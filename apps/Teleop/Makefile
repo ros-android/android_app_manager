@@ -1,7 +1,7 @@
 # Wrapper Makefile to call "ant" in the correct way.
 
-ROSJAVA_ROOT = "../../.."
-ROSANDROID_LIBRARY = "../../library"
+ROSJAVA_ROOT = $(shell rospack find rosjava)
+LIBRARY = "../../library"
 
 all: compile
 
@@ -10,12 +10,15 @@ $(ROSJAVA_ROOT)/java/dist/rosjava.jar:
 
 clean:
 	ant clean
-	cd $(ROSANDROID_LIBRARY) && ant clean
+	cd $(LIBRARY) && ant clean
+
+toplevel:
+	cd ../.. && ant
 
 # Install the app on a connected android device.
-install: clean $(ROSJAVA_ROOT)/java/dist/rosjava.jar
+install: clean $(ROSJAVA_ROOT)/java/dist/rosjava.jar toplevel
 	ant -f build-wrapper.xml install
 
 # Build an .apk file of the app.
-compile: clean $(ROSJAVA_ROOT)/java/dist/rosjava.jar
+compile: clean $(ROSJAVA_ROOT)/java/dist/rosjava.jar toplevel
 	ant -f build-wrapper.xml compile

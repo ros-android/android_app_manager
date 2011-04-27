@@ -27,13 +27,8 @@
       <arg value="-o ${msg_gen}" />
 
       <!-- list of packages to generate messages for -->
-      <arg value="rosgraph_msgs" />
-      <arg value="std_msgs" />
       <arg value="joy" />
-      <arg value="geometry_msgs" />
       <arg value="nav_msgs" />
-      <arg value="sensor_msgs" />
-      <arg value="test_ros" />
       <arg value="diagnostic_msgs" />
       <arg value="app_manager" />
       <arg value="dynamic_reconfigure" />
@@ -48,10 +43,8 @@
       <arg value="-o ${srv_gen}" />
 
       <!-- list of packages to generate for -->
-      <arg value="std_srvs" />
       <arg value="nav_msgs" />
       <arg value="sensor_msgs" />
-      <arg value="test_ros" />
       <arg value="diagnostic_msgs" />
       <arg value="app_manager" />
       <arg value="dynamic_reconfigure" />

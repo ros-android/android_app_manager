@@ -130,7 +130,7 @@ public class MapView extends ImageView {
     int data_i = 0;
     for (int y = 0; y < msg.info.height; y++) {
       for (int x = 0; x < msg.info.width; x++) {
-        int cell = (int) msg.data[data_i];
+        int cell = msg.data[data_i];
         data_i++;
         int red = 128;
         int green = 128;

@@ -52,8 +52,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Enumeration;
 import java.util.HashMap;
 
 /**
@@ -241,7 +245,37 @@ public class MasterChooser extends RosLoader {
           + ex.getMessage());
     }
 
-    configuration.setHostName(Net.getNonLoopbackHostName());
+    configuration.setHostName(getNonLoopbackHostName());
     return configuration;
+  }
+
+  /**
+   * @return The first valid non-loopback, IPv4 host name (address in text form
+   *         like "10.0.129.222" found for this device.
+   */
+  private static String getNonLoopbackHostName() {
+    try {
+      String address = null;
+      for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en
+          .hasMoreElements();) {
+        NetworkInterface intf = en.nextElement();
+        Log.i("RosAndroid", "Interface: " + intf.getName());
+        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr
+            .hasMoreElements();) {
+          InetAddress inetAddress = enumIpAddr.nextElement();
+          Log.i("RosAndroid", "Address: " + inetAddress.getHostAddress().toString());
+          // IPv4 only for now
+          if (!inetAddress.isLoopbackAddress() && inetAddress.getAddress().length == 4) {
+            if (address == null)
+              address = inetAddress.getHostAddress().toString();
+          }
+        }
+      }
+      if (address != null)
+        return address;
+    } catch (SocketException ex) {
+      Log.i("RosAndroid", "SocketException: " + ex.getMessage());
+    }
+    return null;
   }
 }

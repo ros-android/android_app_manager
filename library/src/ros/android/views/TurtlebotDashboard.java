@@ -104,8 +104,8 @@ public class TurtlebotDashboard extends LinearLayout {
     robotBatteryBar = (ProgressBar) findViewById(R.id.robot_battery_bar);
     laptopBatteryBar = (ProgressBar) findViewById(R.id.laptop_battery_bar);
 
-    robotChargingIndicator = (View) findViewById(R.id.robot_charging_indicator);
-    laptopChargingIndicator = (View) findViewById(R.id.laptop_charging_indicator);
+    robotChargingIndicator = findViewById(R.id.robot_charging_indicator);
+    laptopChargingIndicator = findViewById(R.id.laptop_charging_indicator);
   }
 
   /**

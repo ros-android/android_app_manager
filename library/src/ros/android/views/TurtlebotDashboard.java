@@ -77,18 +77,15 @@ public class TurtlebotDashboard extends LinearLayout {
 
   public TurtlebotDashboard(Context context) {
     super(context);
-    Log.i("RosAndroid", "TurtlebotDashboard constructor.");
     inflateSelf(context);
   }
 
   public TurtlebotDashboard(Context context, AttributeSet attrs) {
     super(context, attrs);
-    Log.i("RosAndroid", "TurtlebotDashboard constructor2.");
     inflateSelf(context);
   }
 
   private void inflateSelf(Context context) {
-    Log.i("RosAndroid", "TurtlebotDashboard inflateSelf().");
     LayoutInflater inflater =
         (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     inflater.inflate(R.layout.turtlebot_dashboard, this);
@@ -113,7 +110,6 @@ public class TurtlebotDashboard extends LinearLayout {
    * the previous node if there was one.
    */
   public void start(Node node) throws RosInitException {
-    Log.i("TurtlebotDashboard", "start().");
     stop();
     this.node = node;
     diagnosticSubscriber =
@@ -137,7 +133,6 @@ public class TurtlebotDashboard extends LinearLayout {
   }
 
   public void stop() {
-    Log.i("TurtlebotDashboard", "disconnectNode().");
     if(diagnosticSubscriber != null) {
       diagnosticSubscriber.cancel();
     }
@@ -168,7 +163,6 @@ public class TurtlebotDashboard extends LinearLayout {
   }
 
   private void onModeButtonClicked() {
-    Log.i("RosAndroid", "onModeButtonClicked()");
     if (modeServiceIdentifier != null && setDigOutServiceIdentifier != null) {
       powerOn = !powerOn;
 
@@ -177,11 +171,9 @@ public class TurtlebotDashboard extends LinearLayout {
       setDigOutRequest.digital_out_1 = 0;
       setDigOutRequest.digital_out_2 = 0;
       if (powerOn) {
-        Log.i("RosAndroid", "onModeButtonClicked(): turning on");
         modeRequest.mode = TurtlebotSensorState.OI_MODE_FULL;
         setDigOutRequest.digital_out_0 = 1; // main breaker on
       } else {
-        Log.i("RosAndroid", "onModeButtonClicked(): turning off");
         modeRequest.mode = TurtlebotSensorState.OI_MODE_PASSIVE;
         setDigOutRequest.digital_out_0 = 0; // main breaker off
       }
@@ -211,12 +203,10 @@ public class TurtlebotDashboard extends LinearLayout {
             }
           });
       // TODO: put visual indicator that we are waiting for this to take effect.
-      Log.i("RosAndroid", "onModeButtonClicked(): serviceClient.call() returned.");
     }
   }
 
   private void showMode(String mode) {
-    Log.i("RosAndroid", "showMode(" + mode + ")");
     if (mode == null) {
       modeButton.setBackgroundColor(Color.GRAY);
     } else if (mode.equals("Full")) {

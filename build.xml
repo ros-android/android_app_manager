@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="compile" name="appman_android">
+  
+  <property environment="env"/>
+  <property name="target" value="1.6"/>
+  <property name="source" value="1.6"/>
+
+  <!-- directories -->
+  <property name="pwd" location="."/>
+  <property name="msg_gen" location="library/msg_gen/java"/>
+  <property name="srv_gen" location="library/srv_gen/java"/>
+
+  <target name="init">
+     <mkdir dir="${msg_gen}" />
+     <mkdir dir="${srv_gen}" />
+  </target>
+
+  <target name="clean">    
+    <delete dir="${msg_gen}"/>
+    <delete dir="${srv_gen}"/>
+  </target>
+
+  <target name="msg_gen" depends="init">
+    <echo message="building commonly used ROS messages"/>        
+
+    <exec executable="scripts/java_msgs.py">
+      <arg value="-o ${msg_gen}" />
+
+      <!-- list of packages to generate messages for -->
+      <arg value="rosgraph_msgs" />
+      <arg value="std_msgs" />
+      <arg value="joy" />
+      <arg value="geometry_msgs" />
+      <arg value="nav_msgs" />
+      <arg value="sensor_msgs" />
+      <arg value="test_ros" />
+      <arg value="diagnostic_msgs" />
+      <arg value="app_manager" />
+      <arg value="dynamic_reconfigure" />
+      <arg value="turtlebot_node" />
+    </exec>
+  </target>
+
+  <target name="srv_gen" depends="init">
+    <echo message="building commonly used ROS services"/>        
+
+    <exec executable="scripts/java_srvs.py">
+      <arg value="-o ${srv_gen}" />
+
+      <!-- list of packages to generate for -->
+      <arg value="std_srvs" />
+      <arg value="nav_msgs" />
+      <arg value="sensor_msgs" />
+      <arg value="test_ros" />
+      <arg value="diagnostic_msgs" />
+      <arg value="app_manager" />
+      <arg value="dynamic_reconfigure" />
+      <arg value="turtlebot_node" />
+    </exec>
+  </target>
+
+  <target name="compile" depends="init, msg_gen, srv_gen" />
+
+</project>

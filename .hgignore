@@ -1,0 +1,21 @@
+syntax: glob
+*.class
+*.dex
+*.orig
+*.swp
+*.pyc
+*.DS_Store
+*~
+*.log
+*.ap_
+*.apk
+.cproject
+.settings
+library/libs/*.jar
+syntax: regexp
+build/.*
+android/(bin|gen)/.*
+(apps/.*|library)/(bin|gen)/.*
+(apps/.*|library)/local.properties
+(apps/.*|library)/proguard.cfg
+library/(bin|build|dist|msg_gen|srv_gen)/.*

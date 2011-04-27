@@ -7,13 +7,13 @@
   <author>Dave Hershberger/hersh@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/appmanandroid</url>
+  <url>http://ros.org/wiki/appman_android</url>
   <depend package="roslib"/>
   <depend package="rosgraph_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="joy"/>
   <depend package="std_msgs"/>
-  <depend package="roslang"/>
   <depend package="rostest"/>
-  <depend package="test_ros"/>
   <depend package="app_manager"/>
   <depend package="turtlebot_node"/>
   <depend package="rosjava"/>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hello">Hello World, RosAndroid!</string>
-    <string name="app_name">RosAndroid</string>
-    
+    <string name="loading">Loading</string>
+    <string name="app_name">App Manager</string>
     <string name="uri_not_set_toast">Select a master URI before continuing.</string>
 </resources>

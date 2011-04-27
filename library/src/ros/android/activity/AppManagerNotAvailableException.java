@@ -33,6 +33,10 @@
 
 package ros.android.activity;
 
+/**
+ * 
+ * @author kwc@willowgarage.com (Ken Conley)
+ */
 public class AppManagerNotAvailableException extends Exception {
 
   private static final long serialVersionUID = 1L;

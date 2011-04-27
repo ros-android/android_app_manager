@@ -30,7 +30,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.ros.app_manager;
+package ros.app_manager;
 
 import org.ros.Node;
 import org.ros.ServiceResponseListener;

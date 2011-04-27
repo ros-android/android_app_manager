@@ -1,17 +1,34 @@
 /*
- * Copyright (C) 2011 Google Inc.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2011, Willow Garage, Inc.
+ * All rights reserved.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *  * Neither the name of Willow Garage, Inc. nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *    
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 package ros.android.activity;
@@ -34,7 +51,6 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import org.yaml.snakeyaml.Yaml;
-import ros.android.util.Net;
 import ros.android.util.RobotDescription;
 import ros.android.util.SdCardSetup;
 import ros.android.util.zxing.IntentIntegrator;
@@ -48,6 +64,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * @author hersh@willowgarage.com
+ */
 public class MasterChooserActivity extends Activity {
 
   private static final int ADD_URI_DIALOG_ID = 0;
@@ -156,7 +175,7 @@ public class MasterChooserActivity extends Activity {
   private void updateListView() {
     setContentView(R.layout.master_chooser);
     ListView listview = (ListView) findViewById(R.id.master_list);
-    listview.setAdapter(new MasterAdapter(this, robots, Net.getNonLoopbackHostName()));
+    listview.setAdapter(new MasterAdapter(this, robots));
     listview.setOnItemClickListener(new OnItemClickListener() {
       @Override
       public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
@@ -204,10 +223,11 @@ public class MasterChooserActivity extends Activity {
 
   private void deleteUnresponsiveRobots() {
     Iterator<RobotDescription> iter = robots.iterator();
-    while( iter.hasNext() ) {
+    while (iter.hasNext()) {
       RobotDescription robot = iter.next();
-      if( robot == null || robot.connectionStatus == null || !robot.connectionStatus.equals( "ok" )) {
-        Log.i("RosAndroid", "Removing robot with connection status '" + robot.connectionStatus + "'");
+      if (robot == null || robot.connectionStatus == null || !robot.connectionStatus.equals("ok")) {
+        Log.i("RosAndroid", "Removing robot with connection status '" + robot.connectionStatus
+            + "'");
         iter.remove();
       }
     }
@@ -241,7 +261,7 @@ public class MasterChooserActivity extends Activity {
       button.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-          dismissDialog( ADD_URI_DIALOG_ID );
+          dismissDialog(ADD_URI_DIALOG_ID);
         }
       });
       break;
@@ -288,12 +308,9 @@ public class MasterChooserActivity extends Activity {
 
   public void scanRobotClicked(View view) {
     dismissDialog(ADD_URI_DIALOG_ID);
-    IntentIntegrator.initiateScan(this,
-                                  IntentIntegrator.DEFAULT_TITLE,
-                                  IntentIntegrator.DEFAULT_MESSAGE,
-                                  IntentIntegrator.DEFAULT_YES,
-                                  IntentIntegrator.DEFAULT_NO,
-                                  IntentIntegrator.QR_CODE_TYPES);
+    IntentIntegrator.initiateScan(this, IntentIntegrator.DEFAULT_TITLE,
+        IntentIntegrator.DEFAULT_MESSAGE, IntentIntegrator.DEFAULT_YES,
+        IntentIntegrator.DEFAULT_NO, IntentIntegrator.QR_CODE_TYPES);
   }
 
   @Override
@@ -307,7 +324,7 @@ public class MasterChooserActivity extends Activity {
   public boolean onOptionsItemSelected(MenuItem item) {
     switch (item.getItemId()) {
     case R.id.add_robot:
-      showDialog( ADD_URI_DIALOG_ID );
+      showDialog(ADD_URI_DIALOG_ID);
       return true;
     case R.id.delete_unresponsive:
       deleteUnresponsiveRobots();
@@ -326,7 +343,7 @@ public class MasterChooserActivity extends Activity {
       if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
         EditText uriField = (EditText) view;
         String newMasterUri = uriField.getText().toString();
-        if( newMasterUri != null && newMasterUri.length() > 0 ) {
+        if (newMasterUri != null && newMasterUri.length() > 0) {
           addMaster(newMasterUri);
         }
         dismissDialog(ADD_URI_DIALOG_ID);

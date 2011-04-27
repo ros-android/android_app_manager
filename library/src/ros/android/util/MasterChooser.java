@@ -1,17 +1,34 @@
 /*
- * Copyright (C) 2011 Google Inc.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2011, Willow Garage, Inc.
+ * All rights reserved.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *  * Neither the name of Willow Garage, Inc. nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *    
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 package ros.android.util;
@@ -40,8 +57,8 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 
 /**
- * Helper class for launching the MasterChooserActivity for choosing a ROS
- * master. Keep this object around for the lifetime of an Activity.
+ * Helper class for launching the {@link MasterChooserActivity} for choosing a
+ * ROS master. Keep this object around for the lifetime of an {@link Activity}.
  */
 public class MasterChooser extends RosLoader {
 
@@ -187,16 +204,25 @@ public class MasterChooser extends RosLoader {
 
   /**
    * Create and return a new ROS NodeContext object based on the current value
-   * of the internal master_uri_ variable. Throws an exception if that value is
-   * invalid or if we can't get a hostname for the device we are running on.
+   * of the internal masterUri variable.
+   * 
+   * @throws RosInitException
+   *           If the master URI is invalid or if we cannot get a hostname for
+   *           the device we are running on.
    */
   @Override
   public NodeConfiguration createConfiguration() throws RosInitException {
-    return createConfiguration(currentRobot.masterUri, Net.getNonLoopbackHostName());
+    return createConfiguration(currentRobot.masterUri);
   }
 
-  static public NodeConfiguration createConfiguration(String masterUri, String myHostName)
-      throws RosInitException {
+  /**
+   * Create and return a new ROS NodeContext object.
+   * 
+   * @throws RosInitException
+   *           If masterUri is invalid or if we cannot get a hostname for the
+   *           device we are running on.
+   */
+  static public NodeConfiguration createConfiguration(String masterUri) throws RosInitException {
     if (masterUri == null) {
       throw new RosInitException("ROS Master URI is not set");
     }
@@ -215,11 +241,7 @@ public class MasterChooser extends RosLoader {
           + ex.getMessage());
     }
 
-    if (myHostName != null) {
-      configuration.setHostName(myHostName);
-    } else {
-      throw new RosInitException("Could not get a hostname for this device.");
-    }
+    configuration.setHostName(Net.getNonLoopbackHostName());
     return configuration;
   }
 }

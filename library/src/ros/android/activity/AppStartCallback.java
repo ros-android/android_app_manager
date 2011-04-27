@@ -33,6 +33,9 @@
 
 package ros.android.activity;
 
+/**
+ * @author kwc@willowgarage.com (Ken Conley)
+ */
 public interface AppStartCallback {
 
   public void appStartResult(boolean success, int resultCode, String message);

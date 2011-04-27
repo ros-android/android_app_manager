@@ -31,12 +31,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.ros.app_manager;
+package ros.app_manager;
 
 /**
  * @author kwc@willowgarage.com (Ken Conley)
  */
 public class AppManagerException extends Exception {
+
+  private static final long serialVersionUID = 1L;
 
   public AppManagerException(Exception e) {
     super(e);

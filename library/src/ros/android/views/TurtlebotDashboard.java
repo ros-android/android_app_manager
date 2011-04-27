@@ -110,38 +110,12 @@ public class TurtlebotDashboard extends LinearLayout {
 
   /**
    * Set the ROS Node to use to get status data and connect it up. Disconnects
-   * the previous node if there was one. Call this with null to disconnect.
+   * the previous node if there was one.
    */
-  public void setNode(Node node) {
-    Log.i("RosAndroid", "TurtlebotDashboard setNode().");
-    if (node == this.node) {
-      Log.i("RosAndroid", "TurtlebotDashboard setNode() duplicate.");
-      return;
-    }
-    if (this.node != null) {
-      disconnectNode();
-    }
+  public void start(Node node) throws RosInitException {
+    Log.i("TurtlebotDashboard", "start().");
+    stop();
     this.node = node;
-    if (this.node != null) {
-      try {
-        connectNode();
-      } catch (RosInitException ex) {
-        Log.e("RosAndroid",
-            "TurtlebotDashboard: setNode() caught RosInitException: " + ex.getMessage());
-        this.node = null;
-      }
-    } else {
-      Log.i("RosAndroid", "TurtlebotDashboard setNode() new node is null.");
-    }
-  }
-
-  public Node getNode() {
-    return node;
-  }
-
-  private void connectNode() throws RosInitException {
-    Log.i("RosAndroid", "TurtlebotDashboard connectNode().");
-
     diagnosticSubscriber =
         node.createSubscriber("diagnostics_agg", new MessageListener<DiagnosticArray>() {
           @Override
@@ -162,9 +136,15 @@ public class TurtlebotDashboard extends LinearLayout {
         node.lookupService(resolver.resolveName("set_digital_outputs"), new SetDigitalOutputs());
   }
 
-  private void disconnectNode() {
-    Log.i("RosAndroid", "TurtlebotDashboard disconnectNode().");
-    diagnosticSubscriber.cancel();
+  public void stop() {
+    Log.i("TurtlebotDashboard", "disconnectNode().");
+    if(diagnosticSubscriber != null) {
+      diagnosticSubscriber.cancel();
+    }
+    diagnosticSubscriber = null;
+    modeServiceIdentifier = null;
+    setDigOutServiceIdentifier = null;
+    node = null;
   }
 
   /**

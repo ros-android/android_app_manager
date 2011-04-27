@@ -161,8 +161,8 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       pubThread.interrupt();
       pubThread = null;
     }
-    dashboard.setNode(null);
-    mapView.setNode(null);
+    dashboard.stop();
+    mapView.stop();
     super.onNodeDestroy(node);
   }
 
@@ -218,9 +218,13 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   protected void onNodeCreate(Node node) {
     Log.i("Teleop", "startAppFuture");
     super.onNodeCreate(node);
-    dashboard.setNode(node);
-    mapView.setNode(node);
-    startApp();
+    try {
+      dashboard.start(node);
+      mapView.start(node, "map");
+      startApp();
+    } catch( RosInitException ex ) {
+      Toast.makeText(Teleop.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+    }
   }
 
   private void startApp() {

@@ -47,7 +47,6 @@ import org.ros.message.nav_msgs.OccupancyGrid;
 
 public class MapView extends ImageView {
   private Subscriber<OccupancyGrid> mapSubscriber;
-  private Node node;
   private Bitmap bitmap;
 
   public MapView(Context ctx) {
@@ -66,36 +65,11 @@ public class MapView extends ImageView {
    * Set the ROS Node to use to get status data and connect it up. Disconnects
    * the previous node if there was one. Call this with null to disconnect.
    */
-  public void setNode(Node node) {
-    if (node == this.node) {
-      return;
-    }
-    if (this.node != null) {
-      disconnectNode();
-    }
-    this.node = node;
-    if (this.node != null) {
-      try {
-        connectNode();
-      } catch (RosInitException ex) {
-        Log.e("RosAndroid",
-              "MapView: setNode() caught RosInitException: " + ex.getMessage());
-        this.node = null;
-      }
-    } else {
-      Log.i("RosAndroid", "MapView setNode() new node is null.");
-    }
-  }
-
-  public Node getNode() {
-    return node;
-  }
-  
-  private void connectNode() throws RosInitException {
-    Log.i("RosAndroid", "MapView connectNode().");
-
+  public void start(Node node, String mapTopic) throws RosInitException {
+    Log.i("MapView", "start().");
+    stop();
     mapSubscriber =
-        node.createSubscriber("map", new MessageListener<OccupancyGrid>() {
+        node.createSubscriber(mapTopic, new MessageListener<OccupancyGrid>() {
           @Override
           public void onNewMessage(final OccupancyGrid msg) {
             MapView.this.post(new Runnable() {
@@ -108,8 +82,11 @@ public class MapView extends ImageView {
         }, OccupancyGrid.class);
   }
 
-  private void disconnectNode() {
-    mapSubscriber.cancel();
+  public void stop() {
+    if(mapSubscriber != null) {
+      mapSubscriber.cancel();
+    }
+    mapSubscriber = null;
   }
 
   /**

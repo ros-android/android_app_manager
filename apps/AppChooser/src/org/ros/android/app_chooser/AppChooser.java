@@ -43,6 +43,7 @@ import android.widget.TextView;
 
 import org.ros.Node;
 import org.ros.ServiceResponseListener;
+import org.ros.exceptions.RosInitException;
 import org.ros.message.app_manager.App;
 import org.ros.service.app_manager.ListApps;
 
@@ -111,8 +112,11 @@ public class AppChooser extends RosAppActivity {
           robotNameView.setText( getCurrentRobot().robotName );
         }
       });
-
-    dashboard.setNode(node);
+    try {
+      dashboard.start(node);
+    } catch( RosInitException ex ) {
+      safeSetStatus("Failed: " + ex.getMessage());
+    }
 
     if (System.currentTimeMillis() - availableAppsCacheTime < 2 * 1000) {
       Log.i("RosAndroid", "using app cache");
@@ -149,7 +153,7 @@ public class AppChooser extends RosAppActivity {
   protected void onNodeDestroy(Node node) {
     Log.i("RosAndroid", "onNodeDestroy");
     super.onNodeDestroy(node);
-    dashboard.setNode(null);
+    dashboard.stop();
   }
 
   public void chooseNewMasterClicked(View view) {

@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="build-wrapper" default="compile">
+<project name="build-wrapper" default="compile" basedir=".">
 
   <import file="build.xml"/>
 
-  <property name="rosjava.root" location="../../.."/>
-  <property name="rosandroid.library" location="${rosjava.root}/android/library"/>
+  <exec command="rospack find rosjava"
+        outputproperty="rosjava.root"
+        failonerror="true"/>
+
+  <property name="appmanandroid.root" location="${basedir}/../.."/>
+  <property name="rosjava.android.library" location="${rosjava.root}/android/library"/>
+  <property name="appmanandroid.library" location="${appmanandroid.root}/library"/>
 
   <!-- It is critical to put these path declarations *after* the
        "setup" tag in build.xml.  They have no effect if placed before
@@ -15,7 +20,7 @@
       <exclude name="mockito*.jar"/>
       <include name="**/*.jar"/>
     </fileset>
-    <fileset dir="${rosandroid.library}/libs">
+    <fileset dir="${appmanandroid.library}/libs">
       <include name="**/*.jar"/>
     </fileset>
     <fileset dir="${rosjava.root}/java/dist">
@@ -29,9 +34,11 @@
          happen if you just pull in the .jar file above. -->
     <pathelement location="${rosjava.root}/java/build/xmlrpc"/>
 
-    <!-- Could probably create a .jar file in ${rosandroid.library}, but
+    <!-- Could probably create .jar files in ${*.library}, but
          this way is fine too. -->
-    <pathelement location="${rosandroid.library}/src"/>
+    <pathelement location="${rosjava.android.library}/src"/>
+    <pathelement location="${appmanandroid.library}/src"/>
+    <pathelement location="${appmanandroid.library}/msg_gen/java"/>
+    <pathelement location="${appmanandroid.library}/srv_gen/java"/>
   </path>
 </project>
-

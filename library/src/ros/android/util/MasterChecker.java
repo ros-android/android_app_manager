@@ -98,10 +98,10 @@ public class MasterChecker {
 
     public CheckerThread(String masterUri) {
       robotDescription = new RobotDescription();
-      checkerThread.robotDescription.masterUri = masterUri;
-      checkerThread.robotDescription.robotName = null;
-      checkerThread.robotDescription.robotType = null;
-      checkerThread.robotDescription.timeLastSeen = null;
+      robotDescription.masterUri = masterUri;
+      robotDescription.robotName = null;
+      robotDescription.robotType = null;
+      robotDescription.timeLastSeen = null;
 
       setDaemon(true);
 

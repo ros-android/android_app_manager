@@ -33,6 +33,7 @@
       <arg value="app_manager" />
       <arg value="dynamic_reconfigure" />
       <arg value="turtlebot_node" />
+      <arg value="tf" />
     </exec>
   </target>
 

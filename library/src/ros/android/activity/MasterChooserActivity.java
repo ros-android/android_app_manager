@@ -55,6 +55,7 @@ import ros.android.util.RobotDescription;
 import ros.android.util.SdCardSetup;
 import ros.android.util.zxing.IntentIntegrator;
 import ros.android.util.zxing.IntentResult;
+import ros.android.activity.R;
 
 import java.io.BufferedReader;
 import java.io.File;

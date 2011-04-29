@@ -18,10 +18,10 @@
                                           android:layout_height="wrap_content"
                                           android:id="@+id/dashboard"/>
     <!-- placeholders... -->
-    <ros.android.views.MapView android:layout_width="160dp"
-                               android:layout_height="fill_parent"
-                               android:layout_weight="1"
-                               android:id="@+id/map_view"/>
+    <ros.android.views.TurtlebotMapView android:layout_width="160dp"
+                                        android:layout_height="fill_parent"
+                                        android:layout_weight="1"
+                                        android:id="@+id/map_view"/>
     <ImageView android:layout_width="160dp"
                android:layout_height="160dp"
                android:src="@drawable/joystick"

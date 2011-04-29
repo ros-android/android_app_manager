@@ -41,7 +41,7 @@ import org.ros.namespace.Namespace;
 import org.ros.service.app_manager.StartApp;
 
 import ros.android.activity.RosAppActivity;
-import ros.android.views.MapView;
+import ros.android.views.TurtlebotMapView;
 import ros.android.views.SensorImageView;
 import ros.android.views.TurtlebotDashboard;
 
@@ -51,7 +51,7 @@ import ros.android.views.TurtlebotDashboard;
 public class Teleop extends RosAppActivity implements OnTouchListener {
   private Publisher<Twist> twistPub;
   private SensorImageView cameraView;
-  private MapView mapView;
+  private TurtlebotMapView mapView;
   private Thread pubThread;
   private boolean deadman;
   private Twist touchCmdMessage;
@@ -81,7 +81,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     touchCmdMessage = new Twist();
 
     dashboard = (TurtlebotDashboard) findViewById( R.id.dashboard );
-    mapView = (MapView) findViewById( R.id.map_view );
+    mapView = (TurtlebotMapView) findViewById( R.id.map_view );
 
     mainLayout = (ViewGroup) findViewById(R.id.main_layout);
     sideLayout = (ViewGroup) findViewById(R.id.side_layout);

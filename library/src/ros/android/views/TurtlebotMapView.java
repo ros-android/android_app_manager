@@ -80,16 +80,18 @@ public class TurtlebotMapView extends View {
   // 2D coordinate transforms
   private Matrix robotImageRelRobot; // constant, based on robot image
   private Matrix robotRelMap; // from TF
-  private Matrix mapRelMapGrid; // from map metadata
-  private Matrix mapGridRelView; // controlled by user pan and zoom
+  private Matrix mapGridRelMap; // from map metadata
+  private Matrix mapRelView; // controlled by user pan and zoom
 
-  private Matrix robotImageRelView;
+  private Matrix mapGridRelView; // computed for showing map
+  private Matrix robotImageRelView; // computed for showing robot
 
   private boolean havePose;
   private boolean haveMap;
 
   private float oldDist; // Previous distance between two fingers on the screen.
   private PointF oldCenter; // Previous center between two fingers on the screen, or previous single finger position.
+  private boolean oldCenterValid;
 
   public TurtlebotMapView(Context ctx) {
     super(ctx);
@@ -122,24 +124,22 @@ public class TurtlebotMapView extends View {
                                              0, 0, 1});
     Log.i("TurtlebotMapView", "robotImageRelRobot = " + robotImageRelRobot.toString());
 
-    // // map grid coordinates are pixels with the origin in the lower-left corner
-    // mapGridRelView = new Matrix3d(1, 0, 0,
-    //                               0, -1, getHeight(), // getHeight() returns 0 here.
-    //                               0, 0, 1);
     // map grid coordinates are pixels with the origin in the lower-left corner
+    mapRelView = new Matrix();
+    mapRelView.setValues( new float[]{5f, 0, 0,
+                                      0, -5f, 0,
+                                      0, 0, 1f} );
+
+    Log.i("TurtlebotMapView", "mapRelView = " + mapRelView.toString());
+
     mapGridRelView = new Matrix();
-    mapGridRelView.setValues( new float[]{.25f, 0, 0,
-                                          0, -.25f, 100f,
-                                          0, 0, 1f} );
-
-    Log.i("TurtlebotMapView", "mapGridRelView = " + mapGridRelView.toString());
-
     robotImageRelView = new Matrix();
     robotRelMap = new Matrix();
-    mapRelMapGrid = new Matrix();
+    mapGridRelMap = new Matrix();
     havePose = false;
     haveMap = false;
     oldCenter = new PointF();
+    oldCenterValid = false;
     oldDist = 0;
   }
 
@@ -224,11 +224,11 @@ public class TurtlebotMapView extends View {
     haveMap = true;
     // This matrix definition presumes the map is flat on the XY plane
     // and that there is 0 rotation.  So just an offset and a scale.
-    float invRes = 1f/(float)msg.info.resolution;
-    mapRelMapGrid.setValues( new float[]{ invRes, 0, (float)-msg.info.origin.position.x * invRes,
-                                          0, invRes, (float)-msg.info.origin.position.y * invRes,
+    float res = (float)msg.info.resolution;
+    mapGridRelMap.setValues( new float[]{ res, 0, (float)msg.info.origin.position.x,
+                                          0, res, (float)msg.info.origin.position.y,
                                           0, 0, 1 });
-    Log.i("TurtlebotMapView", "mapRelMapGrid = " + mapRelMapGrid.toString());
+    Log.i("TurtlebotMapView", "mapGridRelMap = " + mapGridRelMap.toString());
 
     postInvalidate();
   }
@@ -257,12 +257,14 @@ public class TurtlebotMapView extends View {
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
     if( haveMap ) {
+      mapGridRelView.set( mapRelView );
+      mapGridRelView.preConcat( mapGridRelMap );
+
       canvas.drawBitmap(mapBitmap, mapGridRelView, robotPaint);
     }
 
     if( havePose && haveMap ) {
-      robotImageRelView.set( mapGridRelView );
-      robotImageRelView.preConcat( mapRelMapGrid );
+      robotImageRelView.set( mapRelView );
       robotImageRelView.preConcat( robotRelMap );
       robotImageRelView.preConcat( robotImageRelRobot );
 
@@ -284,26 +286,34 @@ public class TurtlebotMapView extends View {
     case MotionEvent.ACTION_DOWN: // first finger touch
       oldCenter.x = event.getX();
       oldCenter.y = event.getY();
+      oldCenterValid = true;
       break;
     case MotionEvent.ACTION_POINTER_DOWN: // second or later finger touches
       findEventCenter(oldCenter, event);
       oldDist = findEventSpacing(event);
+      oldCenterValid = true;
+      break;
+    case MotionEvent.ACTION_POINTER_UP: // second or later finger up
+      oldCenterValid = false;
       break;
     case MotionEvent.ACTION_MOVE:
       // Drag regardless of number of touches
       PointF newCenter = new PointF();
       findEventCenter(newCenter, event);
-      mapGridRelView.postTranslate(newCenter.x - oldCenter.x,
-                                   newCenter.y - oldCenter.y);
+      if(oldCenterValid) {
+        mapRelView.postTranslate(newCenter.x - oldCenter.x,
+                                 newCenter.y - oldCenter.y);
+      }
       // If 2 fingers, also do zoom.
       if( event.getPointerCount() == 2 && oldDist > 10f ) {
         float newDist = findEventSpacing(event);
         if( newDist > 10f ) {
-          mapGridRelView.postScale(newDist / oldDist, newDist / oldDist, newCenter.x, newCenter.y);
+          mapRelView.postScale(newDist / oldDist, newDist / oldDist, newCenter.x, newCenter.y);
         }
         oldDist = newDist;
       }
       oldCenter.set(newCenter);
+      oldCenterValid = true;
       invalidate();
       break;
     }

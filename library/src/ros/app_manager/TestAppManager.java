@@ -50,7 +50,7 @@ public class TestAppManager implements NodeMain {
   private AppManager appManager;
 
   @Override
-  public void run(NodeConfiguration context) {
+  public void main(NodeConfiguration context) {
     Node node = null;
     try {
       node = new Node("app_manager_client", context);

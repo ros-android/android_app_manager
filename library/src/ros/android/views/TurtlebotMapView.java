@@ -92,6 +92,9 @@ public class TurtlebotMapView extends View {
   private float oldDist; // Previous distance between two fingers on the screen.
   private PointF oldCenter; // Previous center between two fingers on the screen, or previous single finger position.
   private boolean oldCenterValid;
+  private boolean firstSize;
+
+  private static final float turtlebotDiameter = .314f; // meters
 
   public TurtlebotMapView(Context ctx) {
     super(ctx);
@@ -112,7 +115,7 @@ public class TurtlebotMapView extends View {
     robotBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.turtlebot_top_view);
     robotPaint = new Paint();
 
-    double robotImageResolution = .314 /* meters */ / 104 /* pixels */;
+    double robotImageResolution = turtlebotDiameter /* meters */ / 104 /* pixels */;
     double xOffsetPixels = 44;
     double yOffsetPixels = 52;
 
@@ -122,16 +125,7 @@ public class TurtlebotMapView extends View {
     robotImageRelRobot.setValues(new float[]{(float)-robotImageResolution, 0, (float)(xOffsetPixels * robotImageResolution),
                                              0, (float)robotImageResolution, (float)(-yOffsetPixels * robotImageResolution),
                                              0, 0, 1});
-    Log.i("TurtlebotMapView", "robotImageRelRobot = " + robotImageRelRobot.toString());
-
-    // map grid coordinates are pixels with the origin in the lower-left corner
     mapRelView = new Matrix();
-    mapRelView.setValues( new float[]{5f, 0, 0,
-                                      0, -5f, 0,
-                                      0, 0, 1f} );
-
-    Log.i("TurtlebotMapView", "mapRelView = " + mapRelView.toString());
-
     mapGridRelView = new Matrix();
     robotImageRelView = new Matrix();
     robotRelMap = new Matrix();
@@ -141,6 +135,7 @@ public class TurtlebotMapView extends View {
     oldCenter = new PointF();
     oldCenterValid = false;
     oldDist = 0;
+    firstSize = true;
   }
 
   public void start(Node node, String mapTopic) throws RosInitException {
@@ -318,6 +313,45 @@ public class TurtlebotMapView extends View {
       break;
     }
     return true;
+  }
+
+  @Override
+  protected void onSizeChanged(int w, int h, int oldW, int oldH) {
+    if(firstSize) {
+      // The first time we get laid out, make the robot be a certain
+      // size in the window.  Later times we'll leave the scale however
+      // the user set it.
+
+      // Make the turtlebot take up 1/8 of the view height initially, and center it.
+      float pixelsPerMeter = h / (turtlebotDiameter * 8f);
+      mapRelView.setValues(new float[]{pixelsPerMeter, 0, w/2,
+                                       0, -pixelsPerMeter, h/2,
+                                       0, 0, 1});
+
+      firstSize = false;
+    }
+    centerRobot();
+  }
+
+  /**
+   * Center the robot's position in the view without changing the
+   * scale.
+   */
+  public void centerRobot() {
+    Matrix robotRelView = new Matrix();
+    robotRelView.set( mapRelView );
+    robotRelView.preConcat( robotRelMap );
+
+    float[] values = new float[9];
+    robotRelView.getValues(values);
+    float robotRelViewX = values[2]; // These should be in pixel units.
+    float robotRelViewY = values[5];
+
+    // Translate mapRelView by the difference between the view center
+    // and the robot center.
+    mapRelView.postTranslate( getWidth()/2f - robotRelViewX,
+                              getHeight()/2f - robotRelViewY );
+    invalidate();
   }
 
   private float findEventSpacing(MotionEvent event) {

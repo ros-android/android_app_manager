@@ -37,15 +37,12 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.util.Log;
-
 import org.ros.NodeConfiguration;
 import org.ros.RosLoader;
 import org.ros.exceptions.RosInitException;
 import org.ros.internal.namespace.GraphName;
 import org.ros.namespace.NameResolver;
-import org.ros.namespace.Namespace;
 import org.yaml.snakeyaml.Yaml;
-
 import ros.android.activity.MasterChooserActivity;
 
 import java.io.BufferedReader;
@@ -129,7 +126,7 @@ public class MasterChooser extends RosLoader {
       Yaml yaml = new Yaml();
       yaml.dump(currentRobot, writer);
       writer.close();
-      Log.i("RosAndroid", "Wrote '" + currentRobot.masterUri + "' etc to current-robot file.");
+      Log.i("RosAndroid", "Wrote '" + currentRobot.getMasterUri() + "' etc to current-robot file.");
     } catch (Exception ex) {
       Log.e("RosAndroid", "exception writing current robot to sdcard: " + ex.getMessage());
     }
@@ -167,9 +164,9 @@ public class MasterChooser extends RosLoader {
    * otherwise. Does not read anything from disk.
    */
   public boolean hasRobot() {
-    return (currentRobot != null && currentRobot.masterUri != null
-        && currentRobot.masterUri.length() != 0 && currentRobot.robotName != null && currentRobot.robotName
-        .length() != 0);
+    return (currentRobot != null && currentRobot.getMasterUri() != null
+        && currentRobot.getMasterUri().length() != 0 && currentRobot.getRobotName() != null && currentRobot
+        .getRobotName().length() != 0);
   }
 
   /**
@@ -216,7 +213,7 @@ public class MasterChooser extends RosLoader {
    */
   @Override
   public NodeConfiguration createConfiguration() throws RosInitException {
-    return createConfiguration(currentRobot.masterUri);
+    return createConfiguration(currentRobot.getMasterUri());
   }
 
   /**
@@ -230,7 +227,7 @@ public class MasterChooser extends RosLoader {
     if (masterUri == null) {
       throw new RosInitException("ROS Master URI is not set");
     }
-    String namespace = Namespace.GLOBAL_NS;
+    String namespace = "/";
     HashMap<GraphName, GraphName> remappings = new HashMap<GraphName, GraphName>();
     NameResolver resolver = new NameResolver(namespace, remappings);
 
@@ -245,7 +242,7 @@ public class MasterChooser extends RosLoader {
           + ex.getMessage());
     }
 
-    configuration.setHostName(getNonLoopbackHostName());
+    configuration.setHost(getNonLoopbackHostName());
     return configuration;
   }
 

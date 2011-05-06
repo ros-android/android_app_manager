@@ -38,7 +38,6 @@ import org.ros.Node;
 import org.ros.exceptions.RosInitException;
 import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
 import org.ros.namespace.NameResolver;
-import org.ros.namespace.Namespace;
 import ros.android.util.RobotDescription;
 
 /**
@@ -56,21 +55,23 @@ public class RosAppActivity extends RosActivity {
 
   private AppManager createAppManagerCb(Node node, RobotDescription robotDescription)
       throws RosInitException, XmlRpcTimeoutException, AppManagerNotAvailableException {
+    //TODO: prevent connecting to app manager of unknown robots
     if (robotDescription == null) {
       throw new RosInitException("no robot available");
     } else {
-      Log.i("RosAndroid", "Using Robot: " + robotDescription.robotName + " "
-          + robotDescription.masterUri);
-      return AppManager.create(node, robotDescription.robotName);
+      Log.i("RosAndroid", "Using Robot: " + robotDescription.getRobotName() + " "
+          + robotDescription.getMasterUri());
+      return AppManager.create(node, robotDescription.getRobotName());
     }
   }
 
-  protected Namespace getAppNamespace(Node node) throws RosInitException {
+  protected NameResolver getAppNamespace(Node node) throws RosInitException {
     RobotDescription robotDescription = getCurrentRobot();
     if (robotDescription == null) {
       throw new RosInitException("no robot available");
     }
-    return node.createNamespace(NameResolver.join(robotDescription.robotName, "application"));
+    NameResolver resolver = node.getResolver();
+    return resolver.createResolver(NameResolver.join(robotDescription.getRobotName(), "application"));
   }
 
   @Override

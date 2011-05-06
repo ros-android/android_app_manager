@@ -32,6 +32,21 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>AppManAndroid_msg_gen_java</name>
+			<type>2</type>
+			<locationURI>_android_AppManAndroid_8bb26096/msg_gen/java</locationURI>
+		</link>
+		<link>
+			<name>AppManAndroid_src</name>
+			<type>2</type>
+			<locationURI>_android_AppManAndroid_8bb26096/src</locationURI>
+		</link>
+		<link>
+			<name>AppManAndroid_srv_gen_java</name>
+			<type>2</type>
+			<locationURI>_android_AppManAndroid_8bb26096/srv_gen/java</locationURI>
+		</link>
+		<link>
 			<name>RosAndroid_src</name>
 			<type>2</type>
 			<locationURI>_android_RosAndroid_633a53d9/src</locationURI>

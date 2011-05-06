@@ -32,16 +32,12 @@ package ros.android.views;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.widget.ImageView;
-
 import org.ros.MessageListener;
 import org.ros.Node;
 import org.ros.exceptions.RosInitException;
 import org.ros.message.sensor_msgs.CompressedImage;
-import org.ros.message.sensor_msgs.Image;
 
 /**
  * A camera node that publishes images and camera_info

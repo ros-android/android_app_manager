@@ -31,66 +31,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-package ros.app_manager;
+package ros.android.util;
 
-import org.ros.ServiceResponseListener;
-import org.ros.message.Message;
+public class InvalidRobotDescriptionException extends Exception {
 
-/**
- * Message listener implementation that enables blocking-style execution of
- * service calls. This implementation is intended for services as it only
- * accepts a single message. It can be used with topics if the use case is
- * similar (wait until a single message received).
- * 
- * @author kwc@willowgarage.com (Ken Conley)
- * 
- * @param <T>
- */
-public class BasicAppManagerCallback<T extends Message> implements ServiceResponseListener<T> {
-
-  private T response;
-  private AppManagerException failure;
-
-  public BasicAppManagerCallback() {
-    response = null;
+  public InvalidRobotDescriptionException(String string) {
+    super(string);
   }
 
-  @Override
-  public void onSuccess(T message) {
-    response = message;
-  }
+  private static final long serialVersionUID = 1L;
 
-  public T getResponse() {
-    return response;
-  }
-
-  @Override
-  public void onFailure(Exception e) {
-    this.failure = new AppManagerException(e);
-  }
-
-  public T waitForResponse(long timeout) throws TimeoutException, AppManagerException {
-    // TODO: need equivalent of node.ok()
-    long timeoutT = System.currentTimeMillis() + timeout;
-    while (response == null && failure == null && System.currentTimeMillis() < timeoutT) {
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-      }
-    }
-    if (failure != null) {
-      // re-throw
-      throw failure;
-    }
-    if (response == null) {
-      throw new TimeoutException();
-    }
-    return response;
-  }
-
-  public static class TimeoutException extends Exception {
-
-    private static final long serialVersionUID = 1L;
-
-  }
 }

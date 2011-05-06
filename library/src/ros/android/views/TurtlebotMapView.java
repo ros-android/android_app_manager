@@ -219,7 +219,7 @@ public class TurtlebotMapView extends View {
     haveMap = true;
     // This matrix definition presumes the map is flat on the XY plane
     // and that there is 0 rotation.  So just an offset and a scale.
-    float res = (float)msg.info.resolution;
+    float res = msg.info.resolution;
     mapGridRelMap.setValues( new float[]{ res, 0, (float)msg.info.origin.position.x,
                                           0, res, (float)msg.info.origin.position.y,
                                           0, 0, 1 });

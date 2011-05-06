@@ -33,8 +33,6 @@
 
 package ros.android.activity;
 
-import ros.android.util.InvalidRobotDescriptionException;
-
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
@@ -53,18 +51,18 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import org.yaml.snakeyaml.Yaml;
+import ros.android.util.InvalidRobotDescriptionException;
 import ros.android.util.RobotDescription;
 import ros.android.util.SdCardSetup;
 import ros.android.util.zxing.IntentIntegrator;
 import ros.android.util.zxing.IntentResult;
-import ros.android.activity.R;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -217,13 +215,14 @@ public class MasterChooserActivity extends Activity {
       if (!masterUri.startsWith("http://") || !masterUri.startsWith("https://")) {
         masterUri = "http://" + masterUri;
       }
+      URI url;
       try {
-        URL url = new URL(masterUri);
-        if (url.getPort() == -1) {
-          masterUri = url.getProtocol() + "://" + url.getHost() + ":11311";
-        }
-      } catch (MalformedURLException e) {
+        url = new URI(masterUri);
+      } catch (URISyntaxException e) {
         throw new InvalidRobotDescriptionException("Invalid master URI");
+      }
+      if (url.getPort() == -1) {
+        masterUri = url.getScheme() + "://" + url.getHost() + ":11311";
       }
 
       Iterator<RobotDescription> iter = robots.iterator();
@@ -234,7 +233,7 @@ public class MasterChooserActivity extends Activity {
           return;
         }
       }
-      robots.add(RobotDescription.createUnknown(masterUri));
+      robots.add(RobotDescription.createUnknown(url));
       onRobotsChanged();
     }
   }
@@ -368,7 +367,11 @@ public class MasterChooserActivity extends Activity {
         EditText uriField = (EditText) view;
         String newMasterUri = uriField.getText().toString();
         if (newMasterUri != null && newMasterUri.length() > 0) {
-          addMaster(newMasterUri);
+          try {
+            addMaster(newMasterUri);
+          } catch (InvalidRobotDescriptionException e) {
+            Toast.makeText(MasterChooserActivity.this, "Invalid URI", Toast.LENGTH_SHORT).show();
+          }
         }
         dismissDialog(ADD_URI_DIALOG_ID);
         return true;

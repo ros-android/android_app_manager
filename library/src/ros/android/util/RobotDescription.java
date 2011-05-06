@@ -38,6 +38,8 @@ import org.ros.exceptions.RosNameException;
 import org.ros.internal.namespace.GraphName;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Date;
 
@@ -48,7 +50,7 @@ public class RobotDescription implements java.io.Serializable {
   public static final String TYPE_UNKNOWN = "Unknown";
 
   private static final long serialVersionUID = 1L;
-  private String masterUri;
+  private URI masterUri;
   private String robotName;
   private String robotType;
   private String connectionStatus;
@@ -56,18 +58,15 @@ public class RobotDescription implements java.io.Serializable {
 
   // TODO(kwc): add in canonicalization of robotName
 
-  public RobotDescription(String masterUri, String robotName, String robotType, Date timeLastSeen)
+  public RobotDescription(URI masterUri, String robotName, String robotType, Date timeLastSeen)
       throws InvalidRobotDescriptionException {
     try {
       GraphName.validateName(robotName);
-      if (masterUri == null || masterUri.length() == 0) {
+      if (masterUri == null || masterUri.toString().length() == 0) {
         throw new InvalidRobotDescriptionException("Empty Master URI");
       }
-      new URL(masterUri);
     } catch (RosNameException e) {
       throw new InvalidRobotDescriptionException("Bad robot name: " + robotName);
-    } catch (MalformedURLException e) {
-      throw new InvalidRobotDescriptionException("Bad Master URI: " + masterUri);
     }
     this.masterUri = masterUri;
     this.robotName = robotName;
@@ -83,11 +82,11 @@ public class RobotDescription implements java.io.Serializable {
     timeLastSeen = other.timeLastSeen;
   }
 
-  public String getMasterUri() {
+  public URI getMasterUri() {
     return masterUri;
   }
 
-  public void setMasterUri(String masterUri) {
+  public void setMasterUri(URI masterUri) {
     this.masterUri = masterUri;
   }
 
@@ -127,9 +126,9 @@ public class RobotDescription implements java.io.Serializable {
     return this.robotName == NAME_UNKNOWN;
   }
 
-  public static RobotDescription createUnknown(String masterUri)
+  public static RobotDescription createUnknown(URI masterUri)
       throws InvalidRobotDescriptionException {
-      return new RobotDescription(masterUri, NAME_UNKNOWN, TYPE_UNKNOWN, new Date());
+    return new RobotDescription(masterUri, NAME_UNKNOWN, TYPE_UNKNOWN, new Date());
   }
 
 }

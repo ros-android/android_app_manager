@@ -115,7 +115,7 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
 
     TextView tv;
     tv = (TextView) view.findViewById(R.id.uri);
-    tv.setText(description.getMasterUri());
+    tv.setText(description.getMasterUri().toString());
 
     tv = (TextView) view.findViewById(R.id.name);
     tv.setText(description.getRobotName());

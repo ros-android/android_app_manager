@@ -53,7 +53,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Enumeration;
 import java.util.HashMap;
 
@@ -165,8 +164,8 @@ public class MasterChooser extends RosLoader {
    */
   public boolean hasRobot() {
     return (currentRobot != null && currentRobot.getMasterUri() != null
-        && currentRobot.getMasterUri().length() != 0 && currentRobot.getRobotName() != null && currentRobot
-        .getRobotName().length() != 0);
+        && currentRobot.getMasterUri().toString().length() != 0
+        && currentRobot.getRobotName() != null && currentRobot.getRobotName().length() != 0);
   }
 
   /**
@@ -223,7 +222,7 @@ public class MasterChooser extends RosLoader {
    *           If masterUri is invalid or if we cannot get a hostname for the
    *           device we are running on.
    */
-  static public NodeConfiguration createConfiguration(String masterUri) throws RosInitException {
+  static public NodeConfiguration createConfiguration(URI masterUri) throws RosInitException {
     if (masterUri == null) {
       throw new RosInitException("ROS Master URI is not set");
     }
@@ -235,12 +234,7 @@ public class MasterChooser extends RosLoader {
     configuration.setParentResolver(resolver);
     configuration.setRosRoot("fixme");
     configuration.setRosPackagePath(null);
-    try {
-      configuration.setRosMasterUri(new URI(masterUri));
-    } catch (URISyntaxException ex) {
-      throw new RosInitException("ROS Master URI (" + masterUri + ") is invalid: "
-          + ex.getMessage());
-    }
+    configuration.setRosMasterUri(masterUri);
 
     configuration.setHost(getNonLoopbackHostName());
     return configuration;

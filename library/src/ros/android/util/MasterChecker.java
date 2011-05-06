@@ -34,12 +34,11 @@
 package ros.android.util;
 
 import android.util.Log;
-
-import org.ros.Node;
 import org.ros.ParameterClient;
+import org.ros.namespace.NameResolver;
 
+import java.net.URI;
 import java.util.Date;
-import java.util.Random;
 
 /**
  * Threaded ROS-master checker. Runs a thread which checks for a valid ROS
@@ -76,9 +75,9 @@ public class MasterChecker {
    * Start the checker thread with the given master URI. If the thread is
    * already running, kill it first and then start anew. Returns immediately.
    */
-  public void beginChecking(String masterUri) {
+  public void beginChecking(URI masterUri) {
     stopChecking();
-    if (masterUri == null || masterUri.equals("")) {
+    if (masterUri == null || masterUri.toString().equals("")) {
       failureCallback.handleFailure("empty master URI");
       return;
     }
@@ -95,9 +94,9 @@ public class MasterChecker {
 
   private class CheckerThread extends Thread {
 
-    private String masterUri;
+    private URI masterUri;
 
-    public CheckerThread(String masterUri) {
+    public CheckerThread(URI masterUri) {
       this.masterUri = masterUri;
 
       setDaemon(true);
@@ -115,9 +114,8 @@ public class MasterChecker {
     public void run() {
       while (true) {
         try {
-          Node node = new Node("master_checker_" + new Random().nextInt(),
-              MasterChooser.createConfiguration(masterUri));
-          ParameterClient paramClient = node.createParameterClient();
+          ParameterClient paramClient = ParameterClient.create("master_checker", masterUri,
+              NameResolver.createDefault());
           String robotName = (String) paramClient.getParam("robot/name");
           String robotType = (String) paramClient.getParam("robot/type");
           Date timeLastSeen = new Date(); // current time.

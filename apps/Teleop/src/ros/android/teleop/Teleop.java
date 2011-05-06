@@ -192,7 +192,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       Namespace appNamespace = getAppNamespace(node);
       cameraView = (SensorImageView) findViewById(R.id.image);
       Log.i("Teleop", "init cameraView");
-      cameraView.start(node, appNamespace.resolveName("camera/rgb/image_color/compressed"));
+      cameraView.start(node, appNamespace.resolveName("lores_camera/rgb/image_color/compressed_throttle"));
       cameraView.post(new Runnable() {
 
         @Override
@@ -201,7 +201,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
         }
       });
       Log.i("Teleop", "init twistPub");
-      twistPub = appNamespace.createPublisher("turtlebot_node/cmd_vel", Twist.class);
+      twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
     } catch (RosInitException e) {
       Log.e("Teleop", e.getMessage());

@@ -105,7 +105,14 @@ public class AppChooser extends RosAppActivity {
   @Override
   protected void onNodeCreate(Node node) {
     Log.i("RosAndroid", "AppChooser.onNodeCreate");
-    super.onNodeCreate(node);
+    try {
+      super.onNodeCreate(node);
+    } catch( Exception ex ) {
+      safeSetStatus("Failed: " + ex.getMessage());
+      node = null;
+      return;
+    }
+
     runOnUiThread(new Runnable() {
         @Override
         public void run() {

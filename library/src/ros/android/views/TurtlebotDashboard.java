@@ -63,6 +63,7 @@ import java.util.HashMap;
 
 public class TurtlebotDashboard extends LinearLayout {
   private ImageButton modeButton;
+  private ProgressBar modeWaitingSpinner;
   private ProgressBar robotBatteryBar;
   private ProgressBar laptopBatteryBar;
   private View robotChargingIndicator;
@@ -74,6 +75,8 @@ public class TurtlebotDashboard extends LinearLayout {
   private ServiceIdentifier setDigOutServiceIdentifier;
 
   private boolean powerOn = false;
+  private int numModeResponses;
+  private int numModeErrors;
 
   public TurtlebotDashboard(Context context) {
     super(context);
@@ -97,6 +100,10 @@ public class TurtlebotDashboard extends LinearLayout {
         onModeButtonClicked();
       }
     });
+
+    modeWaitingSpinner = (ProgressBar) findViewById(R.id.mode_waiting_spinner);
+    modeWaitingSpinner.setIndeterminate(true);
+    modeWaitingSpinner.setVisibility(View.GONE);
 
     robotBatteryBar = (ProgressBar) findViewById(R.id.robot_battery_bar);
     laptopBatteryBar = (ProgressBar) findViewById(R.id.laptop_battery_bar);
@@ -177,16 +184,27 @@ public class TurtlebotDashboard extends LinearLayout {
         modeRequest.mode = TurtlebotSensorState.OI_MODE_PASSIVE;
         setDigOutRequest.digital_out_0 = 0; // main breaker off
       }
+
+      setModeWaiting( true );
+
+      numModeResponses = 0;
+      numModeErrors = 0;
+
       // TODO: can't I save the modeServiceClient? Causes trouble.
       ServiceClient<SetTurtlebotMode.Response> modeServiceClient =
           node.createServiceClient(modeServiceIdentifier, SetTurtlebotMode.Response.class);
       modeServiceClient.call(modeRequest, new ServiceResponseListener<SetTurtlebotMode.Response>() {
         @Override
         public void onSuccess(SetTurtlebotMode.Response message) {
+          numModeResponses++;
+          updateModeWaiting();
         }
 
         @Override
         public void onFailure(Exception e) {
+          numModeResponses++;
+          numModeErrors++;
+          updateModeWaiting();
         }
       });
 
@@ -196,31 +214,50 @@ public class TurtlebotDashboard extends LinearLayout {
           new ServiceResponseListener<SetDigitalOutputs.Response>() {
             @Override
             public void onSuccess(final SetDigitalOutputs.Response msg) {
+              numModeResponses++;
+              updateModeWaiting();
             }
 
             @Override
             public void onFailure(Exception e) {
+              numModeResponses++;
+              numModeErrors++;
+              updateModeWaiting();
             }
           });
-      // TODO: put visual indicator that we are waiting for this to take effect.
     }
+  }
+
+  private void updateModeWaiting() {
+    if( numModeResponses >= 2 ) {
+      setModeWaiting( false );
+    }
+  }
+
+  private void setModeWaiting(final boolean waiting) {
+    post( new Runnable() {
+        @Override public void run() {
+          modeWaitingSpinner.setVisibility( waiting ? View.VISIBLE : View.GONE );
+        }
+      });
   }
 
   private void showMode(String mode) {
     if (mode == null) {
-      modeButton.setBackgroundColor(Color.GRAY);
+      modeButton.setColorFilter(Color.GRAY);
     } else if (mode.equals("Full")) {
-      modeButton.setBackgroundColor(Color.GREEN);
+      modeButton.setColorFilter(Color.GREEN);
       powerOn = true;
     } else if (mode.equals("Safe")) {
-      modeButton.setBackgroundColor(Color.YELLOW);
+      modeButton.setColorFilter(Color.YELLOW);
       powerOn = true;
     } else if (mode.equals("Passive")) {
-      modeButton.setBackgroundColor(Color.RED);
+      modeButton.setColorFilter(Color.RED);
       powerOn = false;
     } else {
-      modeButton.setBackgroundColor(Color.GRAY);
+      modeButton.setColorFilter(Color.GRAY);
     }
+    setModeWaiting(false);
   }
 
   private void populateBatteryFromStatus(ProgressBar bar, View charging_indicator,

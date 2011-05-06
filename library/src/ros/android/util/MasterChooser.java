@@ -53,6 +53,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Enumeration;
 import java.util.HashMap;
 
@@ -179,12 +180,12 @@ public class MasterChooser extends RosLoader {
    * @returns true if the activity result came from the activity started by this
    *          class, false otherwise.
    */
-  public boolean handleActivityResult(int requestCode, int resultCode, Intent result_intent) {
+  public boolean handleActivityResult(int requestCode, int resultCode, Intent resultIntent) {
     if (requestCode != REQUEST_CODE)
       return false;
 
     if (resultCode == Activity.RESULT_OK) {
-      currentRobot = (RobotDescription) result_intent
+      currentRobot = (RobotDescription) resultIntent
           .getSerializableExtra(MasterChooserActivity.ROBOT_DESCRIPTION_EXTRA);
     }
     return true;
@@ -222,19 +223,27 @@ public class MasterChooser extends RosLoader {
    *           If masterUri is invalid or if we cannot get a hostname for the
    *           device we are running on.
    */
-  static public NodeConfiguration createConfiguration(URI masterUri) throws RosInitException {
+  static public NodeConfiguration createConfiguration(String masterUri) throws RosInitException {
     if (masterUri == null) {
+      // TODO: different exception type for invalid master uri
       throw new RosInitException("ROS Master URI is not set");
     }
     String namespace = "/";
     HashMap<GraphName, GraphName> remappings = new HashMap<GraphName, GraphName>();
     NameResolver resolver = new NameResolver(namespace, remappings);
 
+    URI uri;
+    try {
+      uri = new URI(masterUri);
+    } catch (URISyntaxException e) {
+      throw new RosInitException("Invalid master URI");
+    }
+
     NodeConfiguration configuration = new NodeConfiguration();
     configuration.setParentResolver(resolver);
     configuration.setRosRoot("fixme");
     configuration.setRosPackagePath(null);
-    configuration.setRosMasterUri(masterUri);
+    configuration.setRosMasterUri(uri);
 
     configuration.setHost(getNonLoopbackHostName());
     return configuration;

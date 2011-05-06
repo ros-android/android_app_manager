@@ -38,6 +38,7 @@ import org.ros.ParameterClient;
 import org.ros.namespace.NameResolver;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Date;
 
 /**
@@ -75,13 +76,21 @@ public class MasterChecker {
    * Start the checker thread with the given master URI. If the thread is
    * already running, kill it first and then start anew. Returns immediately.
    */
-  public void beginChecking(URI masterUri) {
+  public void beginChecking(String masterUri) {
     stopChecking();
-    if (masterUri == null || masterUri.toString().equals("")) {
+    if (masterUri == null || masterUri.equals("")) {
       failureCallback.handleFailure("empty master URI");
       return;
     }
-    checkerThread = new CheckerThread(masterUri);
+    URI uri;
+    try {
+      uri = new URI(masterUri);
+    } catch (URISyntaxException e) {
+      failureCallback.handleFailure("invalid master URI");
+      return;
+    }
+
+    checkerThread = new CheckerThread(uri);
     checkerThread.start();
   }
 

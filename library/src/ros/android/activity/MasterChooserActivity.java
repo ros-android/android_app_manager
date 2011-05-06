@@ -215,14 +215,18 @@ public class MasterChooserActivity extends Activity {
       if (!masterUri.startsWith("http://") || !masterUri.startsWith("https://")) {
         masterUri = "http://" + masterUri;
       }
-      URI url;
+      URI uri;
       try {
-        url = new URI(masterUri);
+        uri = new URI(masterUri);
       } catch (URISyntaxException e) {
         throw new InvalidRobotDescriptionException("Invalid master URI");
       }
-      if (url.getPort() == -1) {
-        masterUri = url.getScheme() + "://" + url.getHost() + ":11311";
+      if (uri.getPort() < 0) {
+        try {
+          uri = new URI(uri.getScheme() + "://" + uri.getHost() + ":11311");
+        } catch (URISyntaxException e) {
+          throw new InvalidRobotDescriptionException("internal error");
+        }
       }
 
       Iterator<RobotDescription> iter = robots.iterator();
@@ -233,7 +237,7 @@ public class MasterChooserActivity extends Activity {
           return;
         }
       }
-      robots.add(RobotDescription.createUnknown(url));
+      robots.add(RobotDescription.createUnknown(uri));
       onRobotsChanged();
     }
   }

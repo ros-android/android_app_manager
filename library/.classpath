@@ -5,10 +5,10 @@
 	<classpathentry kind="src" path="msg_gen/java"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/java"/>
-	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="lib" path="/java/lib/guava-r07.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/RosAndroid"/>
 	<classpathentry kind="lib" path="libs/snakeyaml-android-1.8-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="libs/vecmath.jar"/>
+	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

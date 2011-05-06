@@ -34,13 +34,9 @@
 package ros.android.util;
 
 import org.ros.exceptions.RosNameException;
-
 import org.ros.internal.namespace.GraphName;
 
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Date;
 
 public class RobotDescription implements java.io.Serializable {
@@ -50,7 +46,7 @@ public class RobotDescription implements java.io.Serializable {
   public static final String TYPE_UNKNOWN = "Unknown";
 
   private static final long serialVersionUID = 1L;
-  private URI masterUri;
+  private String masterUri;
   private String robotName;
   private String robotType;
   private String connectionStatus;
@@ -68,7 +64,7 @@ public class RobotDescription implements java.io.Serializable {
     } catch (RosNameException e) {
       throw new InvalidRobotDescriptionException("Bad robot name: " + robotName);
     }
-    this.masterUri = masterUri;
+    this.masterUri = masterUri.toString();
     this.robotName = robotName;
     this.robotType = robotType;
     this.timeLastSeen = timeLastSeen;
@@ -82,11 +78,11 @@ public class RobotDescription implements java.io.Serializable {
     timeLastSeen = other.timeLastSeen;
   }
 
-  public URI getMasterUri() {
+  public String getMasterUri() {
     return masterUri;
   }
 
-  public void setMasterUri(URI masterUri) {
+  public void setMasterUri(String masterUri) {
     this.masterUri = masterUri;
   }
 

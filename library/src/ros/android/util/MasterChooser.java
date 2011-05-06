@@ -126,7 +126,7 @@ public class MasterChooser extends RosLoader {
       Yaml yaml = new Yaml();
       yaml.dump(currentRobot, writer);
       writer.close();
-      Log.i("RosAndroid", "Wrote '" + currentRobot.masterUri + "' etc to current-robot file.");
+      Log.i("RosAndroid", "Wrote '" + currentRobot.getMasterUri() + "' etc to current-robot file.");
     } catch (Exception ex) {
       Log.e("RosAndroid", "exception writing current robot to sdcard: " + ex.getMessage());
     }
@@ -164,9 +164,9 @@ public class MasterChooser extends RosLoader {
    * otherwise. Does not read anything from disk.
    */
   public boolean hasRobot() {
-    return (currentRobot != null && currentRobot.masterUri != null
-        && currentRobot.masterUri.length() != 0 && currentRobot.robotName != null && currentRobot.robotName
-        .length() != 0);
+    return (currentRobot != null && currentRobot.getMasterUri() != null
+        && currentRobot.getMasterUri().length() != 0 && currentRobot.getRobotName() != null && currentRobot
+        .getRobotName().length() != 0);
   }
 
   /**
@@ -213,7 +213,7 @@ public class MasterChooser extends RosLoader {
    */
   @Override
   public NodeConfiguration createConfiguration() throws RosInitException {
-    return createConfiguration(currentRobot.masterUri);
+    return createConfiguration(currentRobot.getMasterUri());
   }
 
   /**

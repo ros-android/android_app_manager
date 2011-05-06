@@ -94,14 +94,11 @@ public class MasterChecker {
   }
 
   private class CheckerThread extends Thread {
-    public RobotDescription robotDescription;
+
+    private String masterUri;
 
     public CheckerThread(String masterUri) {
-      robotDescription = new RobotDescription();
-      robotDescription.masterUri = masterUri;
-      robotDescription.robotName = null;
-      robotDescription.robotType = null;
-      robotDescription.timeLastSeen = null;
+      this.masterUri = masterUri;
 
       setDaemon(true);
 
@@ -119,16 +116,18 @@ public class MasterChecker {
       while (true) {
         try {
           Node node = new Node("master_checker_" + new Random().nextInt(),
-              MasterChooser.createConfiguration(robotDescription.masterUri));
+              MasterChooser.createConfiguration(masterUri));
           ParameterClient paramClient = node.createParameterClient();
-          robotDescription.robotName = (String) paramClient.getParam("robot/name");
-          robotDescription.robotType = (String) paramClient.getParam("robot/type");
-          robotDescription.timeLastSeen = new Date(); // current time.
+          String robotName = (String) paramClient.getParam("robot/name");
+          String robotType = (String) paramClient.getParam("robot/type");
+          Date timeLastSeen = new Date(); // current time.
+          RobotDescription robotDescription = new RobotDescription(masterUri, robotName, robotType,
+              timeLastSeen);
           foundMasterCallback.receive(robotDescription);
           return;
         } catch (Exception ex) {
           Log.e("RosAndroid", "Exception while creating node in MasterChecker for master URI "
-              + robotDescription.masterUri);
+              + masterUri);
           failureCallback.handleFailure("exception");
         }
         try {

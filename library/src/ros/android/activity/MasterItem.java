@@ -60,25 +60,25 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
   public MasterItem(RobotDescription robotDescription, MasterChooserActivity parentMca) {
     this.parentMca = parentMca;
     this.description = robotDescription;
-    this.description.connectionStatus = RobotDescription.CONNECTING;
+    this.description.setConnectionStatus(RobotDescription.CONNECTING);
     checker = new MasterChecker(this, this);
-    checker.beginChecking(this.description.masterUri);
+    checker.beginChecking(this.description.getMasterUri());
   }
 
   public boolean isOk() {
-    return this.description.connectionStatus.equals(RobotDescription.OK);
+    return this.description.getConnectionStatus().equals(RobotDescription.OK);
   }
 
   @Override
   public void receive(RobotDescription robotDescription) {
     description.copyFrom(robotDescription);
-    description.connectionStatus = RobotDescription.OK;
+    description.setConnectionStatus(RobotDescription.OK);
     safePopulateView();
   }
 
   @Override
   public void handleFailure(String reason) {
-    description.connectionStatus = reason;
+    description.setConnectionStatus(reason);
     safePopulateView();
   }
 
@@ -107,7 +107,7 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
   }
 
   private void populateView() {
-    boolean statusOk = description.connectionStatus.equals("ok");
+    boolean statusOk = description.getConnectionStatus().equals("ok");
 
     ProgressBar progress = (ProgressBar) view.findViewById(R.id.progress_circle);
     progress.setIndeterminate(true);
@@ -115,21 +115,21 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
 
     TextView tv;
     tv = (TextView) view.findViewById(R.id.uri);
-    tv.setText(description.masterUri);
+    tv.setText(description.getMasterUri());
 
     tv = (TextView) view.findViewById(R.id.name);
-    tv.setText(description.robotName);
+    tv.setText(description.getRobotName());
 
     tv = (TextView) view.findViewById(R.id.status);
-    tv.setText(description.connectionStatus);
+    tv.setText(description.getConnectionStatus());
 
     ImageView iv = (ImageView) view.findViewById(R.id.robot_icon);
     iv.setVisibility(statusOk ? View.VISIBLE : View.GONE);
-    if (description.robotType == null) {
+    if (description.getRobotType() == null) {
       iv.setImageResource(R.drawable.question_mark);
-    } else if (description.robotType.equals("pr2")) {
+    } else if (description.getRobotType().equals("pr2")) {
       iv.setImageResource(R.drawable.pr2);
-    } else if (description.robotType.equals("turtlebot")) {
+    } else if (description.getRobotType().equals("turtlebot")) {
       iv.setImageResource(R.drawable.turtlebot);
     } else {
       iv.setImageResource(R.drawable.question_mark);

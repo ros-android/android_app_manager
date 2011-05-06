@@ -55,12 +55,13 @@ public class RosAppActivity extends RosActivity {
 
   private AppManager createAppManagerCb(Node node, RobotDescription robotDescription)
       throws RosInitException, XmlRpcTimeoutException, AppManagerNotAvailableException {
+    //TODO: prevent connecting to app manager of unknown robots
     if (robotDescription == null) {
       throw new RosInitException("no robot available");
     } else {
-      Log.i("RosAndroid", "Using Robot: " + robotDescription.robotName + " "
-          + robotDescription.masterUri);
-      return AppManager.create(node, robotDescription.robotName);
+      Log.i("RosAndroid", "Using Robot: " + robotDescription.getRobotName() + " "
+          + robotDescription.getMasterUri());
+      return AppManager.create(node, robotDescription.getRobotName());
     }
   }
 
@@ -70,7 +71,7 @@ public class RosAppActivity extends RosActivity {
       throw new RosInitException("no robot available");
     }
     NameResolver resolver = node.getResolver();
-    return resolver.createResolver(NameResolver.join(robotDescription.robotName, "application"));
+    return resolver.createResolver(NameResolver.join(robotDescription.getRobotName(), "application"));
   }
 
   @Override

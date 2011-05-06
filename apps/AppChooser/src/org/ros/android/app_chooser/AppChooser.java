@@ -70,8 +70,8 @@ public class AppChooser extends RosAppActivity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
-    dashboard = (TurtlebotDashboard) findViewById( R.id.dashboard );
-    robotNameView = (TextView) findViewById( R.id.robot_name_view );
+    dashboard = (TurtlebotDashboard) findViewById(R.id.dashboard);
+    robotNameView = (TextView) findViewById(R.id.robot_name_view);
   }
 
   @Override
@@ -105,14 +105,14 @@ public class AppChooser extends RosAppActivity {
     Log.i("RosAndroid", "AppChooser.onNodeCreate");
     super.onNodeCreate(node);
     runOnUiThread(new Runnable() {
-        @Override
-        public void run() {
-          robotNameView.setText( getCurrentRobot().robotName );
-        }
-      });
+      @Override
+      public void run() {
+        robotNameView.setText(getCurrentRobot().getRobotName());
+      }
+    });
     try {
       dashboard.start(node);
-    } catch( RosInitException ex ) {
+    } catch (RosInitException ex) {
       safeSetStatus("Failed: " + ex.getMessage());
     }
 
@@ -125,7 +125,7 @@ public class AppChooser extends RosAppActivity {
       return;
     }
     Log.i("RosAndroid", "sending list apps request");
-    
+
     try {
       appManager.addAppListCallback(new MessageListener<AppList>() {
         @Override

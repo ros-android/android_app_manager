@@ -33,6 +33,8 @@
 
 package ros.android.activity;
 
+import ros.android.util.InvalidRobotDescriptionException;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
@@ -61,6 +63,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -196,25 +200,43 @@ public class MasterChooserActivity extends Activity {
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
     if (scanResult != null) {
-      addMaster(scanResult.getContents());
+      try {
+        addMaster(scanResult.getContents());
+      } catch (InvalidRobotDescriptionException e) {
+        Toast.makeText(this, "Invalid robot description", Toast.LENGTH_SHORT).show();
+      }
     } else {
       Toast.makeText(this, "Scan failed", Toast.LENGTH_SHORT).show();
     }
   }
 
-  private void addMaster(String masterUri) {
-    RobotDescription newRobot = new RobotDescription();
-    newRobot.masterUri = masterUri;
-    Iterator<RobotDescription> iter = robots.iterator();
-    while (iter.hasNext()) {
-      RobotDescription robot = iter.next();
-      if (robot.masterUri.equals(masterUri)) {
-        Toast.makeText(this, "That robot is already listed.", Toast.LENGTH_SHORT).show();
-        return;
+  private void addMaster(String masterUri) throws InvalidRobotDescriptionException {
+    if (masterUri == null || masterUri.length() == 0) {
+      throw new InvalidRobotDescriptionException("Empty master URI");
+    } else {
+      if (!masterUri.startsWith("http://") || !masterUri.startsWith("https://")) {
+        masterUri = "http://" + masterUri;
       }
+      try {
+        URL url = new URL(masterUri);
+        if (url.getPort() == -1) {
+          masterUri = url.getProtocol() + "://" + url.getHost() + ":11311";
+        }
+      } catch (MalformedURLException e) {
+        throw new InvalidRobotDescriptionException("Invalid master URI");
+      }
+
+      Iterator<RobotDescription> iter = robots.iterator();
+      while (iter.hasNext()) {
+        RobotDescription robot = iter.next();
+        if (robot.getMasterUri().equals(masterUri)) {
+          Toast.makeText(this, "That robot is already listed.", Toast.LENGTH_SHORT).show();
+          return;
+        }
+      }
+      robots.add(RobotDescription.createUnknown(masterUri));
+      onRobotsChanged();
     }
-    robots.add(newRobot);
-    onRobotsChanged();
   }
 
   private void onRobotsChanged() {
@@ -226,8 +248,9 @@ public class MasterChooserActivity extends Activity {
     Iterator<RobotDescription> iter = robots.iterator();
     while (iter.hasNext()) {
       RobotDescription robot = iter.next();
-      if (robot == null || robot.connectionStatus == null || !robot.connectionStatus.equals("ok")) {
-        Log.i("RosAndroid", "Removing robot with connection status '" + robot.connectionStatus
+      if (robot == null || robot.getConnectionStatus() == null
+          || !robot.getConnectionStatus().equals("ok")) {
+        Log.i("RosAndroid", "Removing robot with connection status '" + robot.getConnectionStatus()
             + "'");
         iter.remove();
       }

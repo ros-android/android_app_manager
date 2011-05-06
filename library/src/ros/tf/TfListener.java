@@ -405,7 +405,7 @@ public class TfListener {
         if (addToQueue) {
           // determine cost (based on max absolute difference in time stamp)
           TimeCache cache = frame.getTimeCache(parentFrame);
-          parentFrameNode.cost = Math.max((double)cache.timeToNearestTransform(time),
+          parentFrameNode.cost = Math.max(cache.timeToNearestTransform(time),
                                           Math.max(parentFrameNode.cost, frameNode.cost));
           // if visiting forward (from source), set backward step to remember path
           if (frameNode.backwardStep != null) parentFrameNode.backwardStep = frameNode;
@@ -456,6 +456,7 @@ public class TfListener {
     }
 
     /** Comparator method: low cost < high cost. */
+    @Override
     public int compareTo(SearchNode<V> other) {
       if (this.cost < other.cost) return -1;
       if (this.cost > other.cost) return 1;

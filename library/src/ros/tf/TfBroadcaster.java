@@ -94,7 +94,7 @@ public class TfBroadcaster {
 
     // create tfMessage and add TransformStamped message to it
     tfMessage msg = new tfMessage();
-    msg.transforms = new ArrayList();
+    msg.transforms = new ArrayList<TransformStamped>();
     msg.transforms.add(tfMsg);
 
     // publish the message

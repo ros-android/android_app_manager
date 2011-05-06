@@ -32,10 +32,10 @@ package ros.tf;
 
 import org.ros.message.Time;
 
+import javax.vecmath.Matrix4d;
+import javax.vecmath.Point3d;
 import javax.vecmath.Quat4d;
 import javax.vecmath.Vector3d;
-import javax.vecmath.Point3d;
-import javax.vecmath.Matrix4d;
 
 /** 
  * Transformation stamped with time, frame ID and child frame ID. 
@@ -214,6 +214,7 @@ public class StampedTransform {
     /**
      * Returns a string that contains the values of this transform.
      */    
+    @Override
     public String toString() {
         return "[" + frameID + " -> " + childFrameID + ", " + timeStamp + ", " + getMatrix4() + "]";
     } 

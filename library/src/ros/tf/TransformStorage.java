@@ -32,7 +32,6 @@ package ros.tf;
 
 import javax.vecmath.Quat4d;
 import javax.vecmath.Vector3d;
-import javax.vecmath.Matrix4d;
 
 /**
  * Transformation stamped with time, frame ID and child frame ID, as it is stored in the buffer.
@@ -136,9 +135,10 @@ public class TransformStorage {
     /**
      * Returns a string representation of this transform
      */
+    @Override
     public String toString() {
         return "[" + parentFrame.getFrameID() + " -> " + childFrame.getFrameID() + ", "
-                   + ((double)timeStamp / 1E9) + ", " + getTranslation() + ", " + getRotation() + "]";
+                   + (timeStamp / 1E9) + ", " + getTranslation() + ", " + getRotation() + "]";
     } 
     
 }

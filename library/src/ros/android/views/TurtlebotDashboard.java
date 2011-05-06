@@ -63,10 +63,8 @@ import java.util.HashMap;
 public class TurtlebotDashboard extends LinearLayout {
   private ImageButton modeButton;
   private ProgressBar modeWaitingSpinner;
-  private ProgressBar robotBatteryBar;
-  private ProgressBar laptopBatteryBar;
-  private View robotChargingIndicator;
-  private View laptopChargingIndicator;
+  private BatteryLevelView robotBattery;
+  private BatteryLevelView laptopBattery;
 
   private Node node;
   private Subscriber<DiagnosticArray> diagnosticSubscriber;
@@ -104,11 +102,8 @@ public class TurtlebotDashboard extends LinearLayout {
     modeWaitingSpinner.setIndeterminate(true);
     modeWaitingSpinner.setVisibility(View.GONE);
 
-    robotBatteryBar = (ProgressBar) findViewById(R.id.robot_battery_bar);
-    laptopBatteryBar = (ProgressBar) findViewById(R.id.laptop_battery_bar);
-
-    robotChargingIndicator = findViewById(R.id.robot_charging_indicator);
-    laptopChargingIndicator = findViewById(R.id.laptop_charging_indicator);
+    robotBattery = (BatteryLevelView) findViewById(R.id.robot_battery);
+    laptopBattery = (BatteryLevelView) findViewById(R.id.laptop_battery);
   }
 
   /**
@@ -156,10 +151,10 @@ public class TurtlebotDashboard extends LinearLayout {
     String mode = null;
     for (DiagnosticStatus status : msg.status) {
       if (status.name.equals("/Power System/Battery")) {
-        populateBatteryFromStatus(robotBatteryBar, robotChargingIndicator, status);
+        populateBatteryFromStatus(robotBattery, status);
       }
       if (status.name.equals("/Power System/Laptop Battery")) {
-        populateBatteryFromStatus(laptopBatteryBar, laptopChargingIndicator, status);
+        populateBatteryFromStatus(laptopBattery, status);
       }
       if (status.name.equals("/Mode/Operating Mode")) {
         mode = status.message;
@@ -259,14 +254,13 @@ public class TurtlebotDashboard extends LinearLayout {
     setModeWaiting(false);
   }
 
-  private void populateBatteryFromStatus(ProgressBar bar, View charging_indicator,
-      DiagnosticStatus status) {
+  private void populateBatteryFromStatus(BatteryLevelView view, DiagnosticStatus status) {
     HashMap<String, String> values = keyValueArrayToMap(status.values);
     try {
       float percent =
           100 * Float.parseFloat(values.get("Charge (Ah)"))
               / Float.parseFloat(values.get("Capacity (Ah)"));
-      bar.setProgress((int) percent);
+      view.setBatteryPercent((int) percent);
       // TODO: set color red/yellow/green based on level (maybe with level-set
       // in XML)
     } catch (NumberFormatException ex) {
@@ -277,11 +271,7 @@ public class TurtlebotDashboard extends LinearLayout {
       // Do nothing: data wasn't there.
     }
     try {
-      if (Float.parseFloat(values.get("Current (A)")) > 0) {
-        charging_indicator.setVisibility(View.VISIBLE);
-      } else {
-        charging_indicator.setVisibility(View.INVISIBLE);
-      }
+      view.setPluggedIn( Float.parseFloat(values.get("Current (A)")) > 0);
     } catch (NumberFormatException ex) {
     } catch (ArithmeticException ex) {
     } catch (NullPointerException ex) {

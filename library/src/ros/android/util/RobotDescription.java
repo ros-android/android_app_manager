@@ -54,17 +54,13 @@ public class RobotDescription implements java.io.Serializable {
 
   // TODO(kwc): add in canonicalization of robotName
 
+  public RobotDescription() {   
+  }
+  
   public RobotDescription(URI masterUri, String robotName, String robotType, Date timeLastSeen)
       throws InvalidRobotDescriptionException {
-    try {
-      GraphName.validateName(robotName);
-      if (masterUri == null || masterUri.toString().length() == 0) {
-        throw new InvalidRobotDescriptionException("Empty Master URI");
-      }
-    } catch (RosNameException e) {
-      throw new InvalidRobotDescriptionException("Bad robot name: " + robotName);
-    }
-    this.masterUri = masterUri.toString();
+    setRobotName(robotName);
+    setMasterUri(masterUri.toString());
     this.robotName = robotName;
     this.robotType = robotType;
     this.timeLastSeen = timeLastSeen;
@@ -82,7 +78,11 @@ public class RobotDescription implements java.io.Serializable {
     return masterUri;
   }
 
-  public void setMasterUri(String masterUri) {
+  public void setMasterUri(String masterUri) throws InvalidRobotDescriptionException {
+    if (masterUri == null || masterUri.toString().length() == 0) {
+      throw new InvalidRobotDescriptionException("Empty Master URI");
+    }
+    //TODO: validate
     this.masterUri = masterUri;
   }
 
@@ -90,7 +90,12 @@ public class RobotDescription implements java.io.Serializable {
     return robotName;
   }
 
-  public void setRobotName(String robotName) {
+  public void setRobotName(String robotName) throws InvalidRobotDescriptionException {
+    try {
+      GraphName.validateName(robotName);
+    } catch (RosNameException e) {
+      throw new InvalidRobotDescriptionException("Bad robot name: " + robotName);
+    }
     this.robotName = robotName;
   }
 

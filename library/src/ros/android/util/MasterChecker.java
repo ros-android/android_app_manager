@@ -123,7 +123,7 @@ public class MasterChecker {
     public void run() {
       while (true) {
         try {
-          ParameterClient paramClient = ParameterClient.create("master_checker", masterUri,
+          ParameterClient paramClient = ParameterClient.create("/master_checker", masterUri,
               NameResolver.createDefault());
           String robotName = (String) paramClient.getParam("robot/name");
           String robotType = (String) paramClient.getParam("robot/type");
@@ -134,7 +134,7 @@ public class MasterChecker {
           return;
         } catch (Exception ex) {
           Log.e("RosAndroid", "Exception while creating node in MasterChecker for master URI "
-              + masterUri);
+              + masterUri + " " + ex.toString());
           failureCallback.handleFailure("exception");
         }
         try {

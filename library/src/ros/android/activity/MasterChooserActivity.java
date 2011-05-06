@@ -201,7 +201,7 @@ public class MasterChooserActivity extends Activity {
       try {
         addMaster(scanResult.getContents());
       } catch (InvalidRobotDescriptionException e) {
-        Toast.makeText(this, "Invalid robot description", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Invalid robot description: "+e.getMessage(), Toast.LENGTH_SHORT).show();
       }
     } else {
       Toast.makeText(this, "Scan failed", Toast.LENGTH_SHORT).show();
@@ -209,10 +209,11 @@ public class MasterChooserActivity extends Activity {
   }
 
   private void addMaster(String masterUri) throws InvalidRobotDescriptionException {
+    Log.i("MasterChooserActivity", "addMaster ["+masterUri+"]");
     if (masterUri == null || masterUri.length() == 0) {
       throw new InvalidRobotDescriptionException("Empty master URI");
     } else {
-      if (!masterUri.startsWith("http://") || !masterUri.startsWith("https://")) {
+      if (!masterUri.startsWith("http://") && !masterUri.startsWith("https://")) {
         masterUri = "http://" + masterUri;
       }
       URI uri;
@@ -237,7 +238,9 @@ public class MasterChooserActivity extends Activity {
           return;
         }
       }
+      Log.i("MasterChooserActivity", "creating robot description: "+uri);
       robots.add(RobotDescription.createUnknown(uri));
+      Log.i("MasterChooserActivity", "description created");
       onRobotsChanged();
     }
   }

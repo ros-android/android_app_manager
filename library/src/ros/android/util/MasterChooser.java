@@ -37,15 +37,12 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.util.Log;
-
 import org.ros.NodeConfiguration;
 import org.ros.RosLoader;
 import org.ros.exceptions.RosInitException;
 import org.ros.internal.namespace.GraphName;
 import org.ros.namespace.NameResolver;
-import org.ros.namespace.Namespace;
 import org.yaml.snakeyaml.Yaml;
-
 import ros.android.activity.MasterChooserActivity;
 
 import java.io.BufferedReader;
@@ -230,7 +227,7 @@ public class MasterChooser extends RosLoader {
     if (masterUri == null) {
       throw new RosInitException("ROS Master URI is not set");
     }
-    String namespace = Namespace.GLOBAL_NS;
+    String namespace = "/";
     HashMap<GraphName, GraphName> remappings = new HashMap<GraphName, GraphName>();
     NameResolver resolver = new NameResolver(namespace, remappings);
 
@@ -245,7 +242,7 @@ public class MasterChooser extends RosLoader {
           + ex.getMessage());
     }
 
-    configuration.setHostName(getNonLoopbackHostName());
+    configuration.setHost(getNonLoopbackHostName());
     return configuration;
   }
 

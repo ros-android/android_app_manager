@@ -28,7 +28,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
-
 import org.ros.Node;
 import org.ros.Publisher;
 import org.ros.ServiceResponseListener;
@@ -37,13 +36,12 @@ import org.ros.exceptions.RosInitException;
 import org.ros.message.Message;
 import org.ros.message.app_manager.AppStatus;
 import org.ros.message.geometry_msgs.Twist;
-import org.ros.namespace.Namespace;
+import org.ros.namespace.NameResolver;
 import org.ros.service.app_manager.StartApp;
-
 import ros.android.activity.RosAppActivity;
-import ros.android.views.TurtlebotMapView;
 import ros.android.views.SensorImageView;
 import ros.android.views.TurtlebotDashboard;
+import ros.android.views.TurtlebotMapView;
 
 /**
  * @author kwc@willowgarage.com (Ken Conley)
@@ -53,7 +51,6 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   private SensorImageView cameraView;
   private TurtlebotMapView mapView;
   private Thread pubThread;
-  private boolean deadman;
   private Twist touchCmdMessage;
   private float motionY;
   private float motionX;
@@ -61,8 +58,13 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   private TurtlebotDashboard dashboard;
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
-  private enum ViewMode { CAMERA, MAP };
+
+  private enum ViewMode {
+    CAMERA, MAP
+  };
+
   private ViewMode viewMode;
+  private boolean deadman;
 
   /** Called when the activity is first created. */
   @Override
@@ -80,8 +82,8 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     // cameraView.setOnTouchListener(this);
     touchCmdMessage = new Twist();
 
-    dashboard = (TurtlebotDashboard) findViewById( R.id.dashboard );
-    mapView = (TurtlebotMapView) findViewById( R.id.map_view );
+    dashboard = (TurtlebotDashboard) findViewById(R.id.dashboard);
+    mapView = (TurtlebotMapView) findViewById(R.id.map_view);
 
     mainLayout = (ViewGroup) findViewById(R.id.main_layout);
     sideLayout = (ViewGroup) findViewById(R.id.side_layout);
@@ -89,17 +91,17 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     viewMode = ViewMode.CAMERA;
 
     mapView.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          Teleop.this.swapViews();
-        }
-      });
+      @Override
+      public void onClick(View v) {
+        Teleop.this.swapViews();
+      }
+    });
     cameraView.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          Teleop.this.swapViews();
-        }
-      });
+      @Override
+      public void onClick(View v) {
+        Teleop.this.swapViews();
+      }
+    });
     mapView.setClickable(true);
     cameraView.setClickable(false);
   }
@@ -112,7 +114,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     ViewGroup mapViewParent;
     ViewGroup cameraViewParent;
     Log.i("Teleop", "viewMode = " + viewMode);
-    if( viewMode == ViewMode.CAMERA ) {
+    if (viewMode == ViewMode.CAMERA) {
       Log.i("Teleop", "camera mode");
       mapViewParent = sideLayout;
       cameraViewParent = mainLayout;
@@ -127,13 +129,13 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     // Remove the views from their old locations...
     mapViewParent.removeView(mapView);
     cameraViewParent.removeView(cameraView);
-    
+
     // Add them to their new location...
     mapViewParent.addView(cameraView, mapViewIndex);
     cameraViewParent.addView(mapView, cameraViewIndex);
 
     // Remeber that we are in the other mode now.
-    if( viewMode == ViewMode.CAMERA ) {
+    if (viewMode == ViewMode.CAMERA) {
       viewMode = ViewMode.MAP;
     } else {
       viewMode = ViewMode.CAMERA;
@@ -189,7 +191,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     try {
       Log.i("Teleop", "getNode()");
       Node node = getNode();
-      Namespace appNamespace = getAppNamespace(node);
+      NameResolver appNamespace = getAppNamespace(node);
       cameraView = (SensorImageView) findViewById(R.id.image);
       Log.i("Teleop", "init cameraView");
       cameraView.start(node, appNamespace.resolveName("camera/rgb/image_color/compressed"));
@@ -201,7 +203,8 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
         }
       });
       Log.i("Teleop", "init twistPub");
-      twistPub = appNamespace.createPublisher("turtlebot_node/cmd_vel", Twist.class);
+      twistPub = node.createPublisher(appNamespace.resolveName("turtlebot_node/cmd_vel"),
+          Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
     } catch (RosInitException e) {
       Log.e("Teleop", e.getMessage());
@@ -222,7 +225,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       dashboard.start(node);
       mapView.start(node, "map");
       startApp();
-    } catch( RosInitException ex ) {
+    } catch (RosInitException ex) {
       Toast.makeText(Teleop.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
     }
   }

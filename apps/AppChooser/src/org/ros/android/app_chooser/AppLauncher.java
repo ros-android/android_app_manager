@@ -41,12 +41,12 @@ import android.content.Intent;
 import android.util.Log;
 import org.ros.message.app_manager.App;
 import org.ros.message.app_manager.ClientApp;
+import ros.android.activity.AppManager;
 
 import java.util.ArrayList;
 
 public class AppLauncher {
   static private final String CLIENT_TYPE = "android";
-  static public final String PACKAGE = "org.ros.android.app_chooser";
 
   /** Launch a client app for the given robot app. */
   static public void launch(Activity parentActivity, App app) {
@@ -80,6 +80,7 @@ public class AppLauncher {
     for (int i = 0; i < appropriateAndroidApps.size(); i++) {
       ClientAppData appData = appropriateAndroidApps.get(i);
       Intent intent = appData.createIntent();
+      intent.putExtra(AppManager.PACKAGE + ".robot_app_name", app.name);
       try {
         Log.i("RosAndroid", "trying to startActivity( action: " + intent.getAction() + " )");
         parentActivity.startActivity(intent);
@@ -109,8 +110,8 @@ public class AppLauncher {
   /** Launch the "stub" app */
   static public void launchStubApp(Activity parentActivity, App robotApp) {
     Intent intent = new Intent(parentActivity, StubAppActivity.class);
-    intent.putExtra(PACKAGE + ".robot_app_display_name", robotApp.display_name);
-    intent.putExtra(PACKAGE + ".robot_app_name", robotApp.name);
+    intent.putExtra(AppManager.PACKAGE + ".robot_app_display_name", robotApp.display_name);
+    intent.putExtra(AppManager.PACKAGE + ".robot_app_name", robotApp.name);
     try {
       parentActivity.startActivity(intent);
       return;

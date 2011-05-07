@@ -58,6 +58,7 @@ import org.ros.service.app_manager.StopApp;
  * @author kwc@willowgarage.com (Ken Conley)
  */
 public class AppManager {
+  static public final String PACKAGE = "ros.android.activity";
 
   private final Node node;
   private AppManagerIdentifier appManagerIdentifier;

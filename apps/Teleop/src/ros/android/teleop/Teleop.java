@@ -38,6 +38,7 @@ import org.ros.message.app_manager.AppStatus;
 import org.ros.message.geometry_msgs.Twist;
 import org.ros.namespace.NameResolver;
 import org.ros.service.app_manager.StartApp;
+import ros.android.activity.AppManager;
 import ros.android.activity.RosAppActivity;
 import ros.android.views.SensorImageView;
 import ros.android.views.TurtlebotDashboard;
@@ -58,6 +59,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   private TurtlebotDashboard dashboard;
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
+  private String robotAppName;
 
   private enum ViewMode {
     CAMERA, MAP
@@ -74,6 +76,11 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
     setContentView(R.layout.main);
+
+    robotAppName = getIntent().getStringExtra(AppManager.PACKAGE + ".robot_app_name");
+    if( robotAppName == null ) {
+      robotAppName = "turtlebot_teleop/android_teleop";
+    }
 
     View joyView = findViewById(R.id.joystick);
     joyView.setOnTouchListener(this);
@@ -230,7 +237,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   }
 
   private void startApp() {
-    appManager.startApp("turtlebot_teleop/android_teleop",
+    appManager.startApp(robotAppName,
         new ServiceResponseListener<StartApp.Response>() {
           @Override
           public void onSuccess(StartApp.Response message) {

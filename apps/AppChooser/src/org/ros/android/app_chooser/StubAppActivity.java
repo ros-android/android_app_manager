@@ -43,6 +43,7 @@ import org.ros.service.app_manager.StartApp;
 import org.ros.service.app_manager.StopApp;
 
 import ros.android.activity.AppStartCallback;
+import ros.android.activity.AppManager;
 import ros.android.activity.RosAppActivity;
 
 public class StubAppActivity extends RosAppActivity implements AppStartCallback {
@@ -55,9 +56,9 @@ public class StubAppActivity extends RosAppActivity implements AppStartCallback 
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    robotAppName = getIntent().getStringExtra(AppLauncher.PACKAGE + ".robot_app_name");
+    robotAppName = getIntent().getStringExtra(AppManager.PACKAGE + ".robot_app_name");
     robotAppDisplayName = getIntent().getStringExtra(
-        AppLauncher.PACKAGE + ".robot_app_display_name");
+        AppManager.PACKAGE + ".robot_app_display_name");
 
     setTitle(robotAppDisplayName);
     setContentView(R.layout.stub_app);

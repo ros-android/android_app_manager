@@ -259,17 +259,19 @@ public class RosActivity extends Activity {
           setErrorMessage("failed to create node" + e.getMessage());
           setErrorException(e);
         }
-        onNodeCreate(node);
-        try {
-          while (true) {
-            Thread.sleep(10);
+        if( node != null ) {
+          onNodeCreate(node);
+          try {
+            while (true) {
+              Thread.sleep(10);
+            }
+          } catch (InterruptedException e) {
+            Log.i("RosAndroid", "node thread exiting");
           }
-        } catch (InterruptedException e) {
-          Log.i("RosAndroid", "node thread exiting");
+          onNodeDestroy(node);
+          node.stop();
+          node = null;
         }
-        onNodeDestroy(node);
-        node.stop();
-        node = null;
       }
     };
     nodeThread.start();

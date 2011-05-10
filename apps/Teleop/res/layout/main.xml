@@ -24,7 +24,7 @@
                                         android:id="@+id/map_view"/>
     <ImageView android:layout_width="160dp"
                android:layout_height="160dp"
-               android:src="@drawable/joystick"
+               android:src="@drawable/joystick_white"
                android:id="@+id/joystick"/>
   </LinearLayout>
 </LinearLayout>

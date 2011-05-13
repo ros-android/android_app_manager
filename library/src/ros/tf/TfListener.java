@@ -76,6 +76,23 @@ public class TfListener {
   /** TF name prefix, currently not used (TODO) */
   protected String tfPrefix = "";
 
+  /** The ROS topic to subscribe to TF data, defaults to "/tf". */
+  private String topic = "/tf";
+
+  /**
+   * The ROS topic to subscribe to TF data, defaults to "/tf".  This
+   * does not change a running listener.  For that you must call
+   * stop() and start() again.
+   */
+  public void setTopic(String newTopic) {
+    topic = newTopic;
+  }
+
+  /** The ROS topic to subscribe to TF data, defaults to "/tf". */
+  public String getTopic() {
+    return topic;
+  }
+
   /* **********************************************************************
    * *                           INITIALIZATION                           *
    * ********************************************************************** */
@@ -94,7 +111,7 @@ public class TfListener {
   public boolean start(Node node) {
     stop();
     try {
-      tfSubscriber = node.createSubscriber("/tf", new MessageListener<tfMessage>() {
+      tfSubscriber = node.createSubscriber(getTopic(), new MessageListener<tfMessage>() {
           @Override
           public void onNewMessage(final tfMessage msg) {
             if (msg != null) {

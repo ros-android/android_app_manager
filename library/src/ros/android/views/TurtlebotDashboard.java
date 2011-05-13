@@ -113,24 +113,29 @@ public class TurtlebotDashboard extends LinearLayout {
   public void start(Node node) throws RosInitException {
     stop();
     this.node = node;
-    diagnosticSubscriber =
-        node.createSubscriber("diagnostics_agg", new MessageListener<DiagnosticArray>() {
-          @Override
-          public void onNewMessage(final DiagnosticArray msg) {
-            TurtlebotDashboard.this.post(new Runnable() {
-              @Override
-              public void run() {
-                TurtlebotDashboard.this.handleDiagnosticArray(msg);
-              }
-            });
-          }
-        }, DiagnosticArray.class);
+    try {
+      diagnosticSubscriber =
+          node.createSubscriber("diagnostics_agg", new MessageListener<DiagnosticArray>() {
+            @Override
+            public void onNewMessage(final DiagnosticArray msg) {
+              TurtlebotDashboard.this.post(new Runnable() {
+                @Override
+                public void run() {
+                  TurtlebotDashboard.this.handleDiagnosticArray(msg);
+                }
+              });
+            }
+          }, DiagnosticArray.class);
 
-    NameResolver resolver = node.getResolver().createResolver("/turtlebot_node");
-    modeServiceIdentifier =
-        node.lookupService(resolver.resolveName("set_operation_mode"), new SetTurtlebotMode());
-    setDigOutServiceIdentifier =
-        node.lookupService(resolver.resolveName("set_digital_outputs"), new SetDigitalOutputs());
+      NameResolver resolver = node.getResolver().createResolver("/turtlebot_node");
+      modeServiceIdentifier =
+          node.lookupService(resolver.resolveName("set_operation_mode"), new SetTurtlebotMode());
+      setDigOutServiceIdentifier =
+          node.lookupService(resolver.resolveName("set_digital_outputs"), new SetDigitalOutputs());
+    } catch( Exception ex ) {
+      this.node = null;
+      throw( new RosInitException( ex ));
+    }
   }
 
   public void stop() {

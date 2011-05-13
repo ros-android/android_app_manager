@@ -213,7 +213,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
     } catch (RosInitException e) {
-      Log.e("Teleop", e.getMessage());
+      Log.e("Teleop", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
     }
   }
 

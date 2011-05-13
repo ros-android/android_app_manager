@@ -54,11 +54,12 @@ import org.ros.MessageListener;
 import org.ros.Node;
 import org.ros.Subscriber;
 import org.ros.exceptions.RosInitException;
-import org.ros.message.Time;
 import org.ros.message.nav_msgs.OccupancyGrid;
+import org.ros.message.sensor_msgs.LaserScan;
 
 import ros.tf.TfListener;
 import ros.tf.StampedTransform;
+import ros.tf.TransformChangeDetector;
 
 import ros.android.activity.R;
 
@@ -70,7 +71,7 @@ public class TurtlebotMapView extends View {
   private Bitmap mapBitmap;
 
   private TfListener tfListener = new TfListener();
-  private StampedTransform robotPose;
+  private TransformChangeDetector robotPoseChangeDetector;
   private Vector3d pos3d;
   private Quat4d rot3d;
   private Bitmap robotBitmap;
@@ -88,6 +89,15 @@ public class TurtlebotMapView extends View {
 
   private boolean havePose;
   private boolean haveMap;
+
+  private boolean haveScan;
+  private boolean haveScanPose;
+  private Subscriber<LaserScan> scanSubscriber;
+  private LaserScan rangeScan;
+  private Paint scanLinePaint;
+  private Matrix scanRelView; // computed for showing scan
+  private Matrix scanRelMap; // from TF
+  private TransformChangeDetector scanPoseChangeDetector;
 
   private float oldDist; // Previous distance between two fingers on the screen.
   private PointF oldCenter; // Previous center between two fingers on the screen, or previous single finger position.
@@ -127,8 +137,10 @@ public class TurtlebotMapView extends View {
                                              0, 0, 1});
     mapRelView = new Matrix();
     mapGridRelView = new Matrix();
+    scanRelView = new Matrix();
     robotImageRelView = new Matrix();
     robotRelMap = new Matrix();
+    scanRelMap = new Matrix();
     mapGridRelMap = new Matrix();
     havePose = false;
     haveMap = false;
@@ -136,6 +148,11 @@ public class TurtlebotMapView extends View {
     oldCenterValid = false;
     oldDist = 0;
     firstSize = true;
+
+    haveScan = false;
+    haveScanPose = false;
+    scanLinePaint = new Paint();
+    scanLinePaint.setColor(0x80ffff00);
   }
 
   public void start(Node node, String mapTopic) throws RosInitException {
@@ -153,12 +170,27 @@ public class TurtlebotMapView extends View {
           }
         }, OccupancyGrid.class);
 
+    tfListener.setTopic("/tf_changes");
     tfListener.start(node);
+
+    scanSubscriber =
+        node.createSubscriber("narrow_scan", new MessageListener<LaserScan>() {
+          @Override
+          public void onNewMessage(final LaserScan msg) {
+            rangeScan = msg;
+            haveScan = true;
+            postInvalidate();
+          }
+        }, LaserScan.class);
+
+    robotPoseChangeDetector = new TransformChangeDetector( tfListener, "map", "base_footprint" );
+    scanPoseChangeDetector = new TransformChangeDetector( tfListener, "map", "kinect_depth_frame" );
+
     updateTimer = new Timer(true);
     updateTimer.scheduleAtFixedRate(new TimerTask() {
         @Override
         public void run() {
-          updateRobotPose();
+          update();
         }
       }, 0, 100);
   }
@@ -175,6 +207,8 @@ public class TurtlebotMapView extends View {
       mapSubscriber.cancel();
     }
     mapSubscriber = null;
+    robotPoseChangeDetector = null;
+    scanPoseChangeDetector = null;
   }
 
   /**
@@ -228,22 +262,31 @@ public class TurtlebotMapView extends View {
     postInvalidate();
   }
 
-  private void updateRobotPose() {
-    StampedTransform pose = tfListener.lookupTransform("map", "base_footprint",
-                                                       Time.fromMillis(System.currentTimeMillis()));
-    if(pose == null) {
-      return;
-    }
-    if(robotPose == null || !pose.getMatrix4().equals(robotPose.getMatrix4())) {
-      robotPose = pose;
-      Matrix4d xform3d = robotPose.getMatrix4();
-      Log.i("TurtlebotMapView", "robot pose = " + xform3d.toString());
-      robotRelMap.setValues(new float[]{ (float)xform3d.m00, (float)xform3d.m01, (float)xform3d.m03,
-                                         (float)xform3d.m10, (float)xform3d.m11, (float)xform3d.m13,
-                                         0, 0, 1 });
-      Log.i("TurtlebotMapView", "robotRelMap = " + robotRelMap.toString());
+  /**
+   * Flatten the 3D transform in xform along the Z axis into the 2D
+   * transform matrix2d.
+   */
+  private void setMatrixFromTransform( Matrix matrix2d, StampedTransform xform ) {
+    Matrix4d xform3d = xform.getMatrix4();
+    matrix2d.setValues(new float[]{ (float)xform3d.m00, (float)xform3d.m01, (float)xform3d.m03,
+                                    (float)xform3d.m10, (float)xform3d.m11, (float)xform3d.m13,
+                                    0, 0, 1 });
+  }
 
+  private void update() {
+    StampedTransform xform;
+
+    xform = robotPoseChangeDetector.getChangedTransform();
+    if( xform != null && xform.getMatrix4() != null ) {
+      setMatrixFromTransform( robotRelMap, xform );
       havePose = true;
+      postInvalidate();
+    }
+
+    xform = scanPoseChangeDetector.getChangedTransform();
+    if( xform != null && xform.getMatrix4() != null ) {
+      setMatrixFromTransform( scanRelMap, xform );
+      haveScanPose = true;
       postInvalidate();
     }
   }
@@ -263,8 +306,34 @@ public class TurtlebotMapView extends View {
       robotImageRelView.preConcat( robotRelMap );
       robotImageRelView.preConcat( robotImageRelRobot );
 
-      Log.i("TurtlebotMapView", "robotImageRelView = " + robotImageRelView.toString());
       canvas.drawBitmap(robotBitmap, robotImageRelView, robotPaint);
+    }
+
+    if( haveScan && haveScanPose ) {
+      Matrix originalCanvasMatrix = canvas.getMatrix();
+
+      scanRelView.set( mapRelView );
+      scanRelView.preConcat( scanRelMap );
+
+      canvas.setMatrix(scanRelView);
+
+      float[] lineEndPoints = new float[rangeScan.ranges.length*4];
+      int numEndPoints = 0;
+      float angle = rangeScan.angle_min;
+      for( float range: rangeScan.ranges ) {
+        // Only process ranges which are in the valid range.
+        if( rangeScan.range_min <= range && range <= rangeScan.range_max ) {
+          PointF near = new PointF( FloatMath.cos(angle) * rangeScan.range_min, FloatMath.sin(angle) * rangeScan.range_min ); 
+          PointF far = new PointF( FloatMath.cos(angle) * range, FloatMath.sin(angle) * range );
+          lineEndPoints[numEndPoints++] = near.x;
+          lineEndPoints[numEndPoints++] = near.y;
+          lineEndPoints[numEndPoints++] = far.x;
+          lineEndPoints[numEndPoints++] = far.y;
+        }
+        angle += rangeScan.angle_increment;
+      }
+      canvas.drawLines(lineEndPoints, 0, numEndPoints, scanLinePaint);
+      canvas.setMatrix(originalCanvasMatrix);
     }
   }
 

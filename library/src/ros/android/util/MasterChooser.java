@@ -154,7 +154,7 @@ public class MasterChooser extends RosLoader {
       } finally {
         reader.close();
       }
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       Log.e("RosAndroid", "exception reading current-robot file: " + ex.getMessage());
     }
   }

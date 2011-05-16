@@ -34,6 +34,7 @@
 package ros.android.activity;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,8 +57,10 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
   private View view;
   private RobotDescription description;
   private MasterChooserActivity parentMca;
+  private String errorReason;
 
   public MasterItem(RobotDescription robotDescription, MasterChooserActivity parentMca) {
+    errorReason = "";
     this.parentMca = parentMca;
     this.description = robotDescription;
     this.description.setConnectionStatus(RobotDescription.CONNECTING);
@@ -78,7 +81,8 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
 
   @Override
   public void handleFailure(String reason) {
-    description.setConnectionStatus(reason);
+    errorReason = reason;
+    description.setConnectionStatus(RobotDescription.ERROR);
     safePopulateView();
   }
 
@@ -107,24 +111,20 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
   }
 
   private void populateView() {
-    boolean statusOk = description.getConnectionStatus().equals("ok");
+    Log.i("MasterItem", "connection status = " + description.getConnectionStatus());
+    boolean isOk = description.getConnectionStatus().equals(RobotDescription.OK);
+    boolean isError = description.getConnectionStatus().equals(RobotDescription.ERROR);
+    boolean isConnecting = description.getConnectionStatus().equals(RobotDescription.CONNECTING);
 
     ProgressBar progress = (ProgressBar) view.findViewById(R.id.progress_circle);
     progress.setIndeterminate(true);
-    progress.setVisibility(statusOk ? View.GONE : View.VISIBLE);
+    progress.setVisibility(isConnecting ? View.VISIBLE : View.GONE );
 
-    TextView tv;
-    tv = (TextView) view.findViewById(R.id.uri);
-    tv.setText(description.getMasterUri().toString());
-
-    tv = (TextView) view.findViewById(R.id.name);
-    tv.setText(description.getRobotName());
-
-    tv = (TextView) view.findViewById(R.id.status);
-    tv.setText(description.getConnectionStatus());
+    ImageView errorImage = (ImageView) view.findViewById(R.id.error_icon);
+    errorImage.setVisibility(isError ? View.VISIBLE : View.GONE );
 
     ImageView iv = (ImageView) view.findViewById(R.id.robot_icon);
-    iv.setVisibility(statusOk ? View.VISIBLE : View.GONE);
+    iv.setVisibility(isOk ? View.VISIBLE : View.GONE);
     if (description.getRobotType() == null) {
       iv.setImageResource(R.drawable.question_mark);
     } else if (description.getRobotType().equals("pr2")) {
@@ -134,5 +134,15 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
     } else {
       iv.setImageResource(R.drawable.question_mark);
     }
+
+    TextView tv;
+    tv = (TextView) view.findViewById(R.id.uri);
+    tv.setText(description.getMasterUri().toString());
+
+    tv = (TextView) view.findViewById(R.id.name);
+    tv.setText(description.getRobotName());
+
+    tv = (TextView) view.findViewById(R.id.status);
+    tv.setText(errorReason);
   }
 }

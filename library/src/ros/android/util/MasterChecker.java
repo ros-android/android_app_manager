@@ -121,26 +121,20 @@ public class MasterChecker {
 
     @Override
     public void run() {
-      while (true) {
-        try {
-          ParameterClient paramClient = ParameterClient.create("/master_checker", masterUri,
-              NameResolver.createDefault());
-          String robotName = (String) paramClient.getParam("robot/name");
-          String robotType = (String) paramClient.getParam("robot/type");
-          Date timeLastSeen = new Date(); // current time.
-          RobotDescription robotDescription = new RobotDescription(masterUri, robotName, robotType,
-              timeLastSeen);
-          foundMasterCallback.receive(robotDescription);
-          return;
-        } catch (Exception ex) {
-          Log.e("RosAndroid", "Exception while creating node in MasterChecker for master URI "
+      try {
+        ParameterClient paramClient = ParameterClient.create("/master_checker", masterUri,
+                                                             NameResolver.createDefault());
+        String robotName = (String) paramClient.getParam("robot/name");
+        String robotType = (String) paramClient.getParam("robot/type");
+        Date timeLastSeen = new Date(); // current time.
+        RobotDescription robotDescription = new RobotDescription(masterUri, robotName, robotType,
+                                                                 timeLastSeen);
+        foundMasterCallback.receive(robotDescription);
+        return;
+      } catch (Throwable ex) {
+        Log.e("RosAndroid", "Exception while creating node in MasterChecker for master URI "
               + masterUri + " " + ex.toString());
-          failureCallback.handleFailure("exception");
-        }
-        try {
-          sleep(1000 /* ms */);
-        } catch (Exception ex) {
-        }
+        failureCallback.handleFailure(ex.toString());
       }
     }
   }

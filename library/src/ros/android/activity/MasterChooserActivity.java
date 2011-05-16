@@ -163,6 +163,10 @@ public class MasterChooserActivity extends Activity {
   protected void onResume() {
     super.onResume();
     wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
+    refresh();
+  }
+
+  private void refresh() {
     currentRobotAccessor.loadCurrentRobot();
     readRobotList();
     updateListView();
@@ -353,6 +357,10 @@ public class MasterChooserActivity extends Activity {
 
   public void addRobotClicked(View view) {
     showDialog(ADD_URI_DIALOG_ID);
+  }
+
+  public void refreshClicked(View view) {
+    refresh();
   }
 
   public void scanRobotClicked(View view) {

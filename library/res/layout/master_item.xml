@@ -10,6 +10,11 @@
                android:id="@+id/progress_circle"/>
   <ImageView android:layout_width="60dp"
              android:layout_height="60dp"
+             android:id="@+id/error_icon"
+             android:src="@drawable/error_triangle"
+             android:adjustViewBounds="true"/>
+  <ImageView android:layout_width="60dp"
+             android:layout_height="60dp"
              android:id="@+id/robot_icon"
              android:src="@drawable/turtlebot"
              android:adjustViewBounds="true"/>

@@ -35,8 +35,10 @@ package org.ros.android.app_chooser;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
+import org.ros.Node;
 import org.ros.ServiceResponseListener;
 import org.ros.message.app_manager.StatusCodes;
 import org.ros.service.app_manager.StartApp;
@@ -50,6 +52,8 @@ public class StubAppActivity extends RosAppActivity implements AppStartCallback 
   private String robotAppName;
   private String robotAppDisplayName;
   private TextView statusView;
+  private Button startButton;
+  private Button stopButton;
 
   /** Called when the activity is first created. */
   @Override
@@ -63,9 +67,24 @@ public class StubAppActivity extends RosAppActivity implements AppStartCallback 
     setTitle(robotAppDisplayName);
     setContentView(R.layout.stub_app);
     statusView = (TextView) findViewById(R.id.status_view);
+    stopButton = (Button) findViewById(R.id.stop_button);
+    startButton = (Button) findViewById(R.id.start_button);
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    // RosActivity super-superclass onPause() destroys the node
+    // running appManager, so disable the buttons until onNodeCreate()
+    // is called with a valid appManager.
+    setButtonsEnabled(false);
   }
 
   private void startApp() {
+    if( appManager == null ) {
+      safeSetStatus("Failed: appManager is not ready.");
+      return;
+    }
     appManager.startApp(robotAppName, new ServiceResponseListener<StartApp.Response>() {
       @Override
       public void onSuccess(StartApp.Response message) {
@@ -91,6 +110,10 @@ public class StubAppActivity extends RosAppActivity implements AppStartCallback 
   }
 
   public void onStopClicked(View view) {
+    if( appManager == null ) {
+      setStatus("Failed: appManager is not ready.");
+      return;
+    }
     setStatus("Stopping...");
     appManager.stopApp("*", new ServiceResponseListener<StopApp.Response>() {
 
@@ -136,6 +159,26 @@ public class StubAppActivity extends RosAppActivity implements AppStartCallback 
       safeSetStatus("started");
     } else {
       safeSetStatus(message);
+    }
+  }
+
+  private void setButtonsEnabled(final boolean enabled) {
+    statusView.post(new Runnable() {
+      @Override
+      public void run() {
+        stopButton.setEnabled(enabled);
+        startButton.setEnabled(enabled);
+      }
+    });
+  }
+
+  @Override
+  protected void onNodeCreate(Node node) {
+    super.onNodeCreate(node);
+    if( appManager == null ) {
+      safeSetStatus("Failed to initialize appManager.");
+    } else {
+      setButtonsEnabled(true);
     }
   }
 }

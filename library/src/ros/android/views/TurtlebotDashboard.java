@@ -36,11 +36,13 @@ package ros.android.views;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 import org.ros.MessageListener;
 import org.ros.Node;
 import org.ros.ServiceResponseListener;
@@ -190,40 +192,45 @@ public class TurtlebotDashboard extends LinearLayout {
       numModeErrors = 0;
 
       // TODO: can't I save the modeServiceClient? Causes trouble.
-      ServiceClient<SetTurtlebotMode.Response> modeServiceClient =
+      try {
+        ServiceClient<SetTurtlebotMode.Response> modeServiceClient =
           node.createServiceClient(modeServiceIdentifier, SetTurtlebotMode.Response.class);
-      modeServiceClient.call(modeRequest, new ServiceResponseListener<SetTurtlebotMode.Response>() {
-        @Override
-        public void onSuccess(SetTurtlebotMode.Response message) {
-          numModeResponses++;
-          updateModeWaiting();
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-          numModeResponses++;
-          numModeErrors++;
-          updateModeWaiting();
-        }
-      });
-
-      ServiceClient<SetDigitalOutputs.Response> setDigOutServiceClient =
-          node.createServiceClient(setDigOutServiceIdentifier, SetDigitalOutputs.Response.class);
-      setDigOutServiceClient.call(setDigOutRequest,
-          new ServiceResponseListener<SetDigitalOutputs.Response>() {
+        modeServiceClient.call(modeRequest, new ServiceResponseListener<SetTurtlebotMode.Response>() {
             @Override
-            public void onSuccess(final SetDigitalOutputs.Response msg) {
+              public void onSuccess(SetTurtlebotMode.Response message) {
               numModeResponses++;
               updateModeWaiting();
             }
 
             @Override
-            public void onFailure(Exception e) {
+              public void onFailure(Exception e) {
               numModeResponses++;
               numModeErrors++;
               updateModeWaiting();
             }
           });
+
+        ServiceClient<SetDigitalOutputs.Response> setDigOutServiceClient =
+          node.createServiceClient(setDigOutServiceIdentifier, SetDigitalOutputs.Response.class);
+        setDigOutServiceClient.call(setDigOutRequest,
+                                    new ServiceResponseListener<SetDigitalOutputs.Response>() {
+                                      @Override
+                                        public void onSuccess(final SetDigitalOutputs.Response msg) {
+                                        numModeResponses++;
+                                        updateModeWaiting();
+                                      }
+
+                                      @Override
+                                        public void onFailure(Exception e) {
+                                        numModeResponses++;
+                                        numModeErrors++;
+                                        updateModeWaiting();
+                                      }
+                                    });
+      } catch(Exception ex) {
+        Toast.makeText(getContext(), "Exception in service call: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+        Log.i("TurtlebotDashboard", "making toast.");
+      }
     }
   }
 
@@ -255,6 +262,7 @@ public class TurtlebotDashboard extends LinearLayout {
       powerOn = false;
     } else {
       modeButton.setColorFilter(Color.GRAY);
+      Log.w("TurtlebotDashboard", "Unknown mode string: '" + mode + "'");
     }
     setModeWaiting(false);
   }

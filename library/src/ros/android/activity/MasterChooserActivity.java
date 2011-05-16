@@ -52,6 +52,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 import org.yaml.snakeyaml.Yaml;
 import ros.android.util.InvalidRobotDescriptionException;
+import ros.android.util.MasterChooser;
 import ros.android.util.RobotDescription;
 import ros.android.util.SdCardSetup;
 import ros.android.util.zxing.IntentIntegrator;
@@ -81,9 +82,11 @@ public class MasterChooserActivity extends Activity {
   // don't modify this without immediately calling updateListView().
   private List<RobotDescription> robots;
   private WifiManager wifiManager;
+  private MasterChooser currentRobotAccessor;
 
   public MasterChooserActivity() {
     robots = new ArrayList<RobotDescription>();
+    currentRobotAccessor = new MasterChooser(this);
   }
 
   private File getRobotListFile() {
@@ -160,6 +163,7 @@ public class MasterChooserActivity extends Activity {
   protected void onResume() {
     super.onResume();
     wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
+    currentRobotAccessor.loadCurrentRobot();
     readRobotList();
     updateListView();
     warnIfWifiDown();
@@ -185,6 +189,15 @@ public class MasterChooserActivity extends Activity {
         choose(position);
       }
     });
+    int index = 0;
+    for( RobotDescription robot: robots ) {
+      if( robot != null && robot.equals( currentRobotAccessor.getCurrentRobot() )) {
+        Log.i("MasterChooserActivity", "Highlighting index " + index);
+        listview.setItemChecked(index, true);
+        break;
+      }
+      index++;
+    }
   }
 
   private void choose(int position) {
@@ -259,6 +272,10 @@ public class MasterChooserActivity extends Activity {
         Log.i("RosAndroid", "Removing robot with connection status '" + robot.getConnectionStatus()
             + "'");
         iter.remove();
+        if( robot != null && robot.equals( currentRobotAccessor.getCurrentRobot() )) {
+          currentRobotAccessor.setCurrentRobot( null );
+          currentRobotAccessor.saveCurrentRobot();
+        }
       }
     }
     onRobotsChanged();
@@ -267,6 +284,8 @@ public class MasterChooserActivity extends Activity {
   private void deleteAllRobots() {
     robots.clear();
     onRobotsChanged();
+    currentRobotAccessor.setCurrentRobot( null );
+    currentRobotAccessor.saveCurrentRobot();
   }
 
   @Override

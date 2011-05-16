@@ -85,6 +85,10 @@ public class MasterChooser extends RosLoader {
     return currentRobot;
   }
 
+  public void setCurrentRobot( RobotDescription robot ) {
+    currentRobot = robot;
+  }
+
   /**
    * Returns a File for the current-robot file if the sdcard is ready and
    * there's no error, null otherwise. The actual file on "disk" does not have

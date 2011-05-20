@@ -265,8 +265,13 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    // TODO: REMOVE
-    return super.onOptionsItemSelected(item);
+    switch (item.getItemId()) {
+    case R.id.kill:
+      android.os.Process.killProcess(android.os.Process.myPid());
+      return true;
+    default:
+      return super.onOptionsItemSelected(item);
+    }
   }
 
   @Override

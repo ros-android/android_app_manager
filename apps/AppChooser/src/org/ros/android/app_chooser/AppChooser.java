@@ -35,6 +35,9 @@ package org.ros.android.app_chooser;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -184,6 +187,24 @@ public class AppChooser extends RosAppActivity {
           statusView.setText(statusMessage);
         }
       });
+    }
+  }
+
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    MenuInflater inflater = getMenuInflater();
+    inflater.inflate(R.menu.app_chooser_menu, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    switch (item.getItemId()) {
+    case R.id.kill:
+      android.os.Process.killProcess(android.os.Process.myPid());
+      return true;
+    default:
+      return super.onOptionsItemSelected(item);
     }
   }
 }

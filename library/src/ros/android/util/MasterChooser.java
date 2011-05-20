@@ -102,7 +102,7 @@ public class MasterChooser extends RosLoader {
         File rosDir = SdCardSetup.getRosDir();
         return new File(rosDir, "current_robot.yaml");
       } catch (Exception ex) {
-        Log.e("RosAndroid", "exception in getCurrentRobotFile: " + ex.getMessage());
+        Log.e("MasterChooser", "exception in getCurrentRobotFile: " + ex.getMessage());
         return null;
       }
     }
@@ -115,13 +115,13 @@ public class MasterChooser extends RosLoader {
   public void saveCurrentRobot() {
     File currentRobotFile = getCurrentRobotFile();
     if (currentRobotFile == null) {
-      Log.e("RosAndroid", "saveCurrentRobot(): could not get current-robot File object.");
+      Log.e("MasterChooser", "saveCurrentRobot(): could not get current-robot File object.");
       return;
     }
 
     try {
       if (!currentRobotFile.exists()) {
-        Log.i("RosAndroid", "current-robot file does not exist, creating.");
+        Log.i("MasterChooser", "current-robot file does not exist, creating.");
         currentRobotFile.createNewFile();
       }
 
@@ -130,9 +130,9 @@ public class MasterChooser extends RosLoader {
       Yaml yaml = new Yaml();
       yaml.dump(currentRobot, writer);
       writer.close();
-      Log.i("RosAndroid", "Wrote '" + currentRobot.getMasterUri() + "' etc to current-robot file.");
+      Log.i("MasterChooser", "Wrote '" + currentRobot.getMasterUri() + "' to current-robot file.");
     } catch (Exception ex) {
-      Log.e("RosAndroid", "exception writing current robot to sdcard: " + ex.getMessage());
+      Log.e("MasterChooser", "exception writing current robot to sdcard: " + ex.getMessage());
     }
   }
 
@@ -147,7 +147,7 @@ public class MasterChooser extends RosLoader {
     try {
       File currentRobotFile = getCurrentRobotFile();
       if (currentRobotFile == null) {
-        Log.e("RosAndroid", "loadCurrentRobot(): can't get the current-robot file.");
+        Log.e("MasterChooser", "loadCurrentRobot(): can't get the current-robot file.");
         return;
       }
 
@@ -159,7 +159,7 @@ public class MasterChooser extends RosLoader {
         reader.close();
       }
     } catch (Throwable ex) {
-      Log.e("RosAndroid", "exception reading current-robot file: " + ex.getMessage());
+      Log.e("MasterChooser", "exception reading current-robot file: " + ex.getMessage());
     }
   }
 
@@ -202,7 +202,7 @@ public class MasterChooser extends RosLoader {
    * before anything else happens there.
    */
   public void launchChooserActivity() throws ActivityNotFoundException {
-    Log.i("RosAndroid", "starting master chooser activity");
+    Log.i("MasterChooser", "starting master chooser activity");
     Intent chooserIntent = new Intent(callingActivity, MasterChooserActivity.class);
     callingActivity.startActivityForResult(chooserIntent, REQUEST_CODE);
   }
@@ -228,6 +228,7 @@ public class MasterChooser extends RosLoader {
    *           device we are running on.
    */
   static public NodeConfiguration createConfiguration(String masterUri) throws RosInitException {
+    Log.i("MasterChooser", "createConfiguration(" + masterUri + ")");
     if (masterUri == null) {
       // TODO: different exception type for invalid master uri
       throw new RosInitException("ROS Master URI is not set");
@@ -240,9 +241,11 @@ public class MasterChooser extends RosLoader {
     try {
       uri = new URI(masterUri);
     } catch (URISyntaxException e) {
+      Log.i("MasterChooser", "createConfiguration(" + masterUri + ") invalid master uri.");
       throw new RosInitException("Invalid master URI");
     }
 
+    Log.i("MasterChooser", "createConfiguration() creating configuration.");
     NodeConfiguration configuration = new NodeConfiguration();
     configuration.setParentResolver(resolver);
     configuration.setRosRoot("fixme");
@@ -250,6 +253,7 @@ public class MasterChooser extends RosLoader {
     configuration.setRosMasterUri(uri);
 
     configuration.setHost(getNonLoopbackHostName());
+    Log.i("MasterChooser", "createConfiguration() returning configuration with host = " + configuration.getHost());
     return configuration;
   }
 
@@ -258,16 +262,17 @@ public class MasterChooser extends RosLoader {
    *         like "10.0.129.222" found for this device.
    */
   private static String getNonLoopbackHostName() {
+    Log.i("MasterChooser", "getNonLoopbackHostName() starts");
     try {
       String address = null;
       for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en
           .hasMoreElements();) {
         NetworkInterface intf = en.nextElement();
-        Log.i("RosAndroid", "Interface: " + intf.getName());
+        Log.i("MasterChooser", "getNonLoopbackHostName() sees interface: " + intf.getName());
         for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr
             .hasMoreElements();) {
           InetAddress inetAddress = enumIpAddr.nextElement();
-          Log.i("RosAndroid", "Address: " + inetAddress.getHostAddress().toString());
+          Log.i("MasterChooser", "getNonLoopbackHostName() sees address: " + inetAddress.getHostAddress().toString());
           // IPv4 only for now
           if (!inetAddress.isLoopbackAddress() && inetAddress.getAddress().length == 4) {
             if (address == null)
@@ -275,11 +280,14 @@ public class MasterChooser extends RosLoader {
           }
         }
       }
-      if (address != null)
+      if (address != null) {
+        Log.i("MasterChooser", "getNonLoopbackHostName() returning " + address);
         return address;
+      }
     } catch (SocketException ex) {
-      Log.i("RosAndroid", "SocketException: " + ex.getMessage());
+      Log.i("MasterChooser", "getNonLoopbackHostName() caught SocketException: " + ex.getMessage());
     }
+    Log.i("MasterChooser", "getNonLoopbackHostName() returning null.");
     return null;
   }
 }

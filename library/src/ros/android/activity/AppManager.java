@@ -97,8 +97,8 @@ public class AppManager {
       ServiceClient<ListApps.Response> listAppsClient = node.createServiceClient(serviceIdentifier,
           ListApps.Response.class);
       listAppsClient.call(new ListApps.Request(), callback);
-    } catch (Exception ex) {
-      callback.onFailure(ex);
+    } catch (Throwable ex) {
+      callback.onFailure(new Exception(ex));
     }
   }
 
@@ -111,8 +111,8 @@ public class AppManager {
       StartApp.Request request = new StartApp.Request();
       request.name = appName;
       startAppClient.call(request, callback);
-    } catch (Exception ex) {
-      callback.onFailure(ex);
+    } catch (Throwable ex) {
+      callback.onFailure(new Exception(ex));
     }
   }
 
@@ -124,8 +124,8 @@ public class AppManager {
       StopApp.Request request = new StopApp.Request();
       request.name = appName;
       stopAppClient.call(request, callback);
-    } catch (Exception ex) {
-      callback.onFailure(ex);
+    } catch (Throwable ex) {
+      callback.onFailure(new Exception(ex));
     }
   }
 

@@ -6,4 +6,6 @@
         android:title="Delete Unresponsive Robots" />
   <item android:id="@+id/delete_all"
         android:title="Delete All Robots" />
+  <item android:id="@+id/kill"
+        android:title="Kill" />
 </menu>

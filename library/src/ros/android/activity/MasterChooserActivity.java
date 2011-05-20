@@ -36,7 +36,6 @@ package ros.android.activity;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -74,14 +73,11 @@ import java.util.List;
 public class MasterChooserActivity extends Activity {
 
   private static final int ADD_URI_DIALOG_ID = 0;
-  private static final int WIFI_DISABLED_DIALOG_ID = 1;
-  private static final int WIFI_ENABLED_BUT_NOT_CONNECTED_DIALOG_ID = 2;
 
   public static final String ROBOT_DESCRIPTION_EXTRA = "org.ros.android.RobotDescription";
 
   // don't modify this without immediately calling updateListView().
   private List<RobotDescription> robots;
-  private WifiManager wifiManager;
   private MasterChooser currentRobotAccessor;
 
   public MasterChooserActivity() {
@@ -162,7 +158,6 @@ public class MasterChooserActivity extends Activity {
   @Override
   protected void onResume() {
     super.onResume();
-    wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
     refresh();
   }
 
@@ -170,17 +165,6 @@ public class MasterChooserActivity extends Activity {
     currentRobotAccessor.loadCurrentRobot();
     readRobotList();
     updateListView();
-    warnIfWifiDown();
-  }
-
-  private void warnIfWifiDown() {
-    if (!wifiManager.isWifiEnabled()) {
-      showDialog(WIFI_DISABLED_DIALOG_ID);
-    } else if (wifiManager.getConnectionInfo() == null) {
-      showDialog(WIFI_ENABLED_BUT_NOT_CONNECTED_DIALOG_ID);
-    } else {
-      Log.i("RosAndroid", "wifi seems OK.");
-    }
   }
 
   private void updateListView() {
@@ -318,37 +302,6 @@ public class MasterChooserActivity extends Activity {
         }
       });
       break;
-    case WIFI_DISABLED_DIALOG_ID:
-      dialog = new Dialog(this);
-      dialog.setContentView(R.layout.wireless_disabled_dialog);
-      dialog.setTitle("Wifi network disabled.");
-      button = (Button) dialog.findViewById(R.id.ok_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          dismissDialog(WIFI_DISABLED_DIALOG_ID);
-        }
-      });
-      button = (Button) dialog.findViewById(R.id.enable_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          wifiManager.setWifiEnabled(true);
-          dismissDialog(WIFI_DISABLED_DIALOG_ID);
-        }
-      });
-      break;
-    case WIFI_ENABLED_BUT_NOT_CONNECTED_DIALOG_ID:
-      dialog = new Dialog(this);
-      dialog.setContentView(R.layout.wireless_enabled_but_not_connected_dialog);
-      dialog.setTitle("Wifi not connected.");
-      button = (Button) dialog.findViewById(R.id.ok_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          dismissDialog(WIFI_ENABLED_BUT_NOT_CONNECTED_DIALOG_ID);
-        }
-      });
     default:
       dialog = null;
     }
@@ -388,6 +341,9 @@ public class MasterChooserActivity extends Activity {
       return true;
     case R.id.delete_all:
       deleteAllRobots();
+      return true;
+    case R.id.kill:
+      android.os.Process.killProcess(android.os.Process.myPid());
       return true;
     default:
       return super.onOptionsItemSelected(item);

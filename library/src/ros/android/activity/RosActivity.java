@@ -34,10 +34,7 @@
 package ros.android.activity;
 
 import android.app.Activity;
-import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
@@ -60,13 +57,8 @@ public class RosActivity extends Activity {
   private Node node;
   private Exception errorException;
   private String errorMessage;
-  private WifiManager wifiManager;
   private Handler uiThreadHandler = new Handler();
   private Thread nodeThread;
-
-  private static final int WIFI_DISABLED_DIALOG_ID = 9999999;
-  private static final int WIFI_ENABLED_BUT_NOT_CONNECTED_DIALOG_ID = 9999998;
-  private static final int WAITING_FOR_WIFI_DIALOG_ID = 9999997;
 
   public RosActivity() {
     masterChooser = new MasterChooser(this);
@@ -123,102 +115,6 @@ public class RosActivity extends Activity {
     }
   }
 
-  @Override
-  protected Dialog onCreateDialog(int id) {
-    Dialog dialog;
-    Button button;
-    switch (id) {
-    case WAITING_FOR_WIFI_DIALOG_ID:
-      ProgressDialog pd = new ProgressDialog(this);
-      pd.setMessage("Waiting for wifi connection...");
-      pd.setIndeterminate(true);
-      dialog = pd;
-      break;
-    case WIFI_DISABLED_DIALOG_ID:
-      dialog = new Dialog(this);
-      dialog.setContentView(R.layout.wireless_disabled_dialog);
-      dialog.setTitle("Wifi network disabled.");
-      button = (Button) dialog.findViewById(R.id.ok_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          dismissDialog(WIFI_DISABLED_DIALOG_ID);
-        }
-      });
-      button = (Button) dialog.findViewById(R.id.enable_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          wifiManager.setWifiEnabled(true);
-          waitForWifiConnection();
-          dismissDialog(WIFI_DISABLED_DIALOG_ID);
-        }
-      });
-      break;
-    case WIFI_ENABLED_BUT_NOT_CONNECTED_DIALOG_ID:
-      dialog = new Dialog(this);
-      dialog.setContentView(R.layout.wireless_enabled_but_not_connected_dialog);
-      dialog.setTitle("Wifi not connected.");
-      button = (Button) dialog.findViewById(R.id.ok_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          dismissDialog(WIFI_ENABLED_BUT_NOT_CONNECTED_DIALOG_ID);
-        }
-      });
-    default:
-      dialog = null;
-    }
-    return dialog;
-  }
-
-  /**
-   * Start a thread which waits for the WIFI connection to become valid, then
-   * restarts the activity.
-   */
-  private void waitForWifiConnection() {
-    showDialog(WAITING_FOR_WIFI_DIALOG_ID);
-    Thread waiter = new Thread() {
-      @Override
-      public void run() {
-        while (wifiManager.getConnectionInfo() == null) {
-          try {
-            sleep(500 /* ms */);
-          } catch (Exception ex) {
-          }
-        }
-        uiThreadHandler.post(new Runnable() {
-          @Override
-          public void run() {
-            dismissDialog(WAITING_FOR_WIFI_DIALOG_ID);
-          }
-        });
-      }
-    };
-    waiter.setDaemon(true);
-    waiter.start();
-  }
-
-  /**
-   * If wifi is disabled or disconnected, this shows a warning dialog and
-   * returns true. If wifi is connected, does nothing and returns true.
-   * 
-   * @returns true if wifi is down or disconnected, false otherwise.
-   */
-  private boolean warnIfWifiDown() {
-    wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
-    if (!wifiManager.isWifiEnabled()) {
-      showDialog(WIFI_DISABLED_DIALOG_ID);
-      return true;
-    } else if (wifiManager.getConnectionInfo() == null) {
-      showDialog(WIFI_ENABLED_BUT_NOT_CONNECTED_DIALOG_ID);
-      return true;
-    } else {
-      Log.i("RosAndroid", "wifi seems OK.");
-      return false;
-    }
-  }
-
   /**
    * Read the current ROS master URI from external storage and set up the ROS
    * node from the resulting node context. If the current master is not set or
@@ -228,9 +124,6 @@ public class RosActivity extends Activity {
   @Override
   protected void onResume() {
     super.onResume();
-    if (warnIfWifiDown()) {
-      return;
-    }
     if (node == null) {
       masterChooser.loadCurrentRobot();
       if (masterChooser.hasRobot()) {

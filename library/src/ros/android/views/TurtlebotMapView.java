@@ -56,10 +56,8 @@ import org.ros.Subscriber;
 import org.ros.exceptions.RosInitException;
 import org.ros.message.nav_msgs.OccupancyGrid;
 import org.ros.message.sensor_msgs.LaserScan;
-
-import ros.tf.TfListener;
-import ros.tf.StampedTransform;
-import ros.tf.TransformChangeDetector;
+import org.ros.message.geometry_msgs.TransformStamped;
+import org.ros.message.tf.tfMessage;
 
 import ros.android.activity.R;
 
@@ -68,15 +66,13 @@ import ros.android.activity.R;
  */
 public class TurtlebotMapView extends View {
   private Subscriber<OccupancyGrid> mapSubscriber;
+  private Subscriber<tfMessage> tfSubscriber;
   private Bitmap mapBitmap;
 
-  private TfListener tfListener = new TfListener();
-  private TransformChangeDetector robotPoseChangeDetector;
   private Vector3d pos3d;
   private Quat4d rot3d;
   private Bitmap robotBitmap;
   private Paint robotPaint;
-  private Timer updateTimer;
 
   // 2D coordinate transforms
   private Matrix robotImageRelRobot; // constant, based on robot image
@@ -97,7 +93,6 @@ public class TurtlebotMapView extends View {
   private Paint scanLinePaint;
   private Matrix scanRelView; // computed for showing scan
   private Matrix scanRelMap; // from TF
-  private TransformChangeDetector scanPoseChangeDetector;
 
   private float oldDist; // Previous distance between two fingers on the screen.
   private PointF oldCenter; // Previous center between two fingers on the screen, or previous single finger position.
@@ -157,21 +152,38 @@ public class TurtlebotMapView extends View {
 
   public void start(Node node, String mapTopic) throws RosInitException {
     stop();
-    mapSubscriber =
-        node.createSubscriber(mapTopic, new MessageListener<OccupancyGrid>() {
-          @Override
-          public void onNewMessage(final OccupancyGrid msg) {
-            TurtlebotMapView.this.post(new Runnable() {
+    mapSubscriber = node.createSubscriber(mapTopic, new MessageListener<OccupancyGrid>() {
+        @Override
+        public void onNewMessage(final OccupancyGrid msg) {
+          TurtlebotMapView.this.post(new Runnable() {
               @Override
               public void run() {
                 TurtlebotMapView.this.handleMap(msg);
               }
             });
-          }
-        }, OccupancyGrid.class);
+        }
+      }, OccupancyGrid.class);
 
-    tfListener.setTopic("/tf_changes");
-    tfListener.start(node);
+    tfSubscriber = node.createSubscriber("tf_changes", new MessageListener<tfMessage>() {
+        @Override
+        public void onNewMessage(final tfMessage msg) {
+          if (msg != null) {
+            for(TransformStamped tf : msg.transforms) {
+              if( tf.child_frame_id.equals( "/base_footprint" )) {
+                setMatrixFromTransformStamped( robotRelMap, tf );
+                havePose = true;
+                postInvalidate();
+              } else if( tf.child_frame_id.equals( "/kinect_depth_frame" )) {
+                setMatrixFromTransformStamped( scanRelMap, tf );
+                haveScanPose = true;
+                postInvalidate();
+              } else {
+                Log.w("TurtlebotMapView", "Unexpected child_frame_id: '" + tf.child_frame_id + "'");
+              }
+            }
+          }
+        }
+      }, tfMessage.class);
 
     scanSubscriber =
         node.createSubscriber("narrow_scan", new MessageListener<LaserScan>() {
@@ -182,33 +194,16 @@ public class TurtlebotMapView extends View {
             postInvalidate();
           }
         }, LaserScan.class);
-
-    robotPoseChangeDetector = new TransformChangeDetector( tfListener, "map", "base_footprint" );
-    scanPoseChangeDetector = new TransformChangeDetector( tfListener, "map", "kinect_depth_frame" );
-
-    updateTimer = new Timer(true);
-    updateTimer.scheduleAtFixedRate(new TimerTask() {
-        @Override
-        public void run() {
-          update();
-        }
-      }, 0, 100);
   }
 
   public void stop() {
-    if( updateTimer != null ) {
-      updateTimer.cancel();
-      updateTimer.purge();
-      updateTimer = null;
-    }
-    tfListener.stop();
-
     if(mapSubscriber != null) {
       mapSubscriber.cancel();
     }
+    if(tfSubscriber != null) {
+      tfSubscriber.cancel();
+    }
     mapSubscriber = null;
-    robotPoseChangeDetector = null;
-    scanPoseChangeDetector = null;
   }
 
   /**
@@ -266,29 +261,16 @@ public class TurtlebotMapView extends View {
    * Flatten the 3D transform in xform along the Z axis into the 2D
    * transform matrix2d.
    */
-  private void setMatrixFromTransform( Matrix matrix2d, StampedTransform xform ) {
-    Matrix4d xform3d = xform.getMatrix4();
+  private void setMatrixFromTransformStamped( Matrix matrix2d, TransformStamped xform ) {
+    org.ros.message.geometry_msgs.Vector3 trans = xform.transform.translation;
+    org.ros.message.geometry_msgs.Quaternion rot = xform.transform.rotation;
+
+    Matrix4d xform3d = new Matrix4d(new Quat4d(rot.x, rot.y, rot.z, rot.w),
+                                    new Vector3d(trans.x, trans.y, trans.z),
+                                    1);
     matrix2d.setValues(new float[]{ (float)xform3d.m00, (float)xform3d.m01, (float)xform3d.m03,
                                     (float)xform3d.m10, (float)xform3d.m11, (float)xform3d.m13,
                                     0, 0, 1 });
-  }
-
-  private void update() {
-    StampedTransform xform;
-
-    xform = robotPoseChangeDetector.getChangedTransform();
-    if( xform != null && xform.getMatrix4() != null ) {
-      setMatrixFromTransform( robotRelMap, xform );
-      havePose = true;
-      postInvalidate();
-    }
-
-    xform = scanPoseChangeDetector.getChangedTransform();
-    if( xform != null && xform.getMatrix4() != null ) {
-      setMatrixFromTransform( scanRelMap, xform );
-      haveScanPose = true;
-      postInvalidate();
-    }
   }
 
   @Override
@@ -301,7 +283,7 @@ public class TurtlebotMapView extends View {
       canvas.drawBitmap(mapBitmap, mapGridRelView, robotPaint);
     }
 
-    if( havePose && haveMap ) {
+    if( havePose ) {
       robotImageRelView.set( mapRelView );
       robotImageRelView.preConcat( robotRelMap );
       robotImageRelView.preConcat( robotImageRelRobot );

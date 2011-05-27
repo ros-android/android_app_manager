@@ -16,8 +16,10 @@
 
 package ros.android.teleop;
 
+import android.app.Dialog;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -27,17 +29,22 @@ import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 import org.ros.Node;
 import org.ros.Publisher;
 import org.ros.ServiceResponseListener;
 import org.ros.Subscriber;
 import org.ros.exceptions.RosInitException;
+import org.ros.internal.node.service.ServiceClient;
+import org.ros.internal.node.service.ServiceIdentifier;
 import org.ros.message.Message;
 import org.ros.message.app_manager.AppStatus;
 import org.ros.message.geometry_msgs.Twist;
 import org.ros.namespace.NameResolver;
 import org.ros.service.app_manager.StartApp;
+import org.ros.service.map_store.NameLatestMap;
 import ros.android.activity.AppManager;
 import ros.android.activity.RosAppActivity;
 import ros.android.views.SensorImageView;
@@ -60,6 +67,9 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
   private String robotAppName;
+  private ServiceIdentifier nameMapServiceIdentifier;
+
+  private static final int NAME_MAP_DIALOG_ID = 0;
 
   private enum ViewMode {
     CAMERA, MAP
@@ -170,6 +180,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       pubThread.interrupt();
       pubThread = null;
     }
+    nameMapServiceIdentifier = null;
     dashboard.stop();
     mapView.stop();
     super.onNodeDestroy(node);
@@ -201,7 +212,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       NameResolver appNamespace = getAppNamespace(node);
       cameraView = (SensorImageView) findViewById(R.id.image);
       Log.i("Teleop", "init cameraView");
-      cameraView.start(node, appNamespace.resolveName("lores_camera/rgb/image_color/compressed_throttle"));
+      cameraView.start(node, appNamespace.resolveName("camera/rgb/image_color/compressed_throttle"));
       cameraView.post(new Runnable() {
 
         @Override
@@ -212,6 +223,9 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       Log.i("Teleop", "init twistPub");
       twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
+
+      nameMapServiceIdentifier =
+        node.lookupService(node.getResolver().resolveName("name_latest_map"), new NameLatestMap());
     } catch (RosInitException e) {
       Log.e("Teleop", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
     }
@@ -259,7 +273,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     MenuInflater inflater = getMenuInflater();
-    inflater.inflate(R.menu.teleop_switch, menu);
+    inflater.inflate(R.menu.teleop_options, menu);
     return true;
   }
 
@@ -268,6 +282,9 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     switch (item.getItemId()) {
     case R.id.kill:
       android.os.Process.killProcess(android.os.Process.myPid());
+      return true;
+    case R.id.name_map:
+      showDialog(NAME_MAP_DIALOG_ID);
       return true;
     default:
       return super.onOptionsItemSelected(item);
@@ -300,6 +317,80 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       touchCmdMessage.angular.z = 0;
     }
     return true;
+  }
+
+  @Override
+  protected Dialog onCreateDialog(int id) {
+    Dialog dialog;
+    Button button;
+    switch (id) {
+    case NAME_MAP_DIALOG_ID:
+      dialog = new Dialog(this);
+      dialog.setContentView(R.layout.name_map_dialog);
+      dialog.setTitle("Set map name");
+
+      final EditText nameField = (EditText) dialog.findViewById(R.id.name_editor);
+      nameField.setOnKeyListener(new View.OnKeyListener() {
+          @Override
+          public boolean onKey(View view, int keyCode, KeyEvent event) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
+              String newName = nameField.getText().toString();
+              if (newName != null && newName.length() > 0) {
+                setMapName(newName);
+              }
+              dismissDialog(NAME_MAP_DIALOG_ID);
+              return true;
+            } else {
+              return false;
+            }
+          }
+        });
+
+      button = (Button) dialog.findViewById(R.id.cancel_button);
+      button.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+          dismissDialog(NAME_MAP_DIALOG_ID);
+        }
+      });
+      break;
+    default:
+      dialog = null;
+    }
+    return dialog;
+  }
+
+  private void setMapName(final String newName) {
+    Log.i("Teleop", "Map should soon be named " + newName);
+    int debug = 0;
+    if( nameMapServiceIdentifier != null ) {
+      try {
+        Log.i("Teleop", "setMapName() 1");
+        ServiceClient<NameLatestMap.Response> nameMapServiceClient =
+          getNode().createServiceClient(nameMapServiceIdentifier, NameLatestMap.Response.class);
+        Log.i("Teleop", "setMapName() 2");
+        NameLatestMap.Request nameMapRequest = new NameLatestMap.Request();
+        nameMapRequest.map_name = newName;
+        Log.i("Teleop", "setMapName() 3");
+        nameMapServiceClient.call(nameMapRequest, new ServiceResponseListener<NameLatestMap.Response>() {
+            @Override public void onSuccess(NameLatestMap.Response message) {
+              Log.i("Teleop", "setMapName() Success ");
+              // TODO: put success/failure info into response and show it.
+              safeToastStatus("Map has been named " + newName);
+            }
+
+            @Override public void onFailure(Exception e) {
+              Log.i("Teleop", "setMapName() Failure");
+              safeToastStatus("Naming map failed: " + e.getMessage());
+            }
+          });
+      } catch(Throwable ex) {
+        Log.e("Teleop", "setMapName() caught exception: " + ex.toString());
+        safeToastStatus("Naming map couldn't even start: " + ex.getMessage());
+      }
+    } else {
+      Log.e("Teleop", "setMapName(): nameMapServiceIdentifier is null.");
+    }
   }
 
   private void safeToastStatus(final String message) {

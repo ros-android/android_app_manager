@@ -47,7 +47,6 @@ import org.ros.message.geometry_msgs.Twist;
 import org.ros.message.map_store.MapListEntry;
 import org.ros.namespace.NameResolver;
 import org.ros.service.app_manager.StartApp;
-import org.ros.service.map_store.NameLatestMap;
 import org.ros.service.map_store.ListLastMaps;
 import org.ros.service.map_store.PublishMap;
 
@@ -102,7 +101,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
 
     robotAppName = getIntent().getStringExtra(AppManager.PACKAGE + ".robot_app_name");
     if( robotAppName == null ) {
-      robotAppName = "turtlebot_mapnav/android_mapnav";
+      robotAppName = "turtlebot_teleop/android_map_nav";
     }
 
     View joyView = findViewById(R.id.joystick);
@@ -237,11 +236,6 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       Log.i("MapNav", "init twistPub");
       twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
-
-      listMapsServiceIdentifier =
-        node.lookupService(node.getResolver().resolveName("list_latest_maps"), new ListLastMaps());
-      publishMapServiceIdentifier =
-        node.lookupService(node.getResolver().resolveName("publish_map"), new PublishMap());
     } catch (RosInitException e) {
       Log.e("MapNav", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
     }
@@ -312,6 +306,15 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     Thread mapLoaderThread = new Thread(new Runnable() {
         @Override public void run() {
           try {
+            if( listMapsServiceIdentifier == null ) {
+              listMapsServiceIdentifier =
+                getNode().lookupService(getNode().getResolver().resolveName("list_last_maps"), new ListLastMaps());
+              if( listMapsServiceIdentifier == null ) {
+                safeDismissWaitingDialog();
+                safeToastStatus("list_last_maps service not found.");
+                return;
+              }
+            }
             ServiceClient<ListLastMaps.Response> listMapsServiceClient =
               getNode().createServiceClient(listMapsServiceIdentifier, ListLastMaps.Response.class);
             listMapsServiceClient.call(new ListLastMaps.Request(), new ServiceResponseListener<ListLastMaps.Response>() {
@@ -327,8 +330,9 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
                 }
               });
           } catch(Throwable ex) {
-            Log.e("MapNav", "readAvailableMapList() caught exception: " + ex.toString());
+            Log.e("MapNav", "readAvailableMapList() caught exception.", ex);
             safeToastStatus("Listing maps couldn't even start: " + ex.getMessage());
+            safeDismissWaitingDialog();
           }
         }
       });
@@ -398,7 +402,38 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
   }
 
   private void loadMap( MapListEntry mapListEntry ) {
-    safeToastStatus("TODO: actually load map " + mapListEntry.name);
+    Log.i("MapNav", "loadMap(): " + mapListEntry.name);
+    safeShowWaitingDialog("Loading map");
+    try {
+      if( publishMapServiceIdentifier == null ) {
+        publishMapServiceIdentifier =
+          getNode().lookupService(getNode().getResolver().resolveName("publish_map"), new PublishMap());
+        if( publishMapServiceIdentifier == null ) {
+          safeToastStatus("publish_map service not found.");
+          safeDismissWaitingDialog();
+          return;
+        }
+      }
+      ServiceClient<PublishMap.Response> publishMapServiceClient =
+        getNode().createServiceClient(publishMapServiceIdentifier, PublishMap.Response.class);
+      PublishMap.Request req = new PublishMap.Request();
+      req.map_id = mapListEntry.map_id;
+      publishMapServiceClient.call(req, new ServiceResponseListener<PublishMap.Response>() {
+          @Override public void onSuccess(PublishMap.Response message) {
+            Log.i("MapNav", "loadMap() Success");
+            safeDismissWaitingDialog();
+          }
+          @Override public void onFailure(Exception e) {
+            Log.i("MapNav", "loadMap() Failure");
+            safeToastStatus("Loading map failed: " + e.getMessage());
+            safeDismissWaitingDialog();
+          }
+        });
+    } catch(Throwable ex) {
+      Log.e("MapNav", "loadMap() caught exception.", ex);
+      safeToastStatus("Publishing map couldn't even start: " + ex.getMessage());
+      safeDismissWaitingDialog();
+    }
   }
 
   private void safeToastStatus(final String message) {

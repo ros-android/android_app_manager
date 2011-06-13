@@ -53,7 +53,7 @@ import javax.vecmath.Vector3d;
 import org.ros.MessageListener;
 import org.ros.Node;
 import org.ros.Subscriber;
-import org.ros.exceptions.RosInitException;
+import org.ros.exception.RosInitException;
 import org.ros.message.nav_msgs.OccupancyGrid;
 import org.ros.message.sensor_msgs.LaserScan;
 import org.ros.message.geometry_msgs.TransformStamped;

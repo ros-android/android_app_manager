@@ -45,7 +45,7 @@ import android.widget.GridView;
 import android.widget.TextView;
 import org.ros.MessageListener;
 import org.ros.Node;
-import org.ros.exceptions.RosInitException;
+import org.ros.exception.RosInitException;
 import org.ros.message.app_manager.App;
 import org.ros.message.app_manager.AppList;
 import ros.android.activity.RosAppActivity;

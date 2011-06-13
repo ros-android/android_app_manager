@@ -47,7 +47,7 @@ import org.ros.MessageListener;
 import org.ros.Node;
 import org.ros.ServiceResponseListener;
 import org.ros.Subscriber;
-import org.ros.exceptions.RosInitException;
+import org.ros.exception.RosInitException;
 import org.ros.internal.node.service.ServiceClient;
 import org.ros.internal.node.service.ServiceIdentifier;
 import org.ros.message.diagnostic_msgs.DiagnosticArray;

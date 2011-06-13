@@ -35,7 +35,7 @@ package ros.android.activity;
 
 import android.util.Log;
 import org.ros.Node;
-import org.ros.exceptions.RosInitException;
+import org.ros.exception.RosInitException;
 import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
 import org.ros.namespace.NameResolver;
 import ros.android.util.RobotDescription;

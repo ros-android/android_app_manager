@@ -58,7 +58,7 @@ public class TfBroadcaster {
    * Create a publisher from the given node.  Must be called before
    * any sendTransform() calls.
    */
-  public void start(Node node) throws org.ros.exceptions.RosInitException {
+  public void start(Node node) throws org.ros.exception.RosInitException {
     stop();
     tfPublisher = node.createPublisher("/tf", tfMessage.class);
   }

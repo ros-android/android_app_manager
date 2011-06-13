@@ -37,7 +37,7 @@ import org.ros.Subscriber;
 
 import java.util.ArrayList;
 
-import org.ros.exceptions.RosInitException;
+import org.ros.exception.RosInitException;
 
 import org.ros.MessageListener;
 import org.ros.message.app_manager.AppList;

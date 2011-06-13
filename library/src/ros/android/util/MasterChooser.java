@@ -39,7 +39,7 @@ import android.content.Intent;
 import android.util.Log;
 import org.ros.NodeConfiguration;
 import org.ros.RosLoader;
-import org.ros.exceptions.RosInitException;
+import org.ros.exception.RosInitException;
 import org.ros.internal.namespace.GraphName;
 import org.ros.namespace.NameResolver;
 import org.yaml.snakeyaml.Yaml;
@@ -248,9 +248,8 @@ public class MasterChooser extends RosLoader {
     Log.i("MasterChooser", "createConfiguration() creating configuration.");
     NodeConfiguration configuration = new NodeConfiguration();
     configuration.setParentResolver(resolver);
-    configuration.setRosRoot("fixme");
     configuration.setRosPackagePath(null);
-    configuration.setRosMasterUri(uri);
+    configuration.setMasterUri(uri);
 
     configuration.setHost(getNonLoopbackHostName());
     Log.i("MasterChooser", "createConfiguration() returning configuration with host = " + configuration.getHost());

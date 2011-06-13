@@ -36,7 +36,7 @@ import android.util.AttributeSet;
 import android.widget.ImageView;
 import org.ros.MessageListener;
 import org.ros.Node;
-import org.ros.exceptions.RosInitException;
+import org.ros.exception.RosInitException;
 import org.ros.message.sensor_msgs.CompressedImage;
 
 /**

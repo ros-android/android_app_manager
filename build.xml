@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project basedir="." default="compile" name="appman_android">
+<project basedir="." default="debug-apps" name="appman_android">
   
   <property environment="env"/>
   <property name="target" value="1.6"/>
@@ -18,6 +18,7 @@
   <target name="clean">    
     <delete dir="${msg_gen}"/>
     <delete dir="${srv_gen}"/>
+    <ant dir="apps" target="clean"/>
   </target>
 
   <target name="msg_gen" depends="init">
@@ -32,6 +33,7 @@
       <arg value="diagnostic_msgs" />
       <arg value="app_manager" />
       <arg value="dynamic_reconfigure" />
+      <arg value="map_store" />
       <arg value="turtlebot_node" />
       <arg value="tf" />
     </exec>
@@ -56,4 +58,15 @@
 
   <target name="compile" depends="init, msg_gen, srv_gen" />
 
+  <target name="compile-apps" depends="compile">
+    <ant dir="apps" target="compile"/>
+  </target>
+
+  <target name="debug-apps" depends="compile">
+    <ant dir="apps" target="debug"/>
+  </target>
+
+  <target name="install-apps" depends="compile">
+    <ant dir="apps" target="install"/>
+  </target>
 </project>

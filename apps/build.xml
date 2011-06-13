@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  This build file branches the compile, install, and
+  clean targets out to every subdirectory.
+  -->
+<project basedir="." default="compile" name="appman_apps">
+
+  <target name="compile">
+    <subant target="compile">
+      <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
+    </subant>
+  </target>
+
+  <target name="debug">
+    <subant target="debug">
+      <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
+    </subant>
+  </target>
+
+  <target name="install">
+    <subant target="install">
+      <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
+    </subant>
+  </target>
+
+  <target name="clean">
+    <subant target="clean">
+      <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
+    </subant>
+    <delete includeemptydirs="true">
+      <fileset dir="${basedir}" includes="*/build/**"/>
+    </delete>
+  </target>
+</project>

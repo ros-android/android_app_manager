@@ -41,7 +41,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import org.ros.Node;
-import org.ros.exceptions.RosInitException;
+import org.ros.exception.RosInitException;
 import ros.android.util.MasterChooser;
 import ros.android.util.RobotDescription;
 
@@ -162,7 +162,7 @@ public class RosActivity extends Activity {
             Log.i("RosAndroid", "node thread exiting");
           }
           onNodeDestroy(node);
-          node.stop();
+          node.shutdown();
           node = null;
         }
       }

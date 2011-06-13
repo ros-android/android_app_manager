@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- build file to be included from each app directory. -->
+<project name="build-app-common">
+
+  <exec command="rospack find rosjava"
+        outputproperty="rosjava.root"
+        failonerror="true"/>
+
+  <property name="appmanandroid.root" location="${app.dir}/../.."/>
+  <property name="appmanandroid.library" location="${appmanandroid.root}/library"/>
+
+  <mkdir dir="${app.dir}/build/libs"/>
+  <copy todir="${app.dir}/build/libs">
+    <fileset dir="${rosjava.root}/lib">
+      <exclude name="junit*.jar"/>
+      <exclude name="mockito*.jar"/>
+      <include name="**/*.jar"/>
+    </fileset>
+  </copy>
+
+  <property name="external.libs.dir" location="${app.dir}/build/libs" />
+  <property name="jar.libs.dir" location="${app.dir}/build/libs" />
+
+  <!-- This imports the android-generated build file for the app. -->
+  <import file="${app.dir}/build.xml"/>
+
+  <path id="project.libraries.src">
+    <pathelement location="${appmanandroid.library}/src"/>
+    <pathelement location="${appmanandroid.library}/msg_gen/java"/>
+    <pathelement location="${appmanandroid.library}/srv_gen/java"/>
+  </path>
+</project>

@@ -39,7 +39,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.os.Environment;
-import org.ros.exceptions.RosException;
+import org.ros.exception.RosException;
 
 import java.io.File;
 

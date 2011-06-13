@@ -33,7 +33,7 @@
 
 package ros.android.util;
 
-import org.ros.exceptions.RosNameException;
+import org.ros.exception.RosNameException;
 import org.ros.internal.namespace.GraphName;
 
 import java.net.URI;

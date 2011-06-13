@@ -13,10 +13,11 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package ros.android.mapnav;
 
-package ros.android.makeamap;
-
-import android.app.Dialog;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -32,6 +33,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
 import org.ros.Node;
 import org.ros.Publisher;
 import org.ros.ServiceResponseListener;
@@ -42,20 +44,28 @@ import org.ros.internal.node.service.ServiceIdentifier;
 import org.ros.message.Message;
 import org.ros.message.app_manager.AppStatus;
 import org.ros.message.geometry_msgs.Twist;
+import org.ros.message.map_store.MapListEntry;
 import org.ros.namespace.NameResolver;
 import org.ros.service.app_manager.StartApp;
 import org.ros.service.map_store.NameLatestMap;
+import org.ros.service.map_store.ListLastMaps;
+import org.ros.service.map_store.PublishMap;
+
 import ros.android.activity.AppManager;
 import ros.android.activity.RosAppActivity;
 import ros.android.views.SensorImageView;
 import ros.android.views.TurtlebotDashboard;
 import ros.android.views.TurtlebotMapView;
 
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+
 /**
  * @author kwc@willowgarage.com (Ken Conley)
  * @author hersh@willowgarage.com (Dave Hershberger)
  */
-public class MakeAMap extends RosAppActivity implements OnTouchListener {
+public class MapNav extends RosAppActivity implements OnTouchListener {
   private Publisher<Twist> twistPub;
   private SensorImageView cameraView;
   private TurtlebotMapView mapView;
@@ -68,9 +78,8 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
   private String robotAppName;
-  private ServiceIdentifier nameMapServiceIdentifier;
-
-  private static final int NAME_MAP_DIALOG_ID = 0;
+  private ServiceIdentifier listMapsServiceIdentifier;
+  private ServiceIdentifier publishMapServiceIdentifier;
 
   private enum ViewMode {
     CAMERA, MAP
@@ -78,6 +87,9 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
 
   private ViewMode viewMode;
   private boolean deadman;
+
+  private ProgressDialog waitingDialog;
+  private AlertDialog chooseMapDialog;
 
   /** Called when the activity is first created. */
   @Override
@@ -90,7 +102,7 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
 
     robotAppName = getIntent().getStringExtra(AppManager.PACKAGE + ".robot_app_name");
     if( robotAppName == null ) {
-      robotAppName = "turtlebot_teleop/android_make_a_map";
+      robotAppName = "turtlebot_mapnav/android_mapnav";
     }
 
     View joyView = findViewById(R.id.joystick);
@@ -111,13 +123,13 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
     mapView.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        MakeAMap.this.swapViews();
+        MapNav.this.swapViews();
       }
     });
     cameraView.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        MakeAMap.this.swapViews();
+        MapNav.this.swapViews();
       }
     });
     mapView.setClickable(true);
@@ -131,13 +143,13 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
     // Figure out where the views were...
     ViewGroup mapViewParent;
     ViewGroup cameraViewParent;
-    Log.i("MakeAMap", "viewMode = " + viewMode);
+    Log.i("MapNav", "viewMode = " + viewMode);
     if (viewMode == ViewMode.CAMERA) {
-      Log.i("MakeAMap", "camera mode");
+      Log.i("MapNav", "camera mode");
       mapViewParent = sideLayout;
       cameraViewParent = mainLayout;
     } else {
-      Log.i("MakeAMap", "map mode");
+      Log.i("MapNav", "map mode");
       mapViewParent = mainLayout;
       cameraViewParent = sideLayout;
     }
@@ -181,7 +193,8 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
       pubThread.interrupt();
       pubThread = null;
     }
-    nameMapServiceIdentifier = null;
+    listMapsServiceIdentifier = null;
+    publishMapServiceIdentifier = null;
     dashboard.stop();
     mapView.stop();
     super.onNodeDestroy(node);
@@ -202,17 +215,17 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
         }
       }
     });
-    Log.i("MakeAMap", "started pub thread");
+    Log.i("MapNav", "started pub thread");
     pubThread.start();
   }
 
   private void initRos() {
     try {
-      Log.i("MakeAMap", "getNode()");
+      Log.i("MapNav", "getNode()");
       Node node = getNode();
       NameResolver appNamespace = getAppNamespace(node);
       cameraView = (SensorImageView) findViewById(R.id.image);
-      Log.i("MakeAMap", "init cameraView");
+      Log.i("MapNav", "init cameraView");
       cameraView.start(node, appNamespace.resolveName("camera/rgb/image_color/compressed_throttle"));
       cameraView.post(new Runnable() {
 
@@ -221,33 +234,35 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
           cameraView.setSelected(true);
         }
       });
-      Log.i("MakeAMap", "init twistPub");
+      Log.i("MapNav", "init twistPub");
       twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
 
-      nameMapServiceIdentifier =
-        node.lookupService(node.getResolver().resolveName("name_latest_map"), new NameLatestMap());
+      listMapsServiceIdentifier =
+        node.lookupService(node.getResolver().resolveName("list_latest_maps"), new ListLastMaps());
+      publishMapServiceIdentifier =
+        node.lookupService(node.getResolver().resolveName("publish_map"), new PublishMap());
     } catch (RosInitException e) {
-      Log.e("MakeAMap", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
+      Log.e("MapNav", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
     }
   }
 
   @Override
   protected void onResume() {
     super.onResume();
-    Toast.makeText(MakeAMap.this, "starting app", Toast.LENGTH_LONG).show();
+    Toast.makeText(MapNav.this, "starting app", Toast.LENGTH_LONG).show();
   }
 
   @Override
   protected void onNodeCreate(Node node) {
-    Log.i("MakeAMap", "startAppFuture");
+    Log.i("MapNav", "startAppFuture");
     super.onNodeCreate(node);
     try {
       dashboard.start(node);
       mapView.start(node, "map");
       startApp();
     } catch (RosInitException ex) {
-      Toast.makeText(MakeAMap.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+      Toast.makeText(MapNav.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
     }
   }
 
@@ -274,7 +289,7 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     MenuInflater inflater = getMenuInflater();
-    inflater.inflate(R.menu.make_a_map_options, menu);
+    inflater.inflate(R.menu.mapnav_options, menu);
     return true;
   }
 
@@ -284,12 +299,74 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
     case R.id.kill:
       android.os.Process.killProcess(android.os.Process.myPid());
       return true;
-    case R.id.name_map:
-      showDialog(NAME_MAP_DIALOG_ID);
+    case R.id.choose_map:
+      readAvailableMapList();
       return true;
     default:
       return super.onOptionsItemSelected(item);
     }
+  }
+
+  private void readAvailableMapList() {
+    safeShowWaitingDialog("Waiting for map list");
+    Thread mapLoaderThread = new Thread(new Runnable() {
+        @Override public void run() {
+          try {
+            ServiceClient<ListLastMaps.Response> listMapsServiceClient =
+              getNode().createServiceClient(listMapsServiceIdentifier, ListLastMaps.Response.class);
+            listMapsServiceClient.call(new ListLastMaps.Request(), new ServiceResponseListener<ListLastMaps.Response>() {
+                @Override public void onSuccess(ListLastMaps.Response message) {
+                  Log.i("MapNav", "readAvailableMapList() Success");
+                  safeDismissWaitingDialog();
+                  showMapListDialog(message.map_list);
+                }
+                @Override public void onFailure(Exception e) {
+                  Log.i("MapNav", "readAvailableMapList() Failure");
+                  safeToastStatus("Reading map list failed: " + e.getMessage());
+                  safeDismissWaitingDialog();
+                }
+              });
+          } catch(Throwable ex) {
+            Log.e("MapNav", "readAvailableMapList() caught exception: " + ex.toString());
+            safeToastStatus("Listing maps couldn't even start: " + ex.getMessage());
+          }
+        }
+      });
+    mapLoaderThread.start();
+  }
+
+  /**
+   * Show a dialog with a list of maps.  Safe to call from any thread.
+   */
+  private void showMapListDialog(final ArrayList<MapListEntry> mapList) {
+    // Make an array of map name/date strings.
+    final CharSequence[] availableMapNames = new CharSequence[mapList.size()];
+    for( int i = 0; i < mapList.size(); i++ ) {
+      String displayString;
+      String name = mapList.get(i).name;
+      Date creationDate = new Date(mapList.get(i).date * 1000);
+      String dateTime = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(creationDate);
+      if( name != null && ! name.equals("") ) {
+        displayString = name + " " + dateTime;
+      } else {
+        displayString = dateTime;
+      }
+      availableMapNames[i] = displayString;
+    }
+
+    runOnUiThread(new Runnable() {
+        @Override public void run() {
+          AlertDialog.Builder builder = new AlertDialog.Builder(MapNav.this);
+          builder.setTitle("Choose a map");
+          builder.setItems(availableMapNames, new DialogInterface.OnClickListener() {
+              @Override public void onClick(DialogInterface dialog, int itemIndex) {
+                loadMap( mapList.get( itemIndex ));
+              }
+            });
+          chooseMapDialog = builder.create();
+          chooseMapDialog.show();
+        }
+      });
   }
 
   @Override
@@ -320,89 +397,46 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
     return true;
   }
 
-  @Override
-  protected Dialog onCreateDialog(int id) {
-    Dialog dialog;
-    Button button;
-    switch (id) {
-    case NAME_MAP_DIALOG_ID:
-      dialog = new Dialog(this);
-      dialog.setContentView(R.layout.name_map_dialog);
-      dialog.setTitle("Set map name");
-
-      final EditText nameField = (EditText) dialog.findViewById(R.id.name_editor);
-      nameField.setOnKeyListener(new View.OnKeyListener() {
-          @Override
-          public boolean onKey(View view, int keyCode, KeyEvent event) {
-            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
-              String newName = nameField.getText().toString();
-              if (newName != null && newName.length() > 0) {
-                setMapName(newName);
-              }
-              dismissDialog(NAME_MAP_DIALOG_ID);
-              return true;
-            } else {
-              return false;
-            }
-          }
-        });
-
-      button = (Button) dialog.findViewById(R.id.cancel_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          dismissDialog(NAME_MAP_DIALOG_ID);
-        }
-      });
-      break;
-    default:
-      dialog = null;
-    }
-    return dialog;
-  }
-
-  private void setMapName(final String newName) {
-    try {
-      Log.i("MakeAMap", "Map should soon be named " + newName);
-      int debug = 0;
-      if( nameMapServiceIdentifier == null ) {
-        nameMapServiceIdentifier =
-          getNode().lookupService(getNode().getResolver().resolveName("name_latest_map"), new NameLatestMap());
-      }
-      if( nameMapServiceIdentifier != null ) {
-        ServiceClient<NameLatestMap.Response> nameMapServiceClient =
-          getNode().createServiceClient(nameMapServiceIdentifier, NameLatestMap.Response.class);
-        NameLatestMap.Request nameMapRequest = new NameLatestMap.Request();
-        nameMapRequest.map_name = newName;
-        nameMapServiceClient.call(nameMapRequest, new ServiceResponseListener<NameLatestMap.Response>() {
-            @Override public void onSuccess(NameLatestMap.Response message) {
-              Log.i("MakeAMap", "setMapName() Success ");
-              // TODO: put success/failure info into response and show it.
-              safeToastStatus("Map has been named " + newName);
-            }
-
-            @Override public void onFailure(Exception e) {
-              Log.i("MakeAMap", "setMapName() Failure");
-              safeToastStatus("Naming map failed: " + e.getMessage());
-            }
-          });
-      } else {
-        Log.e("MakeAMap", "setMapName(): nameMapServiceIdentifier is null.");
-        safeToastStatus("Map naming service not ready.");
-      }
-    } catch(Throwable ex) {
-      Log.e("MakeAMap", "setMapName() caught exception: " + ex.toString());
-      safeToastStatus("Naming map couldn't even start: " + ex.getMessage());
-    }
+  private void loadMap( MapListEntry mapListEntry ) {
+    safeToastStatus("TODO: actually load map " + mapListEntry.name);
   }
 
   private void safeToastStatus(final String message) {
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        Toast.makeText(MakeAMap.this, message, Toast.LENGTH_SHORT).show();
+        Toast.makeText(MapNav.this, message, Toast.LENGTH_SHORT).show();
       }
     });
   }
 
+  private void safeDismissChooseMapDialog() {
+    runOnUiThread(new Runnable() {
+        @Override public void run() {
+          if( chooseMapDialog != null ) {
+            chooseMapDialog.dismiss();
+            chooseMapDialog = null;
+          }
+        }
+      });
+  }
+
+  private void safeShowWaitingDialog(final CharSequence message) {
+    runOnUiThread(new Runnable() {
+        @Override public void run() {
+          waitingDialog = ProgressDialog.show(MapNav.this, "", message, true);
+        }
+      });
+  }
+
+  private void safeDismissWaitingDialog() {
+    runOnUiThread(new Runnable() {
+        @Override public void run() {
+          if( waitingDialog != null ) {
+            waitingDialog.dismiss();
+            waitingDialog = null;
+          }
+        }
+      });
+  }
 }

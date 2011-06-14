@@ -253,7 +253,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     super.onNodeCreate(node);
     try {
       dashboard.start(node);
-      mapView.start(node, "map");
+      mapView.start(node);
       startApp();
     } catch (RosInitException ex) {
       Toast.makeText(MapNav.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();

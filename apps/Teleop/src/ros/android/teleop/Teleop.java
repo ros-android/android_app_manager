@@ -1,19 +1,31 @@
 /*
- * Copyright (C) 2011 Google Inc.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * Copyright (c) 2011, Willow Garage, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package ros.android.teleop;
 
 import android.app.Dialog;
@@ -44,12 +56,10 @@ import org.ros.message.app_manager.AppStatus;
 import org.ros.message.geometry_msgs.Twist;
 import org.ros.namespace.NameResolver;
 import org.ros.service.app_manager.StartApp;
-import org.ros.service.map_store.NameLatestMap;
 import ros.android.activity.AppManager;
 import ros.android.activity.RosAppActivity;
 import ros.android.views.SensorImageView;
 import ros.android.views.TurtlebotDashboard;
-import ros.android.views.TurtlebotMapView;
 
 /**
  * @author kwc@willowgarage.com (Ken Conley)
@@ -57,26 +67,13 @@ import ros.android.views.TurtlebotMapView;
 public class Teleop extends RosAppActivity implements OnTouchListener {
   private Publisher<Twist> twistPub;
   private SensorImageView cameraView;
-  private TurtlebotMapView mapView;
   private Thread pubThread;
   private Twist touchCmdMessage;
   private float motionY;
   private float motionX;
   private Subscriber<AppStatus> statusSub;
   private TurtlebotDashboard dashboard;
-  private ViewGroup mainLayout;
-  private ViewGroup sideLayout;
   private String robotAppName;
-  private ServiceIdentifier nameMapServiceIdentifier;
-
-  private static final int NAME_MAP_DIALOG_ID = 0;
-
-  private enum ViewMode {
-    CAMERA, MAP
-  };
-
-  private ViewMode viewMode;
-  private boolean deadman;
 
   /** Called when the activity is first created. */
   @Override
@@ -100,70 +97,10 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     touchCmdMessage = new Twist();
 
     dashboard = (TurtlebotDashboard) findViewById(R.id.dashboard);
-    mapView = (TurtlebotMapView) findViewById(R.id.map_view);
-
-    mainLayout = (ViewGroup) findViewById(R.id.main_layout);
-    sideLayout = (ViewGroup) findViewById(R.id.side_layout);
-
-    viewMode = ViewMode.CAMERA;
-
-    mapView.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        Teleop.this.swapViews();
-      }
-    });
-    cameraView.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        Teleop.this.swapViews();
-      }
-    });
-    mapView.setClickable(true);
-    cameraView.setClickable(false);
-  }
-
-  /**
-   * Swap the camera and map views.
-   */
-  private void swapViews() {
-    // Figure out where the views were...
-    ViewGroup mapViewParent;
-    ViewGroup cameraViewParent;
-    Log.i("Teleop", "viewMode = " + viewMode);
-    if (viewMode == ViewMode.CAMERA) {
-      Log.i("Teleop", "camera mode");
-      mapViewParent = sideLayout;
-      cameraViewParent = mainLayout;
-    } else {
-      Log.i("Teleop", "map mode");
-      mapViewParent = mainLayout;
-      cameraViewParent = sideLayout;
-    }
-    int mapViewIndex = mapViewParent.indexOfChild(mapView);
-    int cameraViewIndex = cameraViewParent.indexOfChild(cameraView);
-
-    // Remove the views from their old locations...
-    mapViewParent.removeView(mapView);
-    cameraViewParent.removeView(cameraView);
-
-    // Add them to their new location...
-    mapViewParent.addView(cameraView, mapViewIndex);
-    cameraViewParent.addView(mapView, cameraViewIndex);
-
-    // Remeber that we are in the other mode now.
-    if (viewMode == ViewMode.CAMERA) {
-      viewMode = ViewMode.MAP;
-    } else {
-      viewMode = ViewMode.CAMERA;
-    }
-    mapView.setClickable(viewMode != ViewMode.MAP);
-    cameraView.setClickable(viewMode != ViewMode.CAMERA);
   }
 
   @Override
   protected void onNodeDestroy(Node node) {
-    deadman = false;
     if (twistPub != null) {
       twistPub.shutdown();
       twistPub = null;
@@ -180,9 +117,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       pubThread.interrupt();
       pubThread = null;
     }
-    nameMapServiceIdentifier = null;
     dashboard.stop();
-    mapView.stop();
     super.onNodeDestroy(node);
   }
 
@@ -223,9 +158,6 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       Log.i("Teleop", "init twistPub");
       twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
-
-      nameMapServiceIdentifier =
-        node.lookupService(node.getResolver().resolveName("name_latest_map"), new NameLatestMap());
     } catch (RosInitException e) {
       Log.e("Teleop", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
     }
@@ -243,7 +175,6 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     super.onNodeCreate(node);
     try {
       dashboard.start(node);
-      mapView.start(node);
       startApp();
     } catch (RosInitException ex) {
       Toast.makeText(Teleop.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
@@ -283,9 +214,6 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     case R.id.kill:
       android.os.Process.killProcess(android.os.Process.myPid());
       return true;
-    case R.id.name_map:
-      showDialog(NAME_MAP_DIALOG_ID);
-      return true;
     default:
       return super.onOptionsItemSelected(item);
     }
@@ -295,8 +223,6 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   public boolean onTouch(View arg0, MotionEvent motionEvent) {
     int action = motionEvent.getAction();
     if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
-      deadman = true;
-
       motionX = (motionEvent.getX() - (arg0.getWidth() / 2)) / (arg0.getWidth());
       motionY = (motionEvent.getY() - (arg0.getHeight() / 2)) / (arg0.getHeight());
 
@@ -308,7 +234,6 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       touchCmdMessage.angular.z = -5 * motionX;
 
     } else {
-      deadman = false;
       touchCmdMessage.linear.x = 0;
       touchCmdMessage.linear.y = 0;
       touchCmdMessage.linear.z = 0;
@@ -319,80 +244,6 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     return true;
   }
 
-  @Override
-  protected Dialog onCreateDialog(int id) {
-    Dialog dialog;
-    Button button;
-    switch (id) {
-    case NAME_MAP_DIALOG_ID:
-      dialog = new Dialog(this);
-      dialog.setContentView(R.layout.name_map_dialog);
-      dialog.setTitle("Set map name");
-
-      final EditText nameField = (EditText) dialog.findViewById(R.id.name_editor);
-      nameField.setOnKeyListener(new View.OnKeyListener() {
-          @Override
-          public boolean onKey(View view, int keyCode, KeyEvent event) {
-            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
-              String newName = nameField.getText().toString();
-              if (newName != null && newName.length() > 0) {
-                setMapName(newName);
-              }
-              dismissDialog(NAME_MAP_DIALOG_ID);
-              return true;
-            } else {
-              return false;
-            }
-          }
-        });
-
-      button = (Button) dialog.findViewById(R.id.cancel_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          dismissDialog(NAME_MAP_DIALOG_ID);
-        }
-      });
-      break;
-    default:
-      dialog = null;
-    }
-    return dialog;
-  }
-
-  private void setMapName(final String newName) {
-    Log.i("Teleop", "Map should soon be named " + newName);
-    int debug = 0;
-    if( nameMapServiceIdentifier != null ) {
-      try {
-        Log.i("Teleop", "setMapName() 1");
-        ServiceClient<NameLatestMap.Response> nameMapServiceClient =
-          getNode().createServiceClient(nameMapServiceIdentifier, NameLatestMap.Response.class);
-        Log.i("Teleop", "setMapName() 2");
-        NameLatestMap.Request nameMapRequest = new NameLatestMap.Request();
-        nameMapRequest.map_name = newName;
-        Log.i("Teleop", "setMapName() 3");
-        nameMapServiceClient.call(nameMapRequest, new ServiceResponseListener<NameLatestMap.Response>() {
-            @Override public void onSuccess(NameLatestMap.Response message) {
-              Log.i("Teleop", "setMapName() Success ");
-              // TODO: put success/failure info into response and show it.
-              safeToastStatus("Map has been named " + newName);
-            }
-
-            @Override public void onFailure(Exception e) {
-              Log.i("Teleop", "setMapName() Failure");
-              safeToastStatus("Naming map failed: " + e.getMessage());
-            }
-          });
-      } catch(Throwable ex) {
-        Log.e("Teleop", "setMapName() caught exception: " + ex.toString());
-        safeToastStatus("Naming map couldn't even start: " + ex.getMessage());
-      }
-    } else {
-      Log.e("Teleop", "setMapName(): nameMapServiceIdentifier is null.");
-    }
-  }
-
   private void safeToastStatus(final String message) {
     runOnUiThread(new Runnable() {
       @Override
@@ -401,5 +252,4 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       }
     });
   }
-
 }

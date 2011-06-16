@@ -96,6 +96,10 @@ public class TurtlebotMapView extends PanZoomView {
     addDisplay( scanDisplay );
   }
 
+  public PlaneTfChangeListener getPoser() {
+    return tfChangeListener;
+  }
+
   @Override
   public void start(Node node) throws RosInitException {
     super.start(node);

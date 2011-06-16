@@ -74,6 +74,7 @@ public class PanZoomView extends View {
 
   private ArrayList<PanZoomDisplay> displays;
   private Node node;
+  private Matrix viewMatrix;
 
   public PanZoomView(Context ctx) {
     super(ctx);
@@ -170,14 +171,25 @@ public class PanZoomView extends View {
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw( canvas );
-    Matrix oldMatrix = canvas.getMatrix();
+    viewMatrix = canvas.getMatrix();
 
     canvas.concat( mapRelView );
     for( PanZoomDisplay display: displays ) {
       display.draw( canvas );
     }
 
-    canvas.setMatrix( oldMatrix );
+    canvas.setMatrix( viewMatrix );
+  }
+
+  /**
+   * Return a copy of the original view matrix from the Canvas passed
+   * to onDraw().  This lets child displays access the original matrix
+   * for view-based drawing within their draw() functions.
+   */
+  public Matrix getViewMatrix() {
+    Matrix result = new Matrix();
+    result.set( viewMatrix );
+    return result;
   }
 
   @Override

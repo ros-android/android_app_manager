@@ -53,6 +53,7 @@ import org.ros.service.map_store.PublishMap;
 import ros.android.activity.AppManager;
 import ros.android.activity.RosAppActivity;
 import ros.android.views.SensorImageView;
+import ros.android.views.SetInitialPoseDisplay;
 import ros.android.views.TurtlebotDashboard;
 import ros.android.views.TurtlebotMapView;
 
@@ -79,6 +80,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
   private String robotAppName;
   private ServiceIdentifier listMapsServiceIdentifier;
   private ServiceIdentifier publishMapServiceIdentifier;
+  private SetInitialPoseDisplay poseSetter;
 
   private enum ViewMode {
     CAMERA, MAP
@@ -133,6 +135,9 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     });
     mapView.setClickable(true);
     cameraView.setClickable(false);
+
+    poseSetter = new SetInitialPoseDisplay();
+    mapView.getPoser().addPosable( "/map", "/base_footprint", poseSetter );
   }
 
   /**
@@ -196,6 +201,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     publishMapServiceIdentifier = null;
     dashboard.stop();
     mapView.stop();
+    poseSetter.stop();
     super.onNodeDestroy(node);
   }
 
@@ -236,6 +242,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       Log.i("MapNav", "init twistPub");
       twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
+      poseSetter.start(node);
     } catch (RosInitException e) {
       Log.e("MapNav", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
     }
@@ -251,12 +258,16 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
   protected void onNodeCreate(Node node) {
     Log.i("MapNav", "startAppFuture");
     super.onNodeCreate(node);
-    try {
-      dashboard.start(node);
-      mapView.start(node);
-      startApp();
-    } catch (RosInitException ex) {
-      Toast.makeText(MapNav.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+    if( appManager != null ) {
+      try {
+        dashboard.start(node);
+        mapView.start(node);
+        startApp();
+      } catch (RosInitException ex) {
+        safeToastStatus( "Failed: " + ex.getMessage() );
+      }
+    } else {
+      safeToastStatus( "App Manager failed to start." );
     }
   }
 
@@ -293,12 +304,19 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     case R.id.kill:
       android.os.Process.killProcess(android.os.Process.myPid());
       return true;
+    case R.id.set_pose:
+      setPose();
+      return true;
     case R.id.choose_map:
       readAvailableMapList();
       return true;
     default:
       return super.onOptionsItemSelected(item);
     }
+  }
+
+  private void setPose() {
+    mapView.addDisplay( poseSetter );
   }
 
   private void readAvailableMapList() {

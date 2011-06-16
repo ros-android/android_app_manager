@@ -30,6 +30,7 @@
 package ros.android.views;
 
 import android.graphics.Canvas;
+import android.view.MotionEvent;
 
 import org.ros.Node;
 import org.ros.exception.RosInitException;
@@ -80,4 +81,12 @@ public abstract class PanZoomDisplay {
    * Override to handle changes to the view size.
    */
   public void onSizeChanged( int w, int h, int oldW, int oldH ) {}
+
+  /**
+   * Override to handle touch events.  Return true if your display has
+   * consumed the event, false otherwise.
+   */
+  public boolean onTouchEvent(MotionEvent event) {
+    return false;
+  }
 }

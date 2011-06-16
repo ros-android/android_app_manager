@@ -199,6 +199,12 @@ public class PanZoomView extends View {
       return super.onTouchEvent(event);
     }
 
+    for( PanZoomDisplay display: displays ) {
+      if( display.onTouchEvent( event )) {
+        return true;
+      }      
+    }
+
     // One or two fingers dragging should pan, and two fingers
     // changing distance between each other should zoom.
     switch(event.getActionMasked()) {

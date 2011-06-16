@@ -141,13 +141,17 @@ public class AppManager {
   public static AppManager create(Node node, String robotName) throws XmlRpcTimeoutException,
       AppManagerNotAvailableException, RosInitException {
     NameResolver resolver = node.getResolver().createResolver(robotName);
-    ServiceIdentifier serviceIdentifier = node.lookupService(resolver.resolveName("list_apps"),
-        new ListApps());
-    if (serviceIdentifier == null) {
-      throw new AppManagerNotAvailableException();
+    try {
+      ServiceIdentifier serviceIdentifier = node.lookupService(resolver.resolveName("list_apps"),
+                                                               new ListApps());
+      if (serviceIdentifier == null) {
+        throw new AppManagerNotAvailableException();
+      }
+      AppManagerIdentifier appManagerIdentifier = new AppManagerIdentifier(resolver,
+                                                                           serviceIdentifier.getUri());
+      return new AppManager(appManagerIdentifier, node, resolver);
+    } catch( java.lang.RuntimeException ex ) {
+      throw new AppManagerNotAvailableException( ex );
     }
-    AppManagerIdentifier appManagerIdentifier = new AppManagerIdentifier(resolver,
-        serviceIdentifier.getUri());
-    return new AppManager(appManagerIdentifier, node, resolver);
   }
 }

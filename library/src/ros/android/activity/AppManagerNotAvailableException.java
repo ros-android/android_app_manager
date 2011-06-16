@@ -41,4 +41,11 @@ public class AppManagerNotAvailableException extends Exception {
 
   private static final long serialVersionUID = 1L;
 
+  public AppManagerNotAvailableException( java.lang.Throwable cause ) {
+    super( cause );
+  }
+
+  public AppManagerNotAvailableException() {
+    super();
+  }
 }

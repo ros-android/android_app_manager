@@ -137,6 +137,8 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     cameraView.setClickable(false);
 
     poseSetter = new SetInitialPoseDisplay();
+    poseSetter.disable();
+    mapView.addDisplay( poseSetter );
     mapView.getPoser().addPosable( "/map", "/base_footprint", poseSetter );
   }
 
@@ -316,7 +318,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
   }
 
   private void setPose() {
-    mapView.addDisplay( poseSetter );
+    poseSetter.enable();
   }
 
   private void readAvailableMapList() {
@@ -440,6 +442,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
           @Override public void onSuccess(PublishMap.Response message) {
             Log.i("MapNav", "loadMap() Success");
             safeDismissWaitingDialog();
+            poseSetter.enable();
           }
           @Override public void onFailure(Exception e) {
             Log.i("MapNav", "loadMap() Failure");

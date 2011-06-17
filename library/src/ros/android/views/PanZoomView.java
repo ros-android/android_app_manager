@@ -175,7 +175,9 @@ public class PanZoomView extends View {
 
     canvas.concat( mapRelView );
     for( PanZoomDisplay display: displays ) {
-      display.draw( canvas );
+      if( display.isEnabled() ) {
+        display.draw( canvas );
+      }
     }
 
     canvas.setMatrix( viewMatrix );

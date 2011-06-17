@@ -65,9 +65,6 @@ import ros.android.util.Posable;
  * drag gestures.  When the user releases their finger and the drag
  * ends, a message will be published on the initialpose topic, and the
  * behavior will revert to following the robot's position estimate.
- *
- * TODO: add a timeout so it disappears after a few seconds of not
- * being used.
  */
 public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
   private Paint paint = new Paint();
@@ -79,6 +76,11 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
   private Matrix estimatedRobotRelView = new Matrix();
   private boolean dragging = false;
   private boolean turning = false;
+  private Runnable disabler = new Runnable() {
+      @Override public void run() {
+        disable();
+      }
+    };
 
   // All these spot and handle geometry values are in view coordinates.
   private float handleCenterDistance = 100;
@@ -211,6 +213,7 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
         turning = false;
         lastPoint.set( event.getX(), event.getY() );
         touchOffset.set( centerX - event.getX(), centerY - event.getY() );
+        postponeTimeout();
         postInvalidate();
         return true;
       } else if( inCircle( event, handleX, handleY, handleRadius )) {
@@ -218,6 +221,7 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
         turning = true;
         lastPoint.set( event.getX(), event.getY() );
         touchOffset.set( handleX - event.getX(), handleY - event.getY() );
+        postponeTimeout();
         postInvalidate();
         return true;
       }
@@ -227,6 +231,7 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
         sendInitialPose();
         dragging = false;
         turning = false;
+        postponeTimeout();
         postInvalidate();
         return true;
       }
@@ -236,6 +241,7 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
         centerX = event.getX() + touchOffset.x;
         centerY = event.getY() + touchOffset.y;
         sendInitialPose();
+        postponeTimeout();
         postInvalidate();
         return true;
       } else if( turning ) {
@@ -243,12 +249,18 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
         handleY = event.getY() + touchOffset.y;
         handleAngleRadians = (float) Math.atan2( (float)(handleY - centerY), (float)(handleX - centerX) );
         sendInitialPose();
+        postponeTimeout();
         postInvalidate();
         return true;
       }
       break;
     }
     return false;
+  }
+
+  private void postponeTimeout() {
+    getParent().removeCallbacks( disabler );
+    getParent().postDelayed( disabler, 3 * 1000 );
   }
 
   private void sendInitialPose() {

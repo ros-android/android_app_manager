@@ -40,12 +40,25 @@ import org.ros.exception.RosInitException;
  */
 public abstract class PanZoomDisplay {
   private PanZoomView parent;
+  private boolean enabled = true;
 
   public void setParent( PanZoomView parent ) {
     this.parent = parent;
   }
   public PanZoomView getParent() {
     return parent;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+  public void enable() {
+    enabled = true;
+    postInvalidate();
+  }
+  public void disable() {
+    enabled = false;
+    postInvalidate();
   }
 
   /**

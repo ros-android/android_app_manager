@@ -48,6 +48,8 @@ import org.ros.exception.RosInitException;
 import org.ros.message.geometry_msgs.PoseWithCovarianceStamped;
 
 import ros.android.util.Posable;
+import ros.android.util.FingerReceiver;
+import ros.android.util.FingerTracker;
 
 /**
  * PanZoomDisplay which implements a draggable initial-pose setter.
@@ -83,21 +85,104 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
     };
 
   // All these spot and handle geometry values are in view coordinates.
-  private float handleCenterDistance = 100;
+  private float handleCenterDistance = 150;
   private float spotDiameter = 100;
   private float handleDiameter = 75;
   private float spotRadius = spotDiameter / 2f;
   private float handleRadius = handleDiameter / 2f;
   private float centerX; // coordinates of the center spot relative to the view.
   private float centerY;
+  private float handleX; // coordinates of the center spot relative to the view.
+  private float handleY;
   private float handleAngleRadians; // relative to the view.
-  private PointF lastPoint = new PointF();
-  private PointF touchOffset = new PointF(); // distance from touch to center of control
+
+  private FingerReceiver translationHandler = new FingerReceiver() {
+      private PointF touchOffset = new PointF(); // distance from touch to center of control
+
+      @Override public boolean onDown( float x, float y ) {
+        if( inCircle( x, y, centerX, centerY, spotRadius )) {
+          touchOffset.set( centerX - x, centerY - y );
+          dragging = true;
+          postponeTimeout();
+          postInvalidate();
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      @Override public void onMove( float x, float y ) {
+        if( dragging ) {
+          centerX = x + touchOffset.x;
+          centerY = y + touchOffset.y;
+          setHandleAngleRadians( handleAngleRadians ); // update handleX and handleY based on the new center.
+          sendInitialPose();
+          postponeTimeout();
+          postInvalidate();
+        }
+      }
+
+      @Override public void onUp() {
+        dragging = false;
+        postponeTimeout();
+        postInvalidate();
+      }
+    };
+
+  private FingerReceiver rotationHandler = new FingerReceiver() {
+      private PointF touchOffset = new PointF(); // distance from touch to center of control
+
+      @Override public boolean onDown( float x, float y ) {
+        if( inCircle( x, y, handleX, handleY, handleRadius )) {
+          touchOffset.set( handleX - x, handleY - y );
+          turning = true;
+          postponeTimeout();
+          postInvalidate();
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      @Override public void onMove( float x, float y ) {
+        if( turning ) {
+          float newHandleX = x + touchOffset.x;
+          float newHandleY = y + touchOffset.y;
+          setHandleAngleRadians( (float) Math.atan2( (float)(newHandleY - centerY), (float)(newHandleX - centerX) ));
+          sendInitialPose();
+          postponeTimeout();
+          postInvalidate();
+        }
+      }
+
+      @Override public void onUp() {
+        turning = false;
+        postponeTimeout();
+        postInvalidate();
+      }
+    };
+
+  private FingerTracker fingerTracker;
+
+  private void setHandleAngleRadians( float radians ) {
+    handleAngleRadians = radians;
+    handleX = centerX + FloatMath.cos( handleAngleRadians ) * handleCenterDistance;
+    handleY = centerY + FloatMath.sin( handleAngleRadians ) * handleCenterDistance;
+  }
 
   public SetInitialPoseDisplay() {
     paint.setColor(0x60ff8080);
     linePaint.setColor(0x60ff8080);
     linePaint.setStrokeWidth(20);
+
+    fingerTracker = new FingerTracker();
+    fingerTracker.addReceiver( translationHandler );
+    fingerTracker.addReceiver( rotationHandler );
+  }
+
+  @Override
+  public boolean onTouchEvent( MotionEvent event ) {
+    return fingerTracker.onTouch( getParent(), event );
   }
 
   public void setTopic( String topic ) {
@@ -179,15 +264,12 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
       // Find the direction vector (which way the robot is pointing) in view coordinates.
       float[] dirVector = {1f, 0f};
       estimatedRobotRelView.mapVectors( dirVector );
-
-      handleAngleRadians = (float) Math.atan2( (double)dirVector[1], (double)dirVector[0] );
+      
+      setHandleAngleRadians( (float) Math.atan2( (double)dirVector[1], (double)dirVector[0] ));
     }
 
     Matrix oldMatrix = canvas.getMatrix();
     canvas.setMatrix( getParent().getViewMatrix() );
-
-    float handleX = centerX + FloatMath.cos( handleAngleRadians ) * handleCenterDistance;
-    float handleY = centerY + FloatMath.sin( handleAngleRadians ) * handleCenterDistance;
 
     canvas.drawCircle( centerX, centerY, spotRadius, paint );
     canvas.drawCircle( handleX, handleY, handleRadius, paint );
@@ -196,66 +278,10 @@ public class SetInitialPoseDisplay extends PanZoomDisplay implements Posable {
     canvas.setMatrix( oldMatrix );
   }
 
-  private boolean inCircle( MotionEvent event, float cx, float cy, float radius ) {
-    float dx = event.getX() - cx;
-    float dy = event.getY() - cy;
+  private boolean inCircle( float x, float y, float cx, float cy, float radius ) {
+    float dx = x - cx;
+    float dy = y - cy;
     return FloatMath.sqrt( dx*dx + dy*dy ) < radius;
-  }
-
-  public boolean onTouchEvent(MotionEvent event) {
-    float handleX = centerX + FloatMath.cos( handleAngleRadians ) * handleCenterDistance;
-    float handleY = centerY + FloatMath.sin( handleAngleRadians ) * handleCenterDistance;
-
-    switch(event.getActionMasked()) {
-    case MotionEvent.ACTION_DOWN: // first finger touch
-      if( inCircle( event, centerX, centerY, spotRadius )) {
-        dragging = true;
-        turning = false;
-        lastPoint.set( event.getX(), event.getY() );
-        touchOffset.set( centerX - event.getX(), centerY - event.getY() );
-        postponeTimeout();
-        postInvalidate();
-        return true;
-      } else if( inCircle( event, handleX, handleY, handleRadius )) {
-        dragging = false;
-        turning = true;
-        lastPoint.set( event.getX(), event.getY() );
-        touchOffset.set( handleX - event.getX(), handleY - event.getY() );
-        postponeTimeout();
-        postInvalidate();
-        return true;
-      }
-      break;
-    case MotionEvent.ACTION_UP: // last finger released
-      if( dragging || turning ) {
-        sendInitialPose();
-        dragging = false;
-        turning = false;
-        postponeTimeout();
-        postInvalidate();
-        return true;
-      }
-      break;
-    case MotionEvent.ACTION_MOVE:
-      if( dragging ) {
-        centerX = event.getX() + touchOffset.x;
-        centerY = event.getY() + touchOffset.y;
-        sendInitialPose();
-        postponeTimeout();
-        postInvalidate();
-        return true;
-      } else if( turning ) {
-        handleX = event.getX() + touchOffset.x;
-        handleY = event.getY() + touchOffset.y;
-        handleAngleRadians = (float) Math.atan2( (float)(handleY - centerY), (float)(handleX - centerX) );
-        sendInitialPose();
-        postponeTimeout();
-        postInvalidate();
-        return true;
-      }
-      break;
-    }
-    return false;
   }
 
   private void postponeTimeout() {

@@ -35,6 +35,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.util.AttributeSet;
+import android.util.Log;
 
 import org.ros.Node;
 import org.ros.exception.RosInitException;
@@ -75,13 +76,19 @@ public class TurtlebotMapView extends PanZoomView {
 
     //******** configure robot display ********
     robotDisplay = new BitmapDisplay();
-    robotDisplay.setBitmap( BitmapFactory.decodeResource( context.getResources(), R.drawable.turtlebot_top_view ));
+    Bitmap robotBitmap = BitmapFactory.decodeResource( context.getResources(), R.drawable.turtlebot_top_view );
+    robotDisplay.setBitmap( robotBitmap );
+    Log.i("TurtlebotMapView", "robot image is " + robotBitmap.getWidth() + " by " + robotBitmap.getHeight() );
     // This transform assumes the robot in the image has its +x
     // pointing to the left and its +y pointing down.
     Matrix robotImageRelRobot = new Matrix();
-    double robotImageResolution = turtlebotDiameter /* meters */ / 104 /* pixels */;
-    double xOffsetPixels = 44; // These constants are tied to the image at R.drawable.turtlebot_top_view.
-    double yOffsetPixels = 52;
+    double robotImageResolution = turtlebotDiameter /* meters */ / robotBitmap.getHeight() /* pixels */;
+    // 104 is the original height of the image, and 44 and 52 are
+    // measured relative to that.  Android seems to be scaling the
+    // bitmap on some platforms, so I am explicitly scaling the
+    // offsets here.
+    double xOffsetPixels = 44 * robotBitmap.getHeight() / 104; // These constants are tied to the image at R.drawable.turtlebot_top_view.
+    double yOffsetPixels = 52 * robotBitmap.getHeight() / 104;
     robotImageRelRobot.setValues(new float[]{(float)-robotImageResolution, 0, (float)(xOffsetPixels * robotImageResolution),
                                              0, (float)robotImageResolution, (float)(-yOffsetPixels * robotImageResolution),
                                              0, 0, 1});

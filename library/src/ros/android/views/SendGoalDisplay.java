@@ -29,6 +29,7 @@
 
 package ros.android.views;
 
+import android.graphics.Matrix;
 import android.util.FloatMath;
 import android.util.Log;
 
@@ -38,24 +39,28 @@ import org.ros.exception.RosInitException;
 import org.ros.message.geometry_msgs.PoseStamped;
 
 /**
- * PanZoomDisplay which implements a draggable initial-pose setter.
+ * PanZoomDisplay which implements a draggable goal-pose setter.
  *
  * The control has two parts: a central circle for translation and a
  * smaller outboard circle for rotation.
  *
- * Behavior: When the user is not actually touching and dragging part
- * of the control, the pose is set by incoming Matrices via the
- * Posable interface (i.e. originating from TF messages describing
- * where the robot thinks it currently is.
+ * Behavior: When the display is enabled and a goal has not yet been
+ * set, the pose is set by incoming Matrices via the Posable interface
+ * (i.e. originating from TF messages describing where the robot
+ * thinks it currently is.
  *
  * When the user touches inside one of the control circles, those
  * incoming Poses are ignored and the pose is updated by the user's
  * drag gestures.
+ *
+ * After the user lets go, the pose stays the same until the display
+ * times out.  (Timeout implemented in PoseInputDisplay).
  */
 public class SendGoalDisplay extends PoseInputDisplay {
   private String goalTopic = "move_base_simple/goal";
   private String fixedFrame = "/map";
   private Publisher<PoseStamped> publisher;
+  private boolean followRobotMode;
 
   public SendGoalDisplay() {
     super();
@@ -83,6 +88,19 @@ public class SendGoalDisplay extends PoseInputDisplay {
   }
 
   @Override
+  public void enable() {
+    super.enable();
+    followRobotMode = true;
+  }
+
+  @Override
+  public void setPose( Matrix poseRelFixedFrame ) {
+    if( followRobotMode ) {
+      super.setPose( poseRelFixedFrame );
+    }
+  }
+
+  @Override
   public void start( Node node ) throws RosInitException {
     super.start( node );
     publisher = node.createPublisher( goalTopic, PoseStamped.class );
@@ -99,6 +117,8 @@ public class SendGoalDisplay extends PoseInputDisplay {
 
   @Override
   protected void onPose( float x, float y, float angle ) {
+    followRobotMode = false;
+
     if( publisher == null ) {
       return;
     }

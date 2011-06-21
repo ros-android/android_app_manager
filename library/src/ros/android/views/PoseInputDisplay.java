@@ -195,6 +195,24 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
   @Override
   public void setPose( Matrix poseRelFixedFrame ) {
     estimatedRobotRelMap.set( poseRelFixedFrame );
+    if( !dragging && !turning ) {
+      estimatedRobotRelView = getParent().getFixedRelView();
+      estimatedRobotRelView.preConcat( estimatedRobotRelMap );
+
+      // Find the center of the robot in view coordinates
+      float[] center = new float[2];
+      center[0] = 0f;
+      center[1] = 0f;
+      estimatedRobotRelView.mapPoints( center );
+      centerX = center[0];
+      centerY = center[1];
+
+      // Find the direction vector (which way the robot is pointing) in view coordinates.
+      float[] dirVector = {1f, 0f};
+      estimatedRobotRelView.mapVectors( dirVector );
+      
+      setHandleAngleRadians( (float) Math.atan2( (double)dirVector[1], (double)dirVector[0] ));
+    }
   }
 
   /**
@@ -218,25 +236,6 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
     } else {
       paint.setAlpha( 0x60 );
       linePaint.setAlpha( 0x60 );
-    }
-
-    if( !dragging && !turning ) {
-      estimatedRobotRelView = getParent().getFixedRelView();
-      estimatedRobotRelView.preConcat( estimatedRobotRelMap );
-
-      // Find the center of the robot in view coordinates
-      float[] center = new float[2];
-      center[0] = 0f;
-      center[1] = 0f;
-      estimatedRobotRelView.mapPoints( center );
-      centerX = center[0];
-      centerY = center[1];
-
-      // Find the direction vector (which way the robot is pointing) in view coordinates.
-      float[] dirVector = {1f, 0f};
-      estimatedRobotRelView.mapVectors( dirVector );
-      
-      setHandleAngleRadians( (float) Math.atan2( (double)dirVector[1], (double)dirVector[0] ));
     }
 
     Matrix oldMatrix = canvas.getMatrix();

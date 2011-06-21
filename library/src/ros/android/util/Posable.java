@@ -46,5 +46,3 @@ public interface Posable {
    */
   void reset();
 }
-
-

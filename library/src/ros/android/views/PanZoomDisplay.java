@@ -31,6 +31,7 @@ package ros.android.views;
 
 import android.graphics.Canvas;
 import android.view.MotionEvent;
+import android.util.Log;
 
 import org.ros.Node;
 import org.ros.exception.RosInitException;
@@ -59,6 +60,7 @@ public abstract class PanZoomDisplay {
   public void disable() {
     enabled = false;
     postInvalidate();
+    Log.i("PanZoomDisplay", "disable()");
   }
 
   /**

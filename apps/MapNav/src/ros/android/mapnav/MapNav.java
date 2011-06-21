@@ -54,6 +54,7 @@ import ros.android.activity.AppManager;
 import ros.android.activity.RosAppActivity;
 import ros.android.views.SensorImageView;
 import ros.android.views.SetInitialPoseDisplay;
+import ros.android.views.SendGoalDisplay;
 import ros.android.views.TurtlebotDashboard;
 import ros.android.views.TurtlebotMapView;
 
@@ -81,6 +82,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
   private ServiceIdentifier listMapsServiceIdentifier;
   private ServiceIdentifier publishMapServiceIdentifier;
   private SetInitialPoseDisplay poseSetter;
+  private SendGoalDisplay goalSender;
 
   private enum ViewMode {
     CAMERA, MAP
@@ -140,6 +142,11 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     poseSetter.disable();
     mapView.addDisplay( poseSetter );
     mapView.getPoser().addPosable( "/map", "/base_footprint", poseSetter );
+
+    goalSender = new SendGoalDisplay();
+    goalSender.disable();
+    mapView.addDisplay( goalSender );
+    mapView.getPoser().addPosable( "/map", "/base_footprint", goalSender );
   }
 
   /**
@@ -204,6 +211,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     dashboard.stop();
     mapView.stop();
     poseSetter.stop();
+    goalSender.stop();
     super.onNodeDestroy(node);
   }
 
@@ -215,7 +223,9 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       public void run() {
         try {
           while (true) {
-            pub.publish(message);
+            if( deadman ) {
+              pub.publish(message);
+            }
             Thread.sleep(1000 / rate);
           }
         } catch (InterruptedException e) {
@@ -245,6 +255,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
       createPublisherThread(twistPub, touchCmdMessage, 10);
       poseSetter.start(node);
+      goalSender.start(node);
     } catch (RosInitException e) {
       Log.e("MapNav", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
     }
@@ -309,6 +320,9 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     case R.id.set_pose:
       setPose();
       return true;
+    case R.id.set_goal:
+      setGoal();
+      return true;
     case R.id.choose_map:
       readAvailableMapList();
       return true;
@@ -319,6 +333,10 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
 
   private void setPose() {
     poseSetter.enable();
+  }
+
+  private void setGoal() {
+    goalSender.enable();
   }
 
   private void readAvailableMapList() {

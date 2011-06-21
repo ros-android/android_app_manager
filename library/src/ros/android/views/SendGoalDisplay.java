@@ -29,27 +29,13 @@
 
 package ros.android.views;
 
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PointF;
 import android.util.FloatMath;
 import android.util.Log;
-import android.view.MotionEvent;
 
-import javax.vecmath.Quat4f;
-import javax.vecmath.Matrix3f;
-
-import org.ros.MessageListener;
 import org.ros.Node;
 import org.ros.Publisher;
 import org.ros.exception.RosInitException;
-import org.ros.message.geometry_msgs.PoseWithCovarianceStamped;
-
-import ros.android.util.Posable;
-import ros.android.util.FingerReceiver;
-import ros.android.util.FingerTracker;
+import org.ros.message.geometry_msgs.PoseStamped;
 
 /**
  * PanZoomDisplay which implements a draggable initial-pose setter.
@@ -66,25 +52,27 @@ import ros.android.util.FingerTracker;
  * incoming Poses are ignored and the pose is updated by the user's
  * drag gestures.
  */
-public class SetInitialPoseDisplay extends PoseInputDisplay {
-  private String initialPoseTopic = "initialpose";
+public class SendGoalDisplay extends PoseInputDisplay {
+  private String goalTopic = "move_base_simple/goal";
   private String fixedFrame = "/map";
-  private Publisher<PoseWithCovarianceStamped> initialPosePublisher;
+  private Publisher<PoseStamped> publisher;
 
-  public SetInitialPoseDisplay() {
+  public SendGoalDisplay() {
     super();
-    setColor( 0xff8080 );
+    Log.i("SendGoalDisplay", "constructor");
+    setColor( 0x80ff80 );
   }
 
   public void setTopic( String topic ) {
-    this.initialPoseTopic = topic;
+    Log.i("SendGoalDisplay", "setTopic");
+    this.goalTopic = topic;
   }
   public String getTopic() {
-    return initialPoseTopic;
+    return goalTopic;
   }
 
   /**
-   * Set the frame ID for the fixed frame which the initial pose is
+   * Set the frame ID for the fixed frame which the goal pose is
    * set relative to.  Defaults to "/map".
    */
   public void setFixedFrame( String fixedFrame ) {
@@ -97,37 +85,35 @@ public class SetInitialPoseDisplay extends PoseInputDisplay {
   @Override
   public void start( Node node ) throws RosInitException {
     super.start( node );
-    initialPosePublisher = node.createPublisher( initialPoseTopic, PoseWithCovarianceStamped.class );
+    publisher = node.createPublisher( goalTopic, PoseStamped.class );
   }
 
   @Override
   public void stop() {
     super.stop();
-    if( initialPosePublisher != null) {
-      initialPosePublisher.shutdown();
+    if( publisher != null) {
+      publisher.shutdown();
     }
-    initialPosePublisher = null;
+    publisher = null;
   }
 
-  @Override protected void onPose( float x, float y, float angle ) {
-    if( initialPosePublisher == null ) {
+  @Override
+  protected void onPose( float x, float y, float angle ) {
+    if( publisher == null ) {
       return;
     }
     
-    PoseWithCovarianceStamped initialPose = new PoseWithCovarianceStamped();
-    initialPose.header.frame_id = fixedFrame;
-    initialPose.pose.pose.position.x = x;
-    initialPose.pose.pose.position.y = y;
-    initialPose.pose.pose.position.z = 0;
-    initialPose.pose.pose.orientation.x = 0;
-    initialPose.pose.pose.orientation.y = 0;
-    initialPose.pose.pose.orientation.z = FloatMath.sin( angle / 2f );
-    initialPose.pose.pose.orientation.w = FloatMath.cos( angle / 2f );
-    initialPose.pose.covariance[6*0+0] = 0.5 * 0.5; // X uncertainty
-    initialPose.pose.covariance[6*1+1] = 0.5 * 0.5; // Y uncertainty
-    initialPose.pose.covariance[6*5+5] = (float)(Math.PI/12.0 * Math.PI/12.0);  // uncertainty of rotation about Z axis
+    PoseStamped goal = new PoseStamped();
+    goal.header.frame_id = fixedFrame;
+    goal.pose.position.x = x;
+    goal.pose.position.y = y;
+    goal.pose.position.z = 0;
+    goal.pose.orientation.x = 0;
+    goal.pose.orientation.y = 0;
+    goal.pose.orientation.z = FloatMath.sin( angle / 2f );
+    goal.pose.orientation.w = FloatMath.cos( angle / 2f );
       
-    Log.i("SetInitialPoseDisplay", "Sending initial pose");
-    initialPosePublisher.publish( initialPose );
+    Log.i("SendGoalDisplay", "Sending goal.");
+    publisher.publish( goal );
   }
 }

@@ -48,7 +48,7 @@ public class RobotDescription implements java.io.Serializable {
   public static final String TYPE_UNKNOWN = "Unknown";
 
   private static final long serialVersionUID = 1L;
-  private String masterUri;
+  private RobotId robotId;
   private String robotName;
   private String robotType;
   private String connectionStatus;
@@ -59,33 +59,34 @@ public class RobotDescription implements java.io.Serializable {
   public RobotDescription() {   
   }
   
-  public RobotDescription(URI masterUri, String robotName, String robotType, Date timeLastSeen)
+  public RobotDescription(RobotId robotId, String robotName, String robotType, Date timeLastSeen)
       throws InvalidRobotDescriptionException {
     setRobotName(robotName);
-    setMasterUri(masterUri.toString());
+    setRobotId(robotId);
     this.robotName = robotName;
     this.robotType = robotType;
     this.timeLastSeen = timeLastSeen;
   }
 
   public void copyFrom(RobotDescription other) {
-    masterUri = other.masterUri;
+    robotId = other.robotId;
     robotName = other.robotName;
     robotType = other.robotType;
     connectionStatus = other.connectionStatus;
     timeLastSeen = other.timeLastSeen;
   }
 
-  public String getMasterUri() {
-    return masterUri;
+  public RobotId getRobotId() {
+    return robotId;
   }
 
-  public void setMasterUri(String masterUri) throws InvalidRobotDescriptionException {
-    if (masterUri == null || masterUri.toString().length() == 0) {
+  public void setRobotId(RobotId robotId) throws InvalidRobotDescriptionException {
+    //TODO: ensure the robot id is sane.
+    if (false) {
       throw new InvalidRobotDescriptionException("Empty Master URI");
     }
     //TODO: validate
-    this.masterUri = masterUri;
+    this.robotId = robotId;
   }
 
   public String getRobotName() {
@@ -129,9 +130,9 @@ public class RobotDescription implements java.io.Serializable {
     return this.robotName == NAME_UNKNOWN;
   }
 
-  public static RobotDescription createUnknown(URI masterUri)
+  public static RobotDescription createUnknown(RobotId robotId)
       throws InvalidRobotDescriptionException {
-    return new RobotDescription(masterUri, NAME_UNKNOWN, TYPE_UNKNOWN, new Date());
+    return new RobotDescription(robotId, NAME_UNKNOWN, TYPE_UNKNOWN, new Date());
   }
 
   @Override
@@ -154,8 +155,8 @@ public class RobotDescription implements java.io.Serializable {
 
     // Check each field. Primitive fields, reference fields, and nullable reference
     // fields are all treated differently.
-    return (masterUri == null ? lhs.masterUri == null
-            : masterUri.equals(lhs.masterUri));
+    return (robotId == null ? lhs.robotId == null
+            : robotId.equals(lhs.robotId));
   }
  
   // I need to override equals() so I'm also overriding hashCode() to match.
@@ -165,7 +166,7 @@ public class RobotDescription implements java.io.Serializable {
     int result = 17;
 
     // Include a hash for each field checked by equals().
-    result = 31 * result + (masterUri == null ? 0 : masterUri.hashCode());
+    result = 31 * result + (robotId == null ? 0 : robotId.hashCode());
 
     return result;
   }

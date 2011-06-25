@@ -53,10 +53,12 @@ import org.yaml.snakeyaml.Yaml;
 import ros.android.util.InvalidRobotDescriptionException;
 import ros.android.util.MasterChooser;
 import ros.android.util.RobotDescription;
+import ros.android.util.RobotId;
 import ros.android.util.SdCardSetup;
 import ros.android.util.zxing.IntentIntegrator;
 import ros.android.util.zxing.IntentResult;
 
+import java.util.Map;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -199,8 +201,11 @@ public class MasterChooserActivity extends Activity {
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
     if (scanResult != null) {
+      Yaml yaml = new Yaml();
+      Map<String, Object> data = (Map<String, Object>)yaml.load(scanResult.getContents().toString());
+      Log.i("MasterChooserActivity", "OBJECT: " + data.toString());
       try {
-        addMaster(scanResult.getContents());
+        addMaster(new RobotId(data));
       } catch (InvalidRobotDescriptionException e) {
         Toast.makeText(this, "Invalid robot description: "+e.getMessage(), Toast.LENGTH_SHORT).show();
       }
@@ -209,12 +214,13 @@ public class MasterChooserActivity extends Activity {
     }
   }
 
-  private void addMaster(String masterUri) throws InvalidRobotDescriptionException {
-    Log.i("MasterChooserActivity", "addMaster ["+masterUri+"]");
-    if (masterUri == null || masterUri.length() == 0) {
+  private void addMaster(RobotId robotId) throws InvalidRobotDescriptionException {
+    Log.i("MasterChooserActivity", "addMaster ["+robotId.toString()+"]");
+    if (robotId == null || robotId.getMasterUri() == null) {
       throw new InvalidRobotDescriptionException("Empty master URI");
     } else {
-      if (!masterUri.startsWith("http://") && !masterUri.startsWith("https://")) {
+      //TODO: in YAML loading!!!
+      /*if (!masterUri.startsWith("http://") && !masterUri.startsWith("https://")) {
         masterUri = "http://" + masterUri;
       }
       URI uri;
@@ -229,18 +235,18 @@ public class MasterChooserActivity extends Activity {
         } catch (URISyntaxException e) {
           throw new InvalidRobotDescriptionException("internal error");
         }
-      }
+        }*/
 
       Iterator<RobotDescription> iter = robots.iterator();
       while (iter.hasNext()) {
         RobotDescription robot = iter.next();
-        if (robot.getMasterUri().equals(masterUri)) {
+        if (robot.getRobotId().equals(robotId)) {
           Toast.makeText(this, "That robot is already listed.", Toast.LENGTH_SHORT).show();
           return;
         }
       }
-      Log.i("MasterChooserActivity", "creating robot description: "+uri);
-      robots.add(RobotDescription.createUnknown(uri));
+      Log.i("MasterChooserActivity", "creating robot description: "+robotId.toString());
+      robots.add(RobotDescription.createUnknown(robotId));
       Log.i("MasterChooserActivity", "description created");
       onRobotsChanged();
     }
@@ -358,7 +364,7 @@ public class MasterChooserActivity extends Activity {
         String newMasterUri = uriField.getText().toString();
         if (newMasterUri != null && newMasterUri.length() > 0) {
           try {
-            addMaster(newMasterUri);
+            addMaster(new RobotId(newMasterUri));
           } catch (InvalidRobotDescriptionException e) {
             Toast.makeText(MasterChooserActivity.this, "Invalid URI", Toast.LENGTH_SHORT).show();
           }

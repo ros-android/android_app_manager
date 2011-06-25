@@ -60,7 +60,7 @@ public class RosAppActivity extends RosActivity {
       throw new RosInitException("no robot available");
     } else {
       Log.i("RosAndroid", "Using Robot: " + robotDescription.getRobotName() + " "
-          + robotDescription.getMasterUri());
+            + robotDescription.getRobotId().toString());
       return AppManager.create(node, robotDescription.getRobotName());
     }
   }

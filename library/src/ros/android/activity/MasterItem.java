@@ -65,7 +65,7 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
     this.description = robotDescription;
     this.description.setConnectionStatus(RobotDescription.CONNECTING);
     checker = new MasterChecker(this, this);
-    checker.beginChecking(this.description.getMasterUri());
+    checker.beginChecking(this.description.getRobotId());
   }
 
   public boolean isOk() {
@@ -137,7 +137,7 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
 
     TextView tv;
     tv = (TextView) view.findViewById(R.id.uri);
-    tv.setText(description.getMasterUri().toString());
+    tv.setText(description.getRobotId().toString());
 
     tv = (TextView) view.findViewById(R.id.name);
     tv.setText(description.getRobotName());

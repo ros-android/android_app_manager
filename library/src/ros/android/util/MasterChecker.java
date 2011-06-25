@@ -73,24 +73,24 @@ public class MasterChecker {
   }
 
   /**
-   * Start the checker thread with the given master URI. If the thread is
+   * Start the checker thread with the given robotId. If the thread is
    * already running, kill it first and then start anew. Returns immediately.
    */
-  public void beginChecking(String masterUri) {
+  public void beginChecking(RobotId robotId) {
     stopChecking();
-    if (masterUri == null || masterUri.equals("")) {
+    if (robotId.getMasterUri() == null) {
       failureCallback.handleFailure("empty master URI");
       return;
     }
     URI uri;
     try {
-      uri = new URI(masterUri);
+      uri = new URI(robotId.getMasterUri());
     } catch (URISyntaxException e) {
       failureCallback.handleFailure("invalid master URI");
       return;
     }
 
-    checkerThread = new CheckerThread(uri);
+    checkerThread = new CheckerThread(robotId, uri);
     checkerThread.start();
   }
 
@@ -104,9 +104,11 @@ public class MasterChecker {
   private class CheckerThread extends Thread {
 
     private URI masterUri;
+    private RobotId robotId;
 
-    public CheckerThread(URI masterUri) {
+    public CheckerThread(RobotId robotId, URI masterUri) {
       this.masterUri = masterUri;
+      this.robotId = robotId;
 
       setDaemon(true);
 
@@ -127,7 +129,7 @@ public class MasterChecker {
         String robotName = (String) paramClient.getParam("robot/name");
         String robotType = (String) paramClient.getParam("robot/type");
         Date timeLastSeen = new Date(); // current time.
-        RobotDescription robotDescription = new RobotDescription(masterUri, robotName, robotType,
+        RobotDescription robotDescription = new RobotDescription(robotId, robotName, robotType,
                                                                  timeLastSeen);
         foundMasterCallback.receive(robotDescription);
         return;

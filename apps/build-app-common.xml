@@ -28,11 +28,10 @@ sdk.dir=${android.sdk.dir}
   <property name="appmanandroid.library" location="${appmanandroid.root}/library"/>
 
   <mkdir dir="${app.dir}/build/libs"/>
-  <echo message="copying files" />
-  <copy todir="${app.dir}/build/libs">
-    <fileset includes="${ros.jarfileset}" dir="/"/>
+  <copy todir="${app.dir}/build/libs" flatten="true">
+    <files includes="${ros.jarfileset}" />
   </copy>
-
+  
   <property name="external.libs.dir" location="${app.dir}/build/libs" />
   <property name="jar.libs.dir" location="${app.dir}/build/libs" />
 

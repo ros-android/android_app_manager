@@ -6,29 +6,23 @@
 <project basedir="." default="compile" name="appman_apps">
 
   <target name="compile">
-    <subant target="compile">
-      <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
-    </subant>
+    <ant dir="AppChooser" antfile="build-wrapper.xml" target="compile"/>    
+    <ant dir="Teleop" antfile="build-wrapper.xml" target="compile"/> 
   </target>
 
-<!--
   <target name="debug">
-    <subant target="debug">
-      <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
-    </subant>
+    <ant dir="AppChooser" antfile="build-wrapper.xml" target="debug"/>    
+    <ant dir="Teleop" antfile="build-wrapper.xml" target="debug"/> 
   </target>
--->
 
   <target name="install">
-    <subant target="install">
-      <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
-    </subant>
+    <ant dir="AppChooser" antfile="build-wrapper.xml" target="install"/>    
+    <ant dir="Teleop" antfile="build-wrapper.xml" target="install"/> 
   </target>
 
   <target name="clean">
-    <subant target="clean">
-      <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
-    </subant>
+    <ant dir="AppChooser" antfile="build-wrapper.xml" target="clean"/>    
+    <ant dir="Teleop" antfile="build-wrapper.xml" target="clean"/>
     <delete includeemptydirs="true">
       <fileset dir="${basedir}" includes="*/build/**"/>
     </delete>

@@ -4,17 +4,25 @@
     Client side code for accessing the app manager from Android, plus some client apps which use it.
 
   </description>
-  <author>Dave Hershberger/hersh@willowgarage.com</author>
+  <author>Dave Hershberger/hersh@willowgarage.com, Ken Conley/kwc@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/appman_android</url>
   <depend package="roslib"/>
-  <depend package="rosgraph_msgs"/>
-  <depend package="geometry_msgs"/>
-  <depend package="joy"/>
-  <depend package="std_msgs"/>
   <depend package="rostest"/>
   <depend package="app_manager"/>
   <depend package="turtlebot_node"/>
   <depend package="rosjava"/>
+
+  <!-- msg dependencies -->
+  <depend package="rosgraph_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="joy"/>
+  <depend package="nav_msgs" />
+  <depend package="diagnostic_msgs"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
+
 </package>

@@ -2,9 +2,7 @@
 <!-- build file to be included from each app directory. -->
 <project name="build-app-common">
 
-  <exec command="rospack find rosjava"
-        outputproperty="rosjava.root"
-        failonerror="true"/>
+  <property file="../ros.properties" />
 
   <!-- Create the "local.properties" file in the app's directory. -->
   <exec command="which android"
@@ -30,12 +28,9 @@ sdk.dir=${android.sdk.dir}
   <property name="appmanandroid.library" location="${appmanandroid.root}/library"/>
 
   <mkdir dir="${app.dir}/build/libs"/>
+  <echo message="copying files" />
   <copy todir="${app.dir}/build/libs">
-    <fileset dir="${rosjava.root}/lib">
-      <exclude name="junit*.jar"/>
-      <exclude name="mockito*.jar"/>
-      <include name="**/*.jar"/>
-    </fileset>
+    <fileset includes="${ros.jarfileset}" dir="/"/>
   </copy>
 
   <property name="external.libs.dir" location="${app.dir}/build/libs" />
@@ -46,7 +41,5 @@ sdk.dir=${android.sdk.dir}
 
   <path id="project.libraries.src">
     <pathelement location="${appmanandroid.library}/src"/>
-    <pathelement location="${appmanandroid.library}/msg_gen/java"/>
-    <pathelement location="${appmanandroid.library}/srv_gen/java"/>
   </path>
 </project>

@@ -11,11 +11,13 @@
     </subant>
   </target>
 
+<!--
   <target name="debug">
     <subant target="debug">
       <fileset dir="${basedir}" includes="*/build-wrapper.xml"/>
     </subant>
   </target>
+-->
 
   <target name="install">
     <subant target="install">

@@ -67,21 +67,21 @@ public class LaserScanDisplay extends PosablePanZoomDisplay {
   public void start( Node node ) throws RosInitException {
     super.start( node );
     scanSubscriber =
-        node.createSubscriber(scanTopic, new MessageListener<LaserScan>() {
+        node.createSubscriber(scanTopic, "sensor_msgs/LaserScan", new MessageListener<LaserScan>() {
           @Override
           public void onNewMessage(final LaserScan msg) {
             rangeScan = msg;
             haveScan = true;
             postInvalidate();
           }
-        }, LaserScan.class);
+        });
   }
 
   @Override
   public void stop() {
     super.stop();
     if(scanSubscriber != null) {
-      scanSubscriber.cancel();
+      scanSubscriber.shutdown();
     }
     scanSubscriber = null;
   }
@@ -95,7 +95,7 @@ public class LaserScanDisplay extends PosablePanZoomDisplay {
       for( float range: rangeScan.ranges ) {
         // Only process ranges which are in the valid range.
         if( rangeScan.range_min <= range && range <= rangeScan.range_max ) {
-          PointF near = new PointF( FloatMath.cos(angle) * rangeScan.range_min, FloatMath.sin(angle) * rangeScan.range_min ); 
+          PointF near = new PointF( FloatMath.cos(angle) * rangeScan.range_min, FloatMath.sin(angle) * rangeScan.range_min );
           PointF far = new PointF( FloatMath.cos(angle) * range, FloatMath.sin(angle) * range );
           lineEndPoints[numEndPoints++] = near.x;
           lineEndPoints[numEndPoints++] = near.y;

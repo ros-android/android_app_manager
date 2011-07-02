@@ -49,7 +49,7 @@ import org.ros.message.tf.tfMessage;
  * Listener for tf messages which does not compose transforms, it just
  * looks for matching transforms, flattens them to a plane, and sends
  * them to Posable objects.
- * 
+ *
  * This can listen to tf messages coming from a change_notifier node
  * (in package "tf"), for instance, which can be configured to emit
  * transforms between specific pairs of frames.
@@ -120,14 +120,14 @@ public class PlaneTfChangeListener {
    * Start listening to tf messages.
    */
   public void start( Node node ) throws RosInitException {
-    tfSubscriber = node.createSubscriber(tfTopic, new MessageListener<tfMessage>() {
+      tfSubscriber = node.createSubscriber(tfTopic, "tf/tfMessage", new MessageListener<tfMessage>() {
         @Override
         public void onNewMessage(final tfMessage msg) {
           if (msg != null) {
             handleTfMessage( msg );
           }
         }
-      }, tfMessage.class);
+      });
   }
 
   /**
@@ -135,7 +135,7 @@ public class PlaneTfChangeListener {
    */
   public void stop() {
     if( tfSubscriber != null ) {
-      tfSubscriber.cancel();
+      tfSubscriber.shutdown();
     }
     tfSubscriber = null;
   }

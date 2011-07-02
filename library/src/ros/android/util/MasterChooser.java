@@ -236,7 +236,7 @@ public class MasterChooser extends RosLoader {
     }
     String namespace = "/";
     HashMap<GraphName, GraphName> remappings = new HashMap<GraphName, GraphName>();
-    NameResolver resolver = new NameResolver(namespace, remappings);
+    NameResolver resolver = new NameResolver(new GraphName(namespace), remappings);
 
     URI uri;
     try {
@@ -247,7 +247,7 @@ public class MasterChooser extends RosLoader {
     }
 
     Log.i("MasterChooser", "createConfiguration() creating configuration.");
-    NodeConfiguration configuration = new NodeConfiguration();
+    NodeConfiguration configuration = NodeConfiguration.createDefault();
     configuration.setParentResolver(resolver);
     configuration.setRosPackagePath(null);
     configuration.setMasterUri(uri);

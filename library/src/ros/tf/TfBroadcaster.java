@@ -60,7 +60,7 @@ public class TfBroadcaster {
    */
   public void start(Node node) throws org.ros.exception.RosInitException {
     stop();
-    tfPublisher = node.createPublisher("/tf", tfMessage.class);
+    tfPublisher = node.createPublisher("/tf", "tf/tfMessage");
   }
 
   /**

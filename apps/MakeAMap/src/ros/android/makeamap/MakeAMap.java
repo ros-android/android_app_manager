@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2011 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -37,8 +37,7 @@ import org.ros.Publisher;
 import org.ros.ServiceResponseListener;
 import org.ros.Subscriber;
 import org.ros.exception.RosInitException;
-import org.ros.internal.node.service.ServiceClient;
-import org.ros.internal.node.service.ServiceIdentifier;
+import org.ros.ServiceClient;
 import org.ros.message.Message;
 import org.ros.message.app_manager.AppStatus;
 import org.ros.message.geometry_msgs.Twist;
@@ -68,7 +67,6 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
   private String robotAppName;
-  private ServiceIdentifier nameMapServiceIdentifier;
 
   private static final int NAME_MAP_DIALOG_ID = 0;
 
@@ -174,14 +172,13 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
       cameraView = null;
     }
     if (statusSub != null) {
-      statusSub.cancel();
+      statusSub.shutdown();
       statusSub = null;
     }
     if (pubThread != null) {
       pubThread.interrupt();
       pubThread = null;
     }
-    nameMapServiceIdentifier = null;
     dashboard.stop();
     mapView.stop();
     super.onNodeDestroy(node);
@@ -213,7 +210,7 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
       NameResolver appNamespace = getAppNamespace(node);
       cameraView = (SensorImageView) findViewById(R.id.image);
       Log.i("MakeAMap", "init cameraView");
-      cameraView.start(node, appNamespace.resolveName("camera/rgb/image_color/compressed_throttle"));
+      cameraView.start(node, appNamespace.resolve("camera/rgb/image_color/compressed_throttle"));
       cameraView.post(new Runnable() {
 
         @Override
@@ -222,11 +219,8 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
         }
       });
       Log.i("MakeAMap", "init twistPub");
-      twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
+      twistPub = node.createPublisher("turtlebot_node/cmd_vel", "geometry_msgs/Twist");
       createPublisherThread(twistPub, touchCmdMessage, 10);
-
-      nameMapServiceIdentifier =
-        node.lookupService(node.getResolver().resolveName("name_latest_map"), new NameLatestMap());
     } catch (RosInitException e) {
       Log.e("MakeAMap", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
     }
@@ -361,40 +355,31 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
     return dialog;
   }
 
-  private void setMapName(final String newName) {
-    try {
-      Log.i("MakeAMap", "Map should soon be named " + newName);
-      int debug = 0;
-      if( nameMapServiceIdentifier == null ) {
-        nameMapServiceIdentifier =
-          getNode().lookupService(getNode().getResolver().resolveName("name_latest_map"), new NameLatestMap());
-      }
-      if( nameMapServiceIdentifier != null ) {
-        ServiceClient<NameLatestMap.Response> nameMapServiceClient =
-          getNode().createServiceClient(nameMapServiceIdentifier, NameLatestMap.Response.class);
-        NameLatestMap.Request nameMapRequest = new NameLatestMap.Request();
-        nameMapRequest.map_name = newName;
-        nameMapServiceClient.call(nameMapRequest, new ServiceResponseListener<NameLatestMap.Response>() {
-            @Override public void onSuccess(NameLatestMap.Response message) {
-              Log.i("MakeAMap", "setMapName() Success ");
-              // TODO: put success/failure info into response and show it.
-              safeToastStatus("Map has been named " + newName);
-            }
+    private void setMapName(final String newName) {
+	try {
+	    Log.i("MakeAMap", "Map should soon be named " + newName);
+	    int debug = 0;
+	    ServiceClient<NameLatestMap.Request, NameLatestMap.Response> nameMapServiceClient =
+		getNode().createServiceClient("name_latest_map", "map_store/NameLatestMap");
+	    NameLatestMap.Request nameMapRequest = new NameLatestMap.Request();
+	    nameMapRequest.map_name = newName;
+	    nameMapServiceClient.call(nameMapRequest, new ServiceResponseListener<NameLatestMap.Response>() {
+		    @Override public void onSuccess(NameLatestMap.Response message) {
+			Log.i("MakeAMap", "setMapName() Success ");
+			// TODO: put success/failure info into response and show it.
+			safeToastStatus("Map has been named " + newName);
+		    }
 
-            @Override public void onFailure(Exception e) {
-              Log.i("MakeAMap", "setMapName() Failure");
-              safeToastStatus("Naming map failed: " + e.getMessage());
-            }
-          });
-      } else {
-        Log.e("MakeAMap", "setMapName(): nameMapServiceIdentifier is null.");
-        safeToastStatus("Map naming service not ready.");
-      }
-    } catch(Throwable ex) {
-      Log.e("MakeAMap", "setMapName() caught exception: " + ex.toString());
-      safeToastStatus("Naming map couldn't even start: " + ex.getMessage());
+		    @Override public void onFailure(Exception e) {
+			Log.i("MakeAMap", "setMapName() Failure");
+			safeToastStatus("Naming map failed: " + e.getMessage());
+		    }
+		});
+	} catch(Throwable ex) {
+	    Log.e("MakeAMap", "setMapName() caught exception: " + ex.toString());
+	    safeToastStatus("Naming map couldn't even start: " + ex.getMessage());
+	}
     }
-  }
 
   private void safeToastStatus(final String message) {
     runOnUiThread(new Runnable() {

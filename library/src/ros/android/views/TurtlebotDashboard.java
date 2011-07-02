@@ -16,7 +16,7 @@
  *  * Neither the name of Willow Garage, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
- *    
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -43,18 +43,19 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import org.ros.DefaultNode;
 import org.ros.MessageListener;
 import org.ros.Node;
 import org.ros.ServiceResponseListener;
 import org.ros.Subscriber;
 import org.ros.exception.RosInitException;
-import org.ros.internal.node.service.ServiceClient;
-import org.ros.internal.node.service.ServiceIdentifier;
+import org.ros.ServiceClient;
 import org.ros.message.diagnostic_msgs.DiagnosticArray;
 import org.ros.message.diagnostic_msgs.DiagnosticStatus;
 import org.ros.message.diagnostic_msgs.KeyValue;
 import org.ros.message.turtlebot_node.TurtlebotSensorState;
 import org.ros.namespace.NameResolver;
+import org.ros.internal.namespace.GraphName;
 import org.ros.service.turtlebot_node.SetDigitalOutputs;
 import org.ros.service.turtlebot_node.SetTurtlebotMode;
 import ros.android.activity.R;
@@ -70,8 +71,6 @@ public class TurtlebotDashboard extends LinearLayout {
 
   private Node node;
   private Subscriber<DiagnosticArray> diagnosticSubscriber;
-  private ServiceIdentifier modeServiceIdentifier;
-  private ServiceIdentifier setDigOutServiceIdentifier;
 
   private boolean powerOn = false;
   private int numModeResponses;
@@ -117,7 +116,7 @@ public class TurtlebotDashboard extends LinearLayout {
     this.node = node;
     try {
       diagnosticSubscriber =
-          node.createSubscriber("diagnostics_agg", new MessageListener<DiagnosticArray>() {
+          node.createSubscriber("diagnostics_agg", "diagnostic_msgs/DiagnosticArray", new MessageListener<DiagnosticArray>() {
             @Override
             public void onNewMessage(final DiagnosticArray msg) {
               TurtlebotDashboard.this.post(new Runnable() {
@@ -127,13 +126,9 @@ public class TurtlebotDashboard extends LinearLayout {
                 }
               });
             }
-          }, DiagnosticArray.class);
+          });
 
-      NameResolver resolver = node.getResolver().createResolver("/turtlebot_node");
-      modeServiceIdentifier =
-          node.lookupService(resolver.resolveName("set_operation_mode"), new SetTurtlebotMode());
-      setDigOutServiceIdentifier =
-          node.lookupService(resolver.resolveName("set_digital_outputs"), new SetDigitalOutputs());
+      NameResolver resolver = node.getResolver().createResolver(new GraphName("/turtlebot_node"));
     } catch( Exception ex ) {
       this.node = null;
       throw( new RosInitException( ex ));
@@ -142,11 +137,9 @@ public class TurtlebotDashboard extends LinearLayout {
 
   public void stop() {
     if(diagnosticSubscriber != null) {
-      diagnosticSubscriber.cancel();
+      diagnosticSubscriber.shutdown();
     }
     diagnosticSubscriber = null;
-    modeServiceIdentifier = null;
-    setDigOutServiceIdentifier = null;
     node = null;
   }
 
@@ -171,7 +164,6 @@ public class TurtlebotDashboard extends LinearLayout {
   }
 
   private void onModeButtonClicked() {
-    if (modeServiceIdentifier != null && setDigOutServiceIdentifier != null) {
       powerOn = !powerOn;
 
       SetTurtlebotMode.Request modeRequest = new SetTurtlebotMode.Request();
@@ -193,8 +185,8 @@ public class TurtlebotDashboard extends LinearLayout {
 
       // TODO: can't I save the modeServiceClient? Causes trouble.
       try {
-        ServiceClient<SetTurtlebotMode.Response> modeServiceClient =
-          node.createServiceClient(modeServiceIdentifier, SetTurtlebotMode.Response.class);
+	  ServiceClient<SetTurtlebotMode.Request, SetTurtlebotMode.Response> modeServiceClient =
+	      node.createServiceClient("turtlebot_node/set_operation_mode", "turtlebot_node/SetTurtlebotMode");
         modeServiceClient.call(modeRequest, new ServiceResponseListener<SetTurtlebotMode.Response>() {
             @Override
               public void onSuccess(SetTurtlebotMode.Response message) {
@@ -209,9 +201,14 @@ public class TurtlebotDashboard extends LinearLayout {
               updateModeWaiting();
             }
           });
+      } catch(Exception ex) {
+        Toast.makeText(getContext(), "Exception in service call for set_operation_mode: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+        Log.i("TurtlebotDashboard", "making toast.");
+      }
 
-        ServiceClient<SetDigitalOutputs.Response> setDigOutServiceClient =
-          node.createServiceClient(setDigOutServiceIdentifier, SetDigitalOutputs.Response.class);
+      try {
+        ServiceClient<SetDigitalOutputs.Request, SetDigitalOutputs.Response> setDigOutServiceClient =
+          node.createServiceClient("turtlebot_node/set_digital_outputs", "turtlebot_node/SetDigitalOutputs");
         setDigOutServiceClient.call(setDigOutRequest,
                                     new ServiceResponseListener<SetDigitalOutputs.Response>() {
                                       @Override
@@ -228,10 +225,9 @@ public class TurtlebotDashboard extends LinearLayout {
                                       }
                                     });
       } catch(Exception ex) {
-        Toast.makeText(getContext(), "Exception in service call: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+        Toast.makeText(getContext(), "Exception in service call for set_digital_outputs: " + ex.getMessage(), Toast.LENGTH_LONG).show();
         Log.i("TurtlebotDashboard", "making toast.");
       }
-    }
   }
 
   private void updateModeWaiting() {

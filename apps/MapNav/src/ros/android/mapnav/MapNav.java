@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2011 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -39,7 +39,7 @@ import org.ros.Publisher;
 import org.ros.ServiceResponseListener;
 import org.ros.Subscriber;
 import org.ros.exception.RosInitException;
-import org.ros.internal.node.service.ServiceClient;
+import org.ros.ServiceClient;
 import org.ros.internal.node.service.ServiceIdentifier;
 import org.ros.message.Message;
 import org.ros.message.app_manager.AppStatus;
@@ -79,8 +79,6 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
   private String robotAppName;
-  private ServiceIdentifier listMapsServiceIdentifier;
-  private ServiceIdentifier publishMapServiceIdentifier;
   private SetInitialPoseDisplay poseSetter;
   private SendGoalDisplay goalSender;
 
@@ -199,15 +197,13 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       cameraView = null;
     }
     if (statusSub != null) {
-      statusSub.cancel();
+      statusSub.shutdown();
       statusSub = null;
     }
     if (pubThread != null) {
       pubThread.interrupt();
       pubThread = null;
     }
-    listMapsServiceIdentifier = null;
-    publishMapServiceIdentifier = null;
     dashboard.stop();
     mapView.stop();
     poseSetter.stop();
@@ -243,7 +239,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       NameResolver appNamespace = getAppNamespace(node);
       cameraView = (SensorImageView) findViewById(R.id.image);
       Log.i("MapNav", "init cameraView");
-      cameraView.start(node, appNamespace.resolveName("camera/rgb/image_color/compressed_throttle"));
+      cameraView.start(node, appNamespace.resolve("camera/rgb/image_color/compressed_throttle"));
       cameraView.post(new Runnable() {
 
         @Override
@@ -252,7 +248,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
         }
       });
       Log.i("MapNav", "init twistPub");
-      twistPub = node.createPublisher("turtlebot_node/cmd_vel", Twist.class);
+      twistPub = node.createPublisher("turtlebot_node/cmd_vel", "geometry_msgs/Twist");
       createPublisherThread(twistPub, touchCmdMessage, 10);
       poseSetter.start(node);
       goalSender.start(node);
@@ -344,17 +340,8 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     Thread mapLoaderThread = new Thread(new Runnable() {
         @Override public void run() {
           try {
-            if( listMapsServiceIdentifier == null ) {
-              listMapsServiceIdentifier =
-                getNode().lookupService(getNode().getResolver().resolveName("list_last_maps"), new ListLastMaps());
-              if( listMapsServiceIdentifier == null ) {
-                safeDismissWaitingDialog();
-                safeToastStatus("list_last_maps service not found.");
-                return;
-              }
-            }
-            ServiceClient<ListLastMaps.Response> listMapsServiceClient =
-              getNode().createServiceClient(listMapsServiceIdentifier, ListLastMaps.Response.class);
+	    ServiceClient<ListLastMaps.Request, ListLastMaps.Response> listMapsServiceClient =
+              getNode().createServiceClient("list_last_maps", "map_store/ListLastMaps");
             listMapsServiceClient.call(new ListLastMaps.Request(), new ServiceResponseListener<ListLastMaps.Response>() {
                 @Override public void onSuccess(ListLastMaps.Response message) {
                   Log.i("MapNav", "readAvailableMapList() Success");
@@ -443,17 +430,8 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     Log.i("MapNav", "loadMap(): " + mapListEntry.name);
     safeShowWaitingDialog("Loading map");
     try {
-      if( publishMapServiceIdentifier == null ) {
-        publishMapServiceIdentifier =
-          getNode().lookupService(getNode().getResolver().resolveName("publish_map"), new PublishMap());
-        if( publishMapServiceIdentifier == null ) {
-          safeToastStatus("publish_map service not found.");
-          safeDismissWaitingDialog();
-          return;
-        }
-      }
-      ServiceClient<PublishMap.Response> publishMapServiceClient =
-        getNode().createServiceClient(publishMapServiceIdentifier, PublishMap.Response.class);
+      ServiceClient<PublishMap.Request, PublishMap.Response> publishMapServiceClient =
+        getNode().createServiceClient("publish_map", "map_store/PublishMap");
       PublishMap.Request req = new PublishMap.Request();
       req.map_id = mapListEntry.map_id;
       publishMapServiceClient.call(req, new ServiceResponseListener<PublishMap.Response>() {

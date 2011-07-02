@@ -16,7 +16,7 @@
  *  * Neither the name of Willow Garage, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
- *    
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -34,7 +34,8 @@
 package ros.android.util;
 
 import android.util.Log;
-import org.ros.ParameterClient;
+import org.ros.internal.node.server.SlaveIdentifier;
+import org.ros.internal.node.client.ParameterClient;
 import org.ros.namespace.NameResolver;
 
 import java.net.URI;
@@ -45,7 +46,7 @@ import java.util.Date;
  * Threaded ROS-master checker. Runs a thread which checks for a valid ROS
  * master and sends back a {@link RobotDescription} (with robot name and type)
  * on success or a failure reason on failure.
- * 
+ *
  * @author hersh@willowgarage.com
  */
 public class MasterChecker {
@@ -124,10 +125,10 @@ public class MasterChecker {
     @Override
     public void run() {
       try {
-        ParameterClient paramClient = ParameterClient.create("/master_checker", masterUri,
-                                                             NameResolver.createDefault());
-        String robotName = (String) paramClient.getParam("robot/name");
-        String robotType = (String) paramClient.getParam("robot/type");
+        ParameterClient paramClient = new ParameterClient(
+                  SlaveIdentifier.createFromStrings("/master_checker", masterUri.toString()), masterUri);
+        String robotName = (String) paramClient.getParam("robot/name").getResult();
+        String robotType = (String) paramClient.getParam("robot/type").getResult();
         Date timeLastSeen = new Date(); // current time.
         RobotDescription robotDescription = new RobotDescription(robotId, robotName, robotType,
                                                                  timeLastSeen);
@@ -135,7 +136,7 @@ public class MasterChecker {
         return;
       } catch (Throwable ex) {
         Log.e("RosAndroid", "Exception while creating node in MasterChecker for master URI "
-              + masterUri + " " + ex.toString());
+              + masterUri, ex);
         failureCallback.handleFailure(ex.toString());
       }
     }

@@ -16,7 +16,7 @@
  *  * Neither the name of Willow Garage, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
- *    
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -40,13 +40,15 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import org.ros.DefaultNode;
 import org.ros.Node;
 import org.ros.exception.RosInitException;
 import ros.android.util.MasterChooser;
 import ros.android.util.RobotDescription;
+import org.ros.NodeConfiguration;
 
 /**
- * 
+ *
  * @author hersh@willowgarage.com
  * @author erublee@willowgarage.com
  * @author kwc@willowgarage.com (Ken Conley)
@@ -54,7 +56,7 @@ import ros.android.util.RobotDescription;
  */
 public class RosActivity extends Activity {
   private MasterChooser masterChooser;
-  private Node node;
+  private Node node; //todo change?
   private Exception errorException;
   private String errorMessage;
   private Handler uiThreadHandler = new Handler();
@@ -145,9 +147,13 @@ public class RosActivity extends Activity {
       @Override
       public void run() {
         try {
-          node = new Node("android", masterChooser.createConfiguration());
+          NodeConfiguration config = masterChooser.createConfiguration();
+          if (config == null) {
+            Log.e("RosAndroid", "Configuration for node is null!");
+          }
+          node = new DefaultNode("android", config);
         } catch (Exception e) {
-          Log.e("RosAndroid", "Exception while creating node: " + e.getMessage());
+	    Log.e("RosAndroid", "Exception while creating node.", e);
           node = null;
           setErrorMessage("failed to create node" + e.getMessage());
           setErrorException(e);
@@ -173,7 +179,7 @@ public class RosActivity extends Activity {
   /**
    * Subclasses should override to do publisher/subscriber initialization in the
    * node thread.
-   * 
+   *
    * @param node
    */
   protected void onNodeCreate(Node node) {
@@ -182,7 +188,7 @@ public class RosActivity extends Activity {
 
   /**
    * Subclasses should override to cleanup node-related resources.
-   * 
+   *
    * @param node
    */
   protected void onNodeDestroy(Node node) {
@@ -194,7 +200,7 @@ public class RosActivity extends Activity {
    * is stopped during {@code onPause()} and reinitialized during
    * {@code onResume()}. It is not safe to maintain a handle on the {@link Node}
    * instance.
-   * 
+   *
    * @return Initialized {@link Node} instance.
    * @throws RosInitException
    *           If {@link Node} was not successfully initialized. Exception will

@@ -103,7 +103,7 @@ public class SendGoalDisplay extends PoseInputDisplay {
   @Override
   public void start( Node node ) throws RosInitException {
     super.start( node );
-    publisher = node.createPublisher( goalTopic, PoseStamped.class );
+    publisher = node.createPublisher( goalTopic, "geometry_msgs/PoseStamped" );
   }
 
   @Override
@@ -122,7 +122,7 @@ public class SendGoalDisplay extends PoseInputDisplay {
     if( publisher == null ) {
       return;
     }
-    
+
     PoseStamped goal = new PoseStamped();
     goal.header.frame_id = fixedFrame;
     goal.pose.position.x = x;
@@ -132,7 +132,7 @@ public class SendGoalDisplay extends PoseInputDisplay {
     goal.pose.orientation.y = 0;
     goal.pose.orientation.z = FloatMath.sin( angle / 2f );
     goal.pose.orientation.w = FloatMath.cos( angle / 2f );
-      
+
     Log.i("SendGoalDisplay", "Sending goal.");
     publisher.publish( goal );
   }

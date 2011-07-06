@@ -13,6 +13,7 @@
   <depend package="app_manager"/>
   <depend package="turtlebot_node"/>
   <depend package="rosjava"/>
+  <depend package="android"/>
 
   <!-- msg dependencies -->
   <depend package="rosgraph_msgs"/>

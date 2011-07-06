@@ -1,11 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="appman_android" default="help">
+<project name="appman_android" default="compile">
+
+    <!-- rosmake/bootstrap integration -->
+    <property file="../ros.properties" />
 
 <!-- The local.properties file is created and updated by the 'android'
      tool.
      It contains the path to the SDK. It should *NOT* be checked into
      Version Control Systems. -->
     <property file="local.properties" />
+
+  <!-- Create the "local.properties" file in the app's directory. -->
+  <exec command="which android"
+        outputproperty="android.tool.path"
+        failonerror="false"
+        resultproperty="which.android.result"/>
+  <fail message="android tool is not in your command path.  Install the android sdk and add the tools directory to your path.">
+    <condition>
+      <not>
+        <equals arg1="${which.android.result}" arg2="0"/>
+      </not>
+    </condition>
+  </fail>
+  <dirname property="android.tool.dir" file="${android.tool.path}"/>
+  <dirname property="android.sdk.dir" file="${android.tool.dir}"/>
+  <property name="sdk.dir" value="${android.sdk.dir}" />  
 
     <!-- The build.properties file can be created by you and is never touched
          by the 'android' tool. This is the place to change some of the
@@ -81,6 +100,6 @@
              - customize to your needs.
     -->
     <path id="android.libraries.src"><path refid="project.libraries.src" /></path>
-    <path id="android.libraries.jars"><path refid="project.libraries.jars" /></path>
+    <path id="android.libraries.jars"><path refid="project.libraries.jars" /><pathelement path="${ros.classpath}" /></path>
     <setup />
 </project>

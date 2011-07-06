@@ -17,8 +17,12 @@
     <ant dir="apps" target="clean"/>
   </target>
 
-  <target name="compile" depends="init" />
-
+  <target name="compile" depends="init">
+    <subant target="compile">
+      <fileset file="library/build.xml" />
+    </subant>
+  </target>
+    
   <target name="compile-apps" depends="compile">
     <ant dir="apps" target="compile"/>
   </target>

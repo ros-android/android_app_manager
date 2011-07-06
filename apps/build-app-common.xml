@@ -2,8 +2,6 @@
 <!-- build file to be included from each app directory. -->
 <project name="build-app-common">
 
-  <property file="../ros.properties" />
-
   <!-- Create the "local.properties" file in the app's directory. -->
   <exec command="which android"
         outputproperty="android.tool.path"
@@ -27,7 +25,11 @@ sdk.dir=${android.sdk.dir}
   <property name="appmanandroid.root" location="${app.dir}/../.."/>
   <property name="appmanandroid.library" location="${appmanandroid.root}/library"/>
 
+  <property file="${appmanandroid.root}/ros.properties" />
+
   <mkdir dir="${app.dir}/build/libs"/>
+  <echo message="to dir ${app.dir}/build/libs" />
+  <echo message="${ros.jarfileset}" />
   <copy todir="${app.dir}/build/libs" flatten="true">
     <files includes="${ros.jarfileset}" />
   </copy>

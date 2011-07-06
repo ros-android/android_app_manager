@@ -1,5 +1,9 @@
 syntax: glob
 *.class
+.classpath
+.classpath-generated
+.project
+.project-generated
 *.dex
 *.orig
 *.swp
@@ -11,9 +15,11 @@ syntax: glob
 *.apk
 .cproject
 .settings
+ros.properties
 library/libs/*.jar
 syntax: regexp
 build/.*
+bin/.*
 android/(bin|gen)/.*
 (apps/.*|library)/(bin|gen)/.*
 (apps/.*|library)/local.properties

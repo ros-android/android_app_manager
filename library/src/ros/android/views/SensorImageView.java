@@ -41,7 +41,7 @@ import org.ros.message.sensor_msgs.CompressedImage;
 
 /**
  * A camera node that publishes images and camera_info
- * 
+ *
  * @author ethan.rublee@gmail.com (Ethan Rublee)
  */
 public class SensorImageView extends ImageView implements MessageListener<CompressedImage>, Runnable {
@@ -62,12 +62,12 @@ public class SensorImageView extends ImageView implements MessageListener<Compre
   }
 
   public void start(Node node, String topic) throws RosInitException {
-    imageSub = node.createSubscriber(topic, this, CompressedImage.class);
+      imageSub = node.createSubscriber(topic, "sensor_msgs/CompressedImage", this); // todo this??? (the callback)
   }
 
   public void stop() {
     if (imageSub != null) {
-      imageSub.cancel();
+      imageSub.shutdown();
     }
     imageSub = null;
   }

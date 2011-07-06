@@ -102,16 +102,16 @@ public class TfListener {
    */
   public TfListener() {
     frames = new HashMap<String, Frame>();
-  }	
-	
+  }
+
   /**
    * Subscribes to tf on the given Node and starts the listener.
    * Stops any previous subscription first.
-   */	
+   */
   public boolean start(Node node) {
     stop();
     try {
-      tfSubscriber = node.createSubscriber(getTopic(), new MessageListener<tfMessage>() {
+	tfSubscriber = node.createSubscriber(getTopic(), "tf/tfMessage", new MessageListener<tfMessage>() {
           @Override
           public void onNewMessage(final tfMessage msg) {
             if (msg != null) {
@@ -120,28 +120,28 @@ public class TfListener {
               }
             }
           }
-        }, tfMessage.class);
+        });
     } catch (Exception e) {
 //      ros.logError("Main: subscribe to /tf failed");
       return false;
-    }   	
+    }
     return true;
   }
-	
+
   /**
    * Unsubscribe from /tf, but don't erase stored data.
    */
   public void stop() {
     if(tfSubscriber != null) {
-      tfSubscriber.cancel();
+      tfSubscriber.shutdown();
     }
     tfSubscriber = null;
   }
 
   /* **********************************************************************
    * *                            TF LISTENER                             *
-   * ********************************************************************** */	
-	
+   * ********************************************************************** */
+
   /**
    * Converts transform (a geometry msg) to a TransformStorage object and adds it to the buffer.
    */
@@ -166,16 +166,16 @@ public class TfListener {
       errorExists = true;
     }
 
-    if (errorExists) return false;	
-	
+    if (errorExists) return false;
+
     // lookup or insert child frame
     Frame frame = lookupOrInsertFrame(childFrameID);
-	
+
     // convert tf message to JTransform datastructure
     transform.child_frame_id = childFrameID;
     transform.header.frame_id = frameID;
     TransformStorage tf = transformStampedMsgToTF(transform);
-	
+
     // try to insert tf in corresponding time cache. If result is FALSE, the tf contains old data.
     if (!frame.insertData(tf)) {
 //      ros.logWarn("TF_OLD_DATA ignoring data from the past for frame \"" + childFrameID + "\" at time " + ((double)tf.getTimeStamp() / 1E9));
@@ -184,7 +184,7 @@ public class TfListener {
 
     return true;
   }
-	
+
   /**
    * Looks up and returns the frame belonging to the given frame ID.
    * If the frame does not exist yet, it is first added to the map.
@@ -194,28 +194,28 @@ public class TfListener {
     if (frame == null) {
       frame = new Frame(frameID, MAX_STORAGE_TIME);
       frames.put(frameID, frame);
-    }	
+    }
     return frame;
   }
 
   /* **********************************************************************
    * *                         TRANSFORM METHODS                          *
    * ********************************************************************** */
-	
+
   /**
    * Transforms a stamped point to the given target frame, and returns the result in stampedOut.
-   */	
+   */
   public void transformPoint(String targetFrameID, Stamped<Point3d> stampedIn, Stamped<Point3d> stampedOut) {
     StampedTransform transform = lookupTransform(targetFrameID, stampedIn.frameID, stampedIn.timeStamp);
     transform.transformPoint(stampedIn.getData(), stampedOut.getData());
     stampedOut.frameID = targetFrameID;
     stampedOut.timeStamp = stampedIn.timeStamp;
   }
-	
+
   /**
    * Transforms a stamped point to the given target frame and time, based on a given fixed frame, and
    * returns the result in stampedOut.
-   */	
+   */
   public void transformPoint(String targetFrameID, Time targetTime, Stamped<Point3d> stampedIn,
                              String fixedFrameID, Stamped<Point3d> stampedOut) {
     StampedTransform transform = lookupTransform(targetFrameID, targetTime, stampedIn.frameID, stampedIn.timeStamp, fixedFrameID);
@@ -225,18 +225,18 @@ public class TfListener {
   }
   /**
    * Transforms a stamped pose to the given target frame, and returns the result in stampedOut.
-   */ 	
+   */
   public void transformPose(String targetFrameID, Stamped<Matrix4d> stampedIn, Stamped<Matrix4d> stampedOut) {
     StampedTransform transform = lookupTransform(targetFrameID, stampedIn.frameID, stampedIn.timeStamp);
-    transform.transformPose(stampedIn.getData(), stampedOut.getData());	
+    transform.transformPose(stampedIn.getData(), stampedOut.getData());
     stampedOut.frameID = targetFrameID;
     stampedOut.timeStamp = stampedIn.timeStamp;
   }
-	
+
   /**
    * Transforms a stamped pose to the given target frame and time, based on a given fixed frame, and
    * returns the result in stampedOut.
-   */ 	
+   */
   public void transformPose(String targetFrameID, Time targetTime, Stamped<Matrix4d> stampedIn,
                             String fixedFrameID, Stamped<Matrix4d> stampedOut) {
     StampedTransform transform = lookupTransform(targetFrameID, targetTime, stampedIn.frameID, stampedIn.timeStamp, fixedFrameID);
@@ -244,7 +244,7 @@ public class TfListener {
     stampedOut.frameID = targetFrameID;
     stampedOut.timeStamp = stampedIn.timeStamp;
   }
-	
+
   /* **********************************************************************
    * *                          LOOKUP METHODS                            *
    * ********************************************************************** */
@@ -280,12 +280,12 @@ public class TfListener {
 //      ros.logError("Cannot transform: target frame \"" + resolvedTargetID + "\" does not exist.");
       return null;
     }
-	
+
     // list that will contain transformations from source frame to some frame F
     LinkedList<TransformStorage> inverseTransforms = new LinkedList<TransformStorage>();
     // list that will contain transformations from frame F to target frame
     LinkedList<TransformStorage> forwardTransforms = new LinkedList<TransformStorage>();
-	
+
     // fill the lists using lookupLists. If it returns FALSE, no transformation could be found.
     if (!lookupLists(targetFrame, sourceFrame, time.totalNsecs(), inverseTransforms, forwardTransforms)) {
       // TODO give warning
@@ -293,43 +293,43 @@ public class TfListener {
 //                   + resolvedTargetID + "\" are not connected.");
       return null;
     }
-	
+
     // create an identity transform with the correct time stamp
-    StampedTransform out = StampedTransform.getIdentity();	
+    StampedTransform out = StampedTransform.getIdentity();
     out.timeStamp = time;
-	
+
     // multiply all transforms from source frame to frame F TODO: right?
     for(TransformStorage t : inverseTransforms) {
       out.mul(StorageToStampedTransform(t));
     }
-	
+
     // multiply all transforms from frame F to target frame TODO: right?
-    for(TransformStorage t : forwardTransforms) {	
+    for(TransformStorage t : forwardTransforms) {
       out.mul(StorageToStampedTransform(t).invert(), out);
-    }	
-	
+    }
+
     // return transform
     return out;
   }
-	
+
   /**
    * Returns the transform from the specified source frame at sourceTime to the target frame at a given
    * targetTime, based on a given fixed frame; returns null if no transformation could be found.
    */
-  public StampedTransform lookupTransform(String targetID, Time targetTime, String sourceID, Time sourceTime, String fixedID) {	
+  public StampedTransform lookupTransform(String targetID, Time targetTime, String sourceID, Time sourceTime, String fixedID) {
     // lookup transform from source to fixed frame, at sourceTime
     StampedTransform t1 = lookupTransform(fixedID, sourceID, sourceTime);
     // lookup transform from fixed frame to target frame, at targetTime
     StampedTransform t2 = lookupTransform(targetID, fixedID, targetTime);
-	
+
     // if either of the two transformations did not succeed, return null
-    if (t1 == null || t2 == null) return null;	
-	
+    if (t1 == null || t2 == null) return null;
+
     // multiply transformation t2 with t1, and return
     t2.mul(t1);
     return t2;
   }
-	
+
   /**
    * Performs a bi-directional best-first graph search on the tf graph to try to find a path from sourceFrame
    * to targetFrame, at the given time. One priority queue is used to keep a sorted list of all search nodes
@@ -342,7 +342,7 @@ public class TfListener {
    * _children_ are added to the queue. Yet, the tf graph is stored by linking child frames to their _parent_
    * frames, not the other way around. So, if a search node is expanded, the _parent_ frames are added to the
    * queue. This may be a bit confusing.
-   */	
+   */
   protected boolean lookupLists(Frame targetFrame, Frame sourceFrame, long time,
                                 LinkedList<TransformStorage> inverseTransforms, LinkedList<TransformStorage> forwardTransforms) {
 
@@ -481,35 +481,35 @@ public class TfListener {
     }
 
   }
-	
+
   /* **********************************************************************
    * *                          HELPER METHODS                            *
-   * ********************************************************************** */	
-	
+   * ********************************************************************** */
+
   /**
    * Converts the given TransformStamped message to the TransformStorage datastructure
-   */	
+   */
   protected TransformStorage transformStampedMsgToTF(TransformStamped msg) {
     org.ros.message.geometry_msgs.Vector3 tMsg = msg.transform.translation;
-    org.ros.message.geometry_msgs.Quaternion rMsg = msg.transform.rotation;	
-	
+    org.ros.message.geometry_msgs.Quaternion rMsg = msg.transform.rotation;
+
     // add frames to map
     Frame childFrame = lookupOrInsertFrame(msg.child_frame_id);
     Frame parentFrame = lookupOrInsertFrame(msg.header.frame_id);
-	
+
     return new TransformStorage(new Vector3d(tMsg.x, tMsg.y, tMsg.z),
                                 new Quat4d(rMsg.x, rMsg.y, rMsg.z, rMsg.w),
                                 msg.header.stamp.totalNsecs(),
                                 parentFrame, childFrame);
   }
-	
+
   /**
    * Converts the given TransformStorage datastructure to a TransformStamped message
-   */ 	
+   */
   protected TransformStamped TFToTransformStampedMsg(TransformStorage tf) {
     Vector3d tTF = tf.getTranslation();
     Quat4d rTF = tf.getRotation();
-	
+
     // convert quaternion and translation vector to corresponding messages
     org.ros.message.geometry_msgs.Vector3 tMsg = new org.ros.message.geometry_msgs.Vector3();
     org.ros.message.geometry_msgs.Quaternion rMsg = new org.ros.message.geometry_msgs.Quaternion();
@@ -517,16 +517,16 @@ public class TfListener {
     rMsg.x = rTF.x; rMsg.y = rTF.y; rMsg.z = rTF.z; rMsg.w = rTF.w;
 
     // create TransformStamped message
-    TransformStamped msg = new TransformStamped();	
+    TransformStamped msg = new TransformStamped();
     msg.header.frame_id = tf.getParentFrame().getFrameID();
     msg.header.stamp = new Time(tf.getTimeStamp());
     msg.child_frame_id = tf.getChildFrame().getFrameID();
     msg.transform.translation = tMsg;
     msg.transform.rotation = rMsg;
-	
+
     return msg;
   }
-	
+
   /**
    * Converts the TransformStorage datastructure (represented by quaternion and vector) to
    * the StampedTransform datastructure (represented by a 4x4 matrix)
@@ -535,44 +535,44 @@ public class TfListener {
     return new StampedTransform(ts.getTranslation(), ts.getRotation(), new Time(ts.getTimeStamp()),
                                 ts.getParentFrame().getFrameID(), ts.getChildFrame().getFrameID());
   }
-	
+
   /**
    * Returns the resolves version of the given frame ID, and asserts a debug message if the name
    * was not fully resolved.
-   */ 	
+   */
   private String assertResolved(String prefix, String frameID) {
     if (!frameID.startsWith("/")) {
 //      ros.logDebug("TF operating on not fully resolved frame id " + frameID +", resolving using local prefix " + prefix);
     }
     return resolve(prefix, frameID);
   }
-	
+
   /**
    * Returns the resolves version of the given frame ID.
-   */	
-  private static String resolve(String prefix, String frameID)	{			
+   */
+  private static String resolve(String prefix, String frameID)	{
     if (frameID.startsWith("/")) {
-      return frameID;			
-    }	
-		
+      return frameID;
+    }
+
     if (prefix.length() > 0) {
       if (prefix.startsWith("/")) {
         return prefix + "/" + frameID;
       } else {
         return "/" + prefix + "/" + frameID;
       }
-    }  else {		
-      return "/" + frameID;			
+    }  else {
+      return "/" + frameID;
     }
-  }	
-	
+  }
+
   /* Returns the tf prefix from the parameter list
    *
    * TODO: does not work yet
    private static String getPrefixParam(NodeHandle nh) {
    String param;
    if (!nh.hasParam("tf_prefix")) return "";
-		
+
    try {
    return nh.getStringParam("tf_prefix", false);
    } catch (Exception e) {
@@ -580,6 +580,6 @@ public class TfListener {
    }
    return "";
    }
-  */	
-	
+  */
+
 }

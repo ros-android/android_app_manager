@@ -97,7 +97,8 @@ public class SetInitialPoseDisplay extends PoseInputDisplay {
   @Override
   public void start( Node node ) throws RosInitException {
     super.start( node );
-    initialPosePublisher = node.createPublisher( initialPoseTopic, PoseWithCovarianceStamped.class );
+    initialPosePublisher =
+	node.createPublisher( initialPoseTopic, "geometry_msgs/PoseWithCovarianceStamped" );
   }
 
   @Override
@@ -113,7 +114,7 @@ public class SetInitialPoseDisplay extends PoseInputDisplay {
     if( initialPosePublisher == null ) {
       return;
     }
-    
+
     PoseWithCovarianceStamped initialPose = new PoseWithCovarianceStamped();
     initialPose.header.frame_id = fixedFrame;
     initialPose.pose.pose.position.x = x;
@@ -126,7 +127,7 @@ public class SetInitialPoseDisplay extends PoseInputDisplay {
     initialPose.pose.covariance[6*0+0] = 0.5 * 0.5; // X uncertainty
     initialPose.pose.covariance[6*1+1] = 0.5 * 0.5; // Y uncertainty
     initialPose.pose.covariance[6*5+5] = (float)(Math.PI/12.0 * Math.PI/12.0);  // uncertainty of rotation about Z axis
-      
+
     Log.i("SetInitialPoseDisplay", "Sending initial pose");
     initialPosePublisher.publish( initialPose );
   }

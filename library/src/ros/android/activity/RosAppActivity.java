@@ -37,6 +37,7 @@ import android.util.Log;
 import org.ros.Node;
 import org.ros.exception.RosInitException;
 import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
+import org.ros.internal.namespace.GraphName;
 import org.ros.namespace.NameResolver;
 import ros.android.util.RobotDescription;
 
@@ -71,7 +72,9 @@ public class RosAppActivity extends RosActivity {
       throw new RosInitException("no robot available");
     }
     NameResolver resolver = node.getResolver();
-    return resolver.createResolver(NameResolver.join(robotDescription.getRobotName(), "application"));
+    GraphName name = new GraphName(robotDescription.getRobotName());
+    name.join(new GraphName("application"));
+    return resolver.createResolver(name);
   }
 
   @Override

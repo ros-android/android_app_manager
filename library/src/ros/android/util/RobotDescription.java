@@ -95,7 +95,7 @@ public class RobotDescription implements java.io.Serializable {
 
   public void setRobotName(String robotName) throws InvalidRobotDescriptionException {
     try {
-      GraphName.validateName(robotName);
+      GraphName.validate(robotName);
     } catch (RosNameException e) {
       throw new InvalidRobotDescriptionException("Bad robot name: " + robotName);
     }

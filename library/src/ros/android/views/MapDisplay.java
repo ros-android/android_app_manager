@@ -66,7 +66,8 @@ public class MapDisplay extends PanZoomDisplay {
 
   @Override
   public void start( Node node ) throws RosInitException {
-    mapSubscriber = node.createSubscriber(mapTopic, new MessageListener<OccupancyGrid>() {
+      mapSubscriber = node.createSubscriber(mapTopic, "nav_msgs/OccupancyGrid",
+					    new MessageListener<OccupancyGrid>() {
         @Override
         public void onNewMessage(final OccupancyGrid msg) {
           getParent().post(new Runnable() {
@@ -76,13 +77,13 @@ public class MapDisplay extends PanZoomDisplay {
               }
             });
         }
-      }, OccupancyGrid.class);
+      });
   }
 
   @Override
   public void stop() {
     if(mapSubscriber != null) {
-      mapSubscriber.cancel();
+      mapSubscriber.shutdown();
     }
     mapSubscriber = null;
   }

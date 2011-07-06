@@ -41,8 +41,11 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import ros.android.util.WiFiChecker;
+import ros.android.util.ControlChecker;
 import ros.android.util.MasterChecker;
 import ros.android.util.RobotDescription;
+import android.net.wifi.WifiManager;
 
 /**
  * Data class behind view of one item in the list of ROS Masters. Gets created
@@ -52,7 +55,10 @@ import ros.android.util.RobotDescription;
  * @author hersh@willowgarage.com
  */
 public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
-    MasterChecker.FailureHandler {
+                                   MasterChecker.FailureHandler,
+                                   ControlChecker.SuccessHandler,
+                                   ControlChecker.FailureHandler {
+  private ControlChecker controlChecker;
   private MasterChecker checker;
   private View view;
   private RobotDescription description;
@@ -64,12 +70,29 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
     this.parentMca = parentMca;
     this.description = robotDescription;
     this.description.setConnectionStatus(RobotDescription.CONNECTING);
-    checker = new MasterChecker(this, this);
-    checker.beginChecking(this.description.getRobotId());
+    if (ros.android.util.WiFiChecker.wifiValid(this.description.getRobotId(), 
+                        (WifiManager)parentMca.getSystemService(parentMca.WIFI_SERVICE))) {
+      checker = new MasterChecker(this, this);
+      if (this.description.getRobotId().getControlUri() != null) {
+        controlChecker = new ControlChecker(this, this);
+        controlChecker.beginChecking(this.description.getRobotId());
+      } else {
+        checker.beginChecking(this.description.getRobotId());
+      }
+    } else {
+      errorReason = "Wrong WiFi Network";
+      description.setConnectionStatus(RobotDescription.ERROR);
+      safePopulateView();
+    }
   }
 
   public boolean isOk() {
     return this.description.getConnectionStatus().equals(RobotDescription.OK);
+  }
+
+  @Override
+  public void handleSuccess() {
+    checker.beginChecking(this.description.getRobotId());
   }
 
   @Override

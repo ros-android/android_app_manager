@@ -33,7 +33,14 @@ sdk.dir=${android.sdk.dir}
   <copy todir="${app.dir}/build/libs" flatten="true">
     <files includes="${ros.jarfileset}" />
   </copy>
-  
+  <!-- Needed to delete two jar files that interfere with eachother. 
+       Hopefully this can be removed in the future. -->
+  <delete>
+    <fileset dir="${app.dir}/build/libs" includes="mockito**.jar"/>
+  </delete>
+  <delete>
+    <fileset dir="${app.dir}/build/libs" includes="junit**.jar"/>
+  </delete>
   <property name="external.libs.dir" location="${app.dir}/build/libs" />
   <property name="jar.libs.dir" location="${app.dir}/build/libs" />
 

@@ -38,6 +38,7 @@ sdk.dir=${android.sdk.dir}
   <!-- This imports the android-generated build file for the app. -->
   <import file="${app.dir}/build.xml"/>
 
+  <echo message="project.libraries.src ${appmanandroid.library}/src"/>
   <path id="project.libraries.src">
     <pathelement location="${appmanandroid.library}/src"/>
   </path>

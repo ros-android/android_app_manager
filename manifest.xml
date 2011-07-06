@@ -25,4 +25,8 @@
   <depend package="geometry_msgs"/>
   <depend package="tf"/>
 
+  <export>
+    <rosjava-src location="library/src" />
+  </export>
+  
 </package>

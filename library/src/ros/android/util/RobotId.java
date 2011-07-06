@@ -75,6 +75,18 @@ public class RobotId implements java.io.Serializable {
   public String getMasterUri() {
     return masterUri;
   }
+  public String getControlUri() {
+    return controlUri;
+  }
+  public String getWifi() {
+    return wifi;
+  }
+  public String getWifiEncryption() {
+    return wifiEncryption;
+  }
+  public String getWifiPassword() {
+    return wifiPassword;
+  }
 
   //TODO: not needed?
   private boolean nullSafeEquals(Object a, Object b) {

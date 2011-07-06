@@ -33,8 +33,11 @@
 
 package ros.android.activity;
 
+import android.app.AlertDialog;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.DialogInterface;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
@@ -43,9 +46,15 @@ import android.widget.Toast;
 import org.ros.DefaultNode;
 import org.ros.Node;
 import org.ros.exception.RosInitException;
+import ros.android.util.RobotId;
 import ros.android.util.MasterChooser;
+import ros.android.util.MasterChecker;
+import ros.android.util.WiFiChecker;
+import ros.android.util.ControlChecker;
 import ros.android.util.RobotDescription;
 import org.ros.NodeConfiguration;
+import java.lang.Runnable;
+import android.net.wifi.WifiManager;
 
 /**
  *
@@ -118,6 +127,86 @@ public class RosActivity extends Activity {
   }
 
   /**
+   * Wraps the alert dialog so it can be used as a yes/no function
+   */
+  private class AlertDialogWrapper {
+    private int state;
+    private AlertDialog dialog;
+    private RosActivity context;
+
+    public AlertDialogWrapper(RosActivity context, AlertDialog.Builder builder, String yesButton, String noButton) {
+      state = 0;
+      this.context = context;
+      dialog = builder.setPositiveButton(yesButton, new DialogInterface.OnClickListener() {
+                              public void onClick(DialogInterface dialog, int which) { state = 1; }})
+                      .setNegativeButton(noButton, new DialogInterface.OnClickListener() {
+                              public void onClick(DialogInterface dialog, int which) { state = 2; }})
+                      .create();
+    }
+
+    public AlertDialogWrapper(RosActivity context, AlertDialog.Builder builder, String okButton) {
+      state = 0;
+      this.context = context;
+      dialog = builder.setNeutralButton(okButton, new DialogInterface.OnClickListener() {
+                              public void onClick(DialogInterface dialog, int which) { state = 1; }})
+                      .create();
+    }
+
+
+    public void setMessage(String m) {
+      dialog.setMessage(m);
+    }
+
+    public boolean show(String m) {
+      setMessage(m);
+      return show();
+    }
+
+    public boolean show() {
+      state = 0;
+      context.runOnUiThread(new Runnable() { 
+          public void run() {
+            dialog.show();
+          }});
+      //Kind of a hack. Do we know a better way?
+      while (state == 0) {
+        try {
+          Thread.sleep(1L);
+        } catch (Exception e) {
+          break;
+        }
+      }
+      return state == 1;
+    }
+    
+  }
+
+  private class ProgressDialogWrapper {
+    private ProgressDialog progress;
+    private RosActivity activity;
+
+    public ProgressDialogWrapper(RosActivity activity) {
+      this.activity = activity;
+      progress = null;
+    }
+
+    public void dismiss() {
+      if (progress != null) {
+        progress.dismiss();
+      }
+      progress = null;
+    }
+
+    public void show(String title, String text) {
+      if (progress != null) {
+        this.dismiss();
+      }
+      progress = ProgressDialog.show(activity, title, text, true, false);
+      progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+    }
+  }
+
+  /**
    * Read the current ROS master URI from external storage and set up the ROS
    * node from the resulting node context. If the current master is not set or
    * is invalid, launch the MasterChooserActivity to choose one or scan a new
@@ -128,11 +217,157 @@ public class RosActivity extends Activity {
     super.onResume();
     if (node == null) {
       masterChooser.loadCurrentRobot();
-      if (masterChooser.hasRobot()) {
-        Toast.makeText(this, "attaching to robot", Toast.LENGTH_SHORT).show();
-        createNode();
+      if (masterChooser.hasRobot()) { //A robot is in the current robot YAML file
+        final RobotId id = masterChooser.getCurrentRobot().getRobotId(); //Used in the classes below to find the robot id.
+
+        //Create alert dialog to see if the user wants to switch WiFi networks.
+        final AlertDialogWrapper wifiDialog =  new AlertDialogWrapper(this,
+                   new AlertDialog.Builder(this).setTitle("Change Wifi?").setCancelable(false),
+                   "Yes", "No");
+        
+        //Create alert dialog to see if the user wants to evict another user.
+        final AlertDialogWrapper evictDialog =  new AlertDialogWrapper(this,
+                   new AlertDialog.Builder(this).setTitle("Evict User?").setCancelable(false),
+                   "Yes", "No");
+
+        //Create alert dialog for issues.
+        final AlertDialogWrapper errorDialog =  new AlertDialogWrapper(this,
+                   new AlertDialog.Builder(this).setTitle("Could Not Connect").setCancelable(false),
+                   "Ok");
+
+        //Create the progress bar
+        final ProgressDialogWrapper progress = new ProgressDialogWrapper(this);
+
+        //Run a set of checkers in series.
+
+        //The last step - ensure the master is up.
+        final MasterChecker mc = new MasterChecker(
+             new MasterChecker.RobotDescriptionReceiver() {
+               public void receive(RobotDescription robotDescription) {
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                     }});
+                 createNode();
+               }
+             },
+             new MasterChecker.FailureHandler() {
+               public void handleFailure(String reason) {
+                 final String reason2 = reason;
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                     }
+                   });
+                 errorDialog.show("Cannot contact ROS master: " + reason2);
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       masterChooser.launchChooserActivity();
+                     }
+                   });
+               }
+             });
+
+        //Ensure the robot is in a good state
+        final ControlChecker cc = new ControlChecker(
+             new ControlChecker.SuccessHandler() {
+               public void handleSuccess() {
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                       progress.show("Connecting...", "Connecting to ROS master");
+                     }});
+                 mc.beginChecking(id);
+               }
+             },
+             new ControlChecker.FailureHandler() {
+               public void handleFailure(String reason) {
+                 final String reason2 = reason;
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                     }
+                   });
+                 errorDialog.show("Cannot connect to control robot: " + reason2);
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       masterChooser.launchChooserActivity();
+                     }
+                   });
+               }
+             },
+             new ControlChecker.EvictionHandler() {
+               public boolean doEviction(String current) {
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                     }});
+                 evictDialog.setMessage(current + " is running custom software on this robot. Do you want to evict this user?");
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.show("Connecting...", "Deactivating robot");
+                     }});
+                 return evictDialog.show();
+               }
+             },
+             new ControlChecker.StartHandler() {
+               public void handleStarting() {
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                       progress.show("Connecting...", "Starting robot");
+                     }});
+               }
+             });
+
+        //Ensure that the correct WiFi network is selected.
+        final WiFiChecker wc = new WiFiChecker(
+             new WiFiChecker.SuccessHandler() {
+               public void handleSuccess() {
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                       progress.show("Connecting...", "Checking robot state");
+                     }});
+                 cc.beginChecking(id);
+               }
+             },
+             new WiFiChecker.FailureHandler() {
+               public void handleFailure(String reason) {
+                 final String reason2 = reason;
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                     }
+                   });
+                 errorDialog.show("Cannot connect to robot WiFi: " + reason2);
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       masterChooser.launchChooserActivity();
+                     }
+                   });
+               }
+             },
+             new WiFiChecker.ReconnectionHandler() {
+               public boolean doReconnection(String from, String to) {
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.dismiss();
+                     }});
+                 wifiDialog.setMessage("To use this robot, you must switch wifi networks. Do you want to switch from " + from + " to " + to + "?");
+                 runOnUiThread(new Runnable() { 
+                     public void run() {
+                       progress.show("Connecting...", "Switching wifi networks");
+                     }});
+                 return wifiDialog.show();
+               }
+             });
+
+        progress.show("Connecting...", "Checking wifi connection");
+        //Start the checkers.
+        wc.beginChecking(id, (WifiManager)getSystemService(WIFI_SERVICE));
       } else {
-        Toast.makeText(this, "finding a robot", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "please select a robot", Toast.LENGTH_SHORT).show();
         // we don't have a master yet.
         masterChooser.launchChooserActivity();
       }

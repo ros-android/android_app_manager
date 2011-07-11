@@ -401,9 +401,14 @@ public class RosActivity extends Activity {
   }
 
   private void controlTerminate() {
+    final ProgressDialogWrapper progress = new ProgressDialogWrapper(this);
     if (getCurrentRobot() != null) {
       if (getCurrentRobot().getRobotId() != null) {
         if (getCurrentRobot().getRobotId().getControlUri() != null) {
+          runOnUiThread(new Runnable() { 
+              public void run() {
+                progress.show("Deactivating...", "Deactivating robot");
+              }});
           String uri = getCurrentRobot().getRobotId().getControlUri() + "?action=STOP_ROBOT";
           try {
             HttpClient client = new DefaultHttpClient();
@@ -427,6 +432,10 @@ public class RosActivity extends Activity {
           } catch (java.net.URISyntaxException ex) {
             Log.e("RosActivity", "URI Invalid: " + uri, ex);
           }
+          runOnUiThread(new Runnable() { 
+              public void run() {
+                progress.dismiss();
+              }});
         }
       }
     }

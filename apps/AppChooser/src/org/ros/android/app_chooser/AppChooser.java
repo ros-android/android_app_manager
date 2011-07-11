@@ -52,6 +52,8 @@ import org.ros.message.app_manager.AppList;
 import ros.android.activity.RosAppActivity;
 import android.widget.LinearLayout;
 import ros.android.util.Dashboard;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 
 import java.util.ArrayList;
 
@@ -65,6 +67,7 @@ public class AppChooser extends RosAppActivity {
   private long availableAppsCacheTime;
   private Dashboard.DashboardInterface dashboard;
   private TextView robotNameView;
+  private Button deactivate;
 
   public AppChooser() {
     availableAppsCache = new ArrayList<App>();
@@ -78,7 +81,7 @@ public class AppChooser extends RosAppActivity {
     setContentView(R.layout.main);
     robotNameView = (TextView) findViewById(R.id.robot_name_view);
 
-    Button deactivate = (Button) findViewById(R.id.deactivate_robot);
+    deactivate = (Button) findViewById(R.id.deactivate_robot);
     deactivate.setVisibility(deactivate.GONE);
   }
 
@@ -133,6 +136,13 @@ public class AppChooser extends RosAppActivity {
             top.removeView((View)dashboard);
           }});
       dashboard = null;
+    }
+    if (getCurrentRobot().getRobotId().getControlUri() != null) {
+      runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            deactivate.setVisibility(deactivate.VISIBLE);
+          }});
     }
     dashboard = Dashboard.createDashboard(node, this);
     
@@ -190,6 +200,11 @@ public class AppChooser extends RosAppActivity {
   protected void onNodeDestroy(Node node) {
     Log.i("RosAndroid", "onNodeDestroy");
     super.onNodeDestroy(node);
+    runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          deactivate.setVisibility(deactivate.GONE);
+        }});
     if (dashboard != null) {
       dashboard.stop();
       runOnUiThread(new Runnable() {
@@ -206,7 +221,14 @@ public class AppChooser extends RosAppActivity {
   }
 
   public void deactivateRobotClicked(View view) {
-    terminateRobot();
+    new AlertDialog.Builder(this).setTitle("De-activate Robot").setCancelable(false)
+      .setMessage("Are you sure you want to deactivate the robot? This will power down the"
+                  + " robot's arms and allow others to run custom software on it.")
+      .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+          public void onClick(DialogInterface dialog, int which) { terminateRobot(); }})
+      .setNegativeButton("No", new DialogInterface.OnClickListener() {
+          public void onClick(DialogInterface dialog, int which) { }})
+      .create().show();
   }
 
   private void setStatus(String status_message) {

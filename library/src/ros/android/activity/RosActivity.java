@@ -56,6 +56,15 @@ import org.ros.NodeConfiguration;
 import java.lang.Runnable;
 import android.net.wifi.WifiManager;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URI;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 /**
  *
  * @author hersh@willowgarage.com
@@ -70,8 +79,11 @@ public class RosActivity extends Activity {
   private String errorMessage;
   private Handler uiThreadHandler = new Handler();
   private Thread nodeThread;
+  private boolean doShutdown = false;
+  private boolean doTerminate = false;
 
   public RosActivity() {
+    doShutdown = false;
     masterChooser = new MasterChooser(this);
   }
 
@@ -94,6 +106,17 @@ public class RosActivity extends Activity {
   public RobotDescription getCurrentRobot() {
     return masterChooser.getCurrentRobot();
   }
+
+  public void shutdownRobot() {
+    Log.i("RosActivity", "Shutting down robot");
+    doShutdown = true;
+  }
+  public void terminateRobot() {
+    Log.i("RosActivity", "Shutting down and terminating robot");
+    doShutdown = true;
+    doTerminate = true;
+  }
+
 
   /**
    * Re-launch the MasterChooserActivity to choose a new ROS master. The results
@@ -214,6 +237,9 @@ public class RosActivity extends Activity {
    */
   @Override
   protected void onResume() {
+    doShutdown = false;
+    doTerminate = false;
+
     super.onResume();
     if (node == null) {
       masterChooser.loadCurrentRobot();
@@ -374,6 +400,38 @@ public class RosActivity extends Activity {
     }
   }
 
+  private void controlTerminate() {
+    if (getCurrentRobot() != null) {
+      if (getCurrentRobot().getRobotId() != null) {
+        if (getCurrentRobot().getRobotId().getControlUri() != null) {
+          String uri = getCurrentRobot().getRobotId().getControlUri() + "?action=STOP_ROBOT";
+          try {
+            HttpClient client = new DefaultHttpClient();
+            HttpGet request = new HttpGet();
+            request.setURI(new URI(uri));
+            HttpResponse response = client.execute(request);
+            BufferedReader in = new BufferedReader
+              (new InputStreamReader(response.getEntity().getContent()));
+            StringBuffer sb = new StringBuffer("");
+            String line = "";
+            String NL = System.getProperty("line.separator");
+            while ((line = in.readLine()) != null) {
+              sb.append(line + NL);
+            }
+            in.close();
+            String page = sb.toString();
+            Log.d("RosActivity", "Shutdown: " + uri);
+            Log.d("RosActivity", page);
+          } catch (java.io.IOException ex) {
+            Log.e("RosActivity", "IOError: " + uri, ex);
+          } catch (java.net.URISyntaxException ex) {
+            Log.e("RosActivity", "URI Invalid: " + uri, ex);
+          }
+        }
+      }
+    }
+  }
+
   /**
    * Sets up nodeThread and starts ROS {@link Node}.
    */
@@ -396,15 +454,24 @@ public class RosActivity extends Activity {
         if( node != null ) {
           onNodeCreate(node);
           try {
-            while (true) {
+            while (!doShutdown) {
               Thread.sleep(10);
             }
           } catch (InterruptedException e) {
             Log.i("RosAndroid", "node thread exiting");
           }
+          Log.i("RosAndroid", "Shutting down");
           onNodeDestroy(node);
           node.shutdown();
           node = null;
+          if (doShutdown) {
+            if (doTerminate) {
+              controlTerminate();
+            }
+            masterChooser.setCurrentRobot(null);
+            masterChooser.saveCurrentRobot();
+            chooseNewMaster();
+          }
         }
       }
     };

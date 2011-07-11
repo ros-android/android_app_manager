@@ -33,6 +33,7 @@
 
 package ros.android.views;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
@@ -40,6 +41,7 @@ import android.util.Log;
 import ros.android.util.Dashboard;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -54,45 +56,71 @@ import org.ros.ServiceClient;
 import org.ros.message.diagnostic_msgs.DiagnosticArray;
 import org.ros.message.diagnostic_msgs.DiagnosticStatus;
 import org.ros.message.diagnostic_msgs.KeyValue;
+import org.ros.message.pr2_msgs.DashboardState;
 import org.ros.message.turtlebot_node.TurtlebotSensorState;
 import org.ros.namespace.NameResolver;
 import org.ros.internal.namespace.GraphName;
 import org.ros.service.turtlebot_node.SetDigitalOutputs;
 import org.ros.service.turtlebot_node.SetTurtlebotMode;
+import org.ros.service.std_srvs.Empty;
+import org.ros.service.pr2_power_board.PowerBoardCommand;
 import ros.android.activity.R;
+import android.content.DialogInterface;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class TurtlebotDashboard extends android.widget.LinearLayout implements Dashboard.DashboardInterface {
+public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboard.DashboardInterface {
   private ImageButton modeButton;
   private ProgressBar modeWaitingSpinner;
   private BatteryLevelView robotBattery;
-  private BatteryLevelView laptopBattery;
+  private BatteryLevelView laptopBattery; //TRASH
+  private ImageView wirelessEstop;
+  private ImageView physicalEstop;
+  private Context context; //TRASH
+
+  private enum Pr2RobotState {
+    UNKNOWN,
+    ANY,
+    NONE,
+    BREAKERS_OUT,
+    MOTORS_OUT, 
+    WORKING
+  }
+  private Pr2RobotState state = Pr2RobotState.UNKNOWN;
+  private Pr2RobotState waitingState = Pr2RobotState.ANY;
+  private int nBreakers;
+  private long serialNumber;
 
   private Node node;
-  private Subscriber<DiagnosticArray> diagnosticSubscriber;
+  private Subscriber<DashboardState> dashboardSubscriber;
 
+  private boolean clickOnTransition = false;
+  AlertDialog.Builder alertBuilder;
+
+  //TRASH
   private boolean powerOn = false;
   private int numModeResponses;
   private int numModeErrors;
 
-  public TurtlebotDashboard(Context context) {
+  public Pr2Dashboard(Context context) {
     super(context);
+    this.context = context;
     inflateSelf(context);
   }
 
-  public TurtlebotDashboard(Context context, AttributeSet attrs) {
+  public Pr2Dashboard(Context context, AttributeSet attrs) {
     super(context, attrs);
+    this.context = context;
     inflateSelf(context);
   }
 
   private void inflateSelf(Context context) {
     LayoutInflater inflater =
         (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    inflater.inflate(R.layout.turtlebot_dashboard, this);
+    inflater.inflate(R.layout.pr2_dashboard, this);
 
-    modeButton = (ImageButton) findViewById(R.id.mode_button);
+    modeButton = (ImageButton) findViewById(R.id.pr2_mode_button);
     modeButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -100,49 +128,57 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
       }
     });
 
-    modeWaitingSpinner = (ProgressBar) findViewById(R.id.mode_waiting_spinner);
+    modeWaitingSpinner = (ProgressBar) findViewById(R.id.pr2_mode_waiting_spinner);
     modeWaitingSpinner.setIndeterminate(true);
     modeWaitingSpinner.setVisibility(View.GONE);
+    setModeWaiting(true);
 
-    robotBattery = (BatteryLevelView) findViewById(R.id.robot_battery);
-    laptopBattery = (BatteryLevelView) findViewById(R.id.laptop_battery);
+    robotBattery = (BatteryLevelView) findViewById(R.id.pr2_robot_battery);
+    wirelessEstop = (ImageView) findViewById(R.id.pr2_wireless_estop);
+    physicalEstop = (ImageView) findViewById(R.id.pr2_physical_estop);
+
+    state = Pr2RobotState.UNKNOWN;
+    waitingState = Pr2RobotState.ANY;
+    clickOnTransition = false;
+
+    alertBuilder = new AlertDialog.Builder(context).setTitle("Error").setCancelable(false)
+                           .setNeutralButton("Dismiss", new DialogInterface.OnClickListener() {
+                               public void onClick(DialogInterface dialog, int which) {}});
   }
 
   /**
    * Set the ROS Node to use to get status data and connect it up. Disconnects
    * the previous node if there was one.
    */
-  @Override
   public void start(Node node) throws RosInitException {
     stop();
     this.node = node;
     try {
-      diagnosticSubscriber =
-          node.createSubscriber("diagnostics_agg", "diagnostic_msgs/DiagnosticArray", new MessageListener<DiagnosticArray>() {
+      dashboardSubscriber =
+          node.createSubscriber("dashboard_agg", "pr2_msgs/DashboardState", new MessageListener<DashboardState>() {
             @Override
-            public void onNewMessage(final DiagnosticArray msg) {
-              TurtlebotDashboard.this.post(new Runnable() {
+            public void onNewMessage(final DashboardState msg) {
+              Pr2Dashboard.this.post(new Runnable() {
                 @Override
                 public void run() {
-                  TurtlebotDashboard.this.handleDiagnosticArray(msg);
+                  Pr2Dashboard.this.handleDashboardState(msg);
                 }
               });
             }
-          });
+            });
 
-      NameResolver resolver = node.getResolver().createResolver(new GraphName("/turtlebot_node"));
+      NameResolver resolver = node.getResolver().createResolver(new GraphName("/"));
     } catch( Exception ex ) {
       this.node = null;
       throw( new RosInitException( ex ));
     }
   }
 
-  @Override
   public void stop() {
-    if(diagnosticSubscriber != null) {
-      diagnosticSubscriber.shutdown();
+    if(dashboardSubscriber != null) {
+      dashboardSubscriber.shutdown();
     }
-    diagnosticSubscriber = null;
+    dashboardSubscriber = null;
     node = null;
   }
 
@@ -150,23 +186,124 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
    * Populate view with new diagnostic data. This must be called in the UI
    * thread.
    */
-  private void handleDiagnosticArray(DiagnosticArray msg) {
-    String mode = null;
-    for (DiagnosticStatus status : msg.status) {
-      if (status.name.equals("/Power System/Battery")) {
-        populateBatteryFromStatus(robotBattery, status);
-      }
-      if (status.name.equals("/Power System/Laptop Battery")) {
-        populateBatteryFromStatus(laptopBattery, status);
-      }
-      if (status.name.equals("/Mode/Operating Mode")) {
-        mode = status.message;
+  private void handleDashboardState(DashboardState msg) {
+    robotBattery.setBatteryPercent((int)msg.power_state.relative_capacity);
+    robotBattery.setPluggedIn(msg.power_state.AC_present != 0);
+
+    if (msg.power_board_state.wireless_stop == false) {
+      physicalEstop.setColorFilter(Color.GRAY);
+      wirelessEstop.setColorFilter(Color.RED);
+    } else {
+      wirelessEstop.setColorFilter(Color.GREEN);
+      if (msg.power_board_state.run_stop == true) {
+        physicalEstop.setColorFilter(Color.GREEN);
+      } else {
+        physicalEstop.setColorFilter(Color.RED);
       }
     }
-    showMode(mode);
+
+    Pr2RobotState previous_state = state;
+
+    boolean breaker_state = true;
+    if (msg.power_board_state_valid == true && msg.power_board_state_valid == true) {
+      for (int i = 0; i < msg.power_board_state.circuit_state.length; i++) {
+        if (msg.power_board_state.circuit_state[i] != 3) { //Breaker invalid
+          breaker_state = false;
+        }
+      }
+      nBreakers = msg.power_board_state.circuit_state.length;
+      serialNumber = msg.power_board_state.serial_num;
+    } else {
+      breaker_state = false;
+    }
+
+    if (breaker_state == false) {
+      modeButton.setColorFilter(Color.RED);
+      state = Pr2RobotState.BREAKERS_OUT;
+    } else {
+      if (msg.motors_halted_valid == true && msg.motors_halted.data == true) {
+        modeButton.setColorFilter(Color.YELLOW);
+        state = Pr2RobotState.MOTORS_OUT;
+      } else { //FIXME: diagnostics
+        modeButton.setColorFilter(Color.GREEN);
+        state = Pr2RobotState.WORKING;
+      }
+    }
+
+    if (state != previous_state) {
+      if ((state == waitingState || waitingState == Pr2RobotState.ANY) && waitingState != Pr2RobotState.NONE) {
+        setModeWaiting(false);
+        waitingState = Pr2RobotState.NONE;
+      }
+      if (clickOnTransition) {
+        clickOnTransition = false;
+        onModeButtonClicked();
+      }
+    }
+
   }
 
   private void onModeButtonClicked() {
+    switch (state) {
+    case BREAKERS_OUT:
+      waitingState = Pr2RobotState.MOTORS_OUT;
+      setModeWaiting(true);
+      clickOnTransition = true;
+      //Send reset to the breakers.
+      for (int i = 0; i < nBreakers; i++) { //FIXME: hack for number of breakers
+        PowerBoardCommand.Request modeRequest = new PowerBoardCommand.Request();
+        modeRequest.breaker_number = i;
+        modeRequest.command = "start";
+        modeRequest.serial_number = serialNumber;
+        ServiceClient<PowerBoardCommand.Request, PowerBoardCommand.Response> modeServiceClient =
+            node.createServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
+        modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommand.Response>() {
+            @Override
+            public void onSuccess(PowerBoardCommand.Response message) { } //Diagnostics will update. 
+            @Override
+            public void onFailure(Exception ex) {
+              final Exception e = ex;
+              Pr2Dashboard.this.post(new Runnable() {
+                  public void run() {
+                    alertBuilder.setMessage("Cannot reset the breakers: " + e.toString()).show();
+                  }});
+            }});
+      }
+      break;
+    case MOTORS_OUT:
+      waitingState = Pr2RobotState.WORKING;
+      setModeWaiting(true);
+      //Send reset to the motors.
+      Empty.Request modeRequest = new Empty.Request();
+      ServiceClient<Empty.Request, Empty.Response> modeServiceClient =
+	      node.createServiceClient("pr2_etherCAT/reset_motors", "std_srvs/Empty");
+      modeServiceClient.call(modeRequest, new ServiceResponseListener<Empty.Response>() {
+          @Override
+          public void onSuccess(Empty.Response message) { } //Diagnostics will update. 
+          @Override
+          public void onFailure(Exception ex) {
+            final Exception e = ex;
+            Pr2Dashboard.this.post(new Runnable() {
+                public void run() {
+                  alertBuilder.setMessage("Cannot reset the motors: " + e.toString()).show();
+                }});
+          }});
+      break;
+    case WORKING:
+      //Nothing to do. We only shutdown the PR2 using the app chooser, because it is different.
+      waitingState = Pr2RobotState.WORKING;
+      break;
+    default:
+      Pr2Dashboard.this.post(new Runnable() {
+          public void run() {
+            alertBuilder.setMessage("Robot is in an unknown or invalid state. Please wait and try again.").show();
+          }});
+      break;
+    }
+  }
+  
+  private void foo() {
+
       powerOn = !powerOn;
 
       SetTurtlebotMode.Request modeRequest = new SetTurtlebotMode.Request();
@@ -247,54 +384,4 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
       });
   }
 
-  private void showMode(String mode) {
-    if (mode == null) {
-      modeButton.setColorFilter(Color.GRAY);
-    } else if (mode.equals("Full")) {
-      modeButton.setColorFilter(Color.GREEN);
-      powerOn = true;
-    } else if (mode.equals("Safe")) {
-      modeButton.setColorFilter(Color.YELLOW);
-      powerOn = true;
-    } else if (mode.equals("Passive")) {
-      modeButton.setColorFilter(Color.RED);
-      powerOn = false;
-    } else {
-      modeButton.setColorFilter(Color.GRAY);
-      Log.w("TurtlebotDashboard", "Unknown mode string: '" + mode + "'");
-    }
-    setModeWaiting(false);
-  }
-
-  private void populateBatteryFromStatus(BatteryLevelView view, DiagnosticStatus status) {
-    HashMap<String, String> values = keyValueArrayToMap(status.values);
-    try {
-      float percent =
-          100 * Float.parseFloat(values.get("Charge (Ah)"))
-              / Float.parseFloat(values.get("Capacity (Ah)"));
-      view.setBatteryPercent((int) percent);
-      // TODO: set color red/yellow/green based on level (maybe with level-set
-      // in XML)
-    } catch (NumberFormatException ex) {
-      // TODO: make battery level gray
-    } catch (ArithmeticException ex) {
-      // TODO: make battery level gray
-    } catch (NullPointerException ex) {
-      // Do nothing: data wasn't there.
-    }
-    try {
-      view.setPluggedIn( Float.parseFloat(values.get("Current (A)")) > 0);
-    } catch (NumberFormatException ex) {
-    } catch (ArithmeticException ex) {
-    } catch (NullPointerException ex) {
-    }
-  }
-
-  private HashMap<String, String> keyValueArrayToMap(ArrayList<KeyValue> kvs) {
-    HashMap<String, String> map = new HashMap<String, String>();
-    for (KeyValue kv : kvs) {
-      map.put(kv.key, kv.value);
-    }
-    return map;
-  }
 }

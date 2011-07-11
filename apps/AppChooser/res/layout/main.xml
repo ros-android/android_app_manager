@@ -5,14 +5,15 @@
     android:layout_height="fill_parent"
     >
   <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content"
-                android:background="#ff404040">
+                android:background="#ff404040"
+	        android:id="@+id/top_bar" >
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
               android:layout_weight="1"
               android:id="@+id/robot_name_view"
-              android:textSize="30sp"/>
-    <ros.android.views.TurtlebotDashboard android:layout_width="wrap_content"
+              android:textSize="30sp" />
+    <!--<ros.android.views.TurtlebotDashboard android:layout_width="wrap_content"
                                           android:layout_height="wrap_content"
-                                          android:id="@+id/dashboard"/>
+                                          android:id="@+id/dashboard"/>-->
   </LinearLayout>
   <GridView android:id="@+id/gridview"
             android:layout_width="fill_parent" 
@@ -27,6 +28,11 @@
   <TextView android:id="@+id/status_view"
             android:layout_width="fill_parent" 
             android:layout_height="wrap_content"/>
+  <Button android:layout_width="fill_parent" 
+          android:layout_height="wrap_content" 
+          android:text="Deactivate Robot"
+          android:onClick="deactivateRobotClicked"
+	  android:id="@+id/deactivate_robot"/>
   <Button android:layout_width="fill_parent" 
           android:layout_height="wrap_content" 
           android:text="Choose new master"

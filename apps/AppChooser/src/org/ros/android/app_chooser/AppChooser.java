@@ -43,13 +43,15 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.GridView;
 import android.widget.TextView;
+import android.widget.Button;
 import org.ros.MessageListener;
 import org.ros.Node;
 import org.ros.exception.RosInitException;
 import org.ros.message.app_manager.App;
 import org.ros.message.app_manager.AppList;
 import ros.android.activity.RosAppActivity;
-import ros.android.views.TurtlebotDashboard;
+import android.widget.LinearLayout;
+import ros.android.util.Dashboard;
 
 import java.util.ArrayList;
 
@@ -61,20 +63,23 @@ public class AppChooser extends RosAppActivity {
 
   private ArrayList<App> availableAppsCache;
   private long availableAppsCacheTime;
-  private TurtlebotDashboard dashboard;
+  private Dashboard.DashboardInterface dashboard;
   private TextView robotNameView;
 
   public AppChooser() {
     availableAppsCache = new ArrayList<App>();
     availableAppsCacheTime = 0;
+    dashboard = null;
   }
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
-    dashboard = (TurtlebotDashboard) findViewById(R.id.dashboard);
     robotNameView = (TextView) findViewById(R.id.robot_name_view);
+
+    Button deactivate = (Button) findViewById(R.id.deactivate_robot);
+    deactivate.setVisibility(deactivate.GONE);
   }
 
   @Override
@@ -118,12 +123,34 @@ public class AppChooser extends RosAppActivity {
       @Override
       public void run() {
         robotNameView.setText(getCurrentRobot().getRobotName());
+      }});
+    
+    if (dashboard != null) {
+      runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
+            top.removeView((View)dashboard);
+          }});
+      dashboard = null;
+    }
+    dashboard = Dashboard.createDashboard(node, this);
+    
+    if (dashboard != null) {
+      runOnUiThread(new Runnable() {
+          @Override
+            public void run() {
+            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
+            LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
+                   LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            top.addView((View)dashboard, lparams);
+          }});
+      
+      try {
+        dashboard.start(node);
+      } catch (RosInitException ex) {
+        safeSetStatus("Failed: " + ex.getMessage());
       }
-    });
-    try {
-      dashboard.start(node);
-    } catch (RosInitException ex) {
-      safeSetStatus("Failed: " + ex.getMessage());
     }
 
     if (System.currentTimeMillis() - availableAppsCacheTime < 2 * 1000) {
@@ -163,11 +190,23 @@ public class AppChooser extends RosAppActivity {
   protected void onNodeDestroy(Node node) {
     Log.i("RosAndroid", "onNodeDestroy");
     super.onNodeDestroy(node);
-    dashboard.stop();
+    if (dashboard != null) {
+      dashboard.stop();
+      runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
+            top.removeView((View)dashboard);
+          }});
+    }
   }
 
   public void chooseNewMasterClicked(View view) {
     chooseNewMaster();
+  }
+
+  public void deactivateRobotClicked(View view) {
+    terminateRobot();
   }
 
   private void setStatus(String status_message) {

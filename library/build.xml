@@ -112,6 +112,7 @@
 
     <target name="clean">
       <delete file="${jar.lib}" />
+      <delete file="gen/ros/android/activity/R.java" />
     </target>
 
     <target name="jar" depends="compile">

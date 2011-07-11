@@ -15,10 +15,13 @@
 
   <target name="clean">    
     <ant dir="apps" target="clean"/>
+    <subant target="clean">
+      <fileset file="library/build.xml" />
+    </subant>
   </target>
 
   <target name="compile" depends="init">
-    <subant target="compile">
+    <subant target="jar">
       <fileset file="library/build.xml" />
     </subant>
   </target>

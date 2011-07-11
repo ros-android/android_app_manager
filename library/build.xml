@@ -9,6 +9,8 @@
      It contains the path to the SDK. It should *NOT* be checked into
      Version Control Systems. -->
     <property file="local.properties" />
+    
+    <property name="jar.lib" location="bin/appmanandroid_lib.jar" />
 
   <!-- Create the "local.properties" file in the app's directory. -->
   <exec command="which android"
@@ -99,7 +101,32 @@
                below to <setup import="false" />.
              - customize to your needs.
     -->
+    <setup />
+
     <path id="android.libraries.src"><path refid="project.libraries.src" /></path>
     <path id="android.libraries.jars"><path refid="project.libraries.jars" /><pathelement path="${ros.classpath}" /></path>
-    <setup />
+
+
+    <path id="jar.classpath">
+    </path>
+
+    <target name="clean">
+      <delete file="${jar.lib}" />
+    </target>
+
+    <target name="jar" depends="compile">
+      <manifestclasspath property="jar.appmanandroid_lib.classpath" jarfile="${jar.lib}">
+	<classpath>
+        <path refid="jar.classpath"/>
+	</classpath>
+      </manifestclasspath>
+      <jar destfile="${jar.lib}">
+	<manifest>
+          <!--<attribute name="Main-Class" value="org.ros.RosRun" />-->
+          <attribute name="Class-Path" value="${jar.appmanandroid_lib.classpath}" />
+	</manifest>
+	<fileset dir="bin/classes" />
+      </jar>
+    </target>
+
 </project>

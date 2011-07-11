@@ -43,6 +43,8 @@ public class RobotDescription implements java.io.Serializable {
   public static final String CONNECTING = "connecting...";
   public static final String OK = "ok";
   public static final String ERROR = "exception";
+  public static final String WIFI = "invalid wifi";
+  public static final String CONTROL = "not started";
 
   public static final String NAME_UNKNOWN = "Unknown";
   public static final String TYPE_UNKNOWN = "Unknown";

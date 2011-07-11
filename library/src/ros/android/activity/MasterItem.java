@@ -64,6 +64,7 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
   private RobotDescription description;
   private MasterChooserActivity parentMca;
   private String errorReason;
+  private boolean control;
 
   public MasterItem(RobotDescription robotDescription, MasterChooserActivity parentMca) {
     errorReason = "";
@@ -74,14 +75,16 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
                         (WifiManager)parentMca.getSystemService(parentMca.WIFI_SERVICE))) {
       checker = new MasterChecker(this, this);
       if (this.description.getRobotId().getControlUri() != null) {
+        control = true;
         controlChecker = new ControlChecker(this, this);
         controlChecker.beginChecking(this.description.getRobotId());
       } else {
+        control = false;
         checker.beginChecking(this.description.getRobotId());
       }
     } else {
       errorReason = "Wrong WiFi Network";
-      description.setConnectionStatus(RobotDescription.ERROR);
+      description.setConnectionStatus(RobotDescription.WIFI);
       safePopulateView();
     }
   }
@@ -92,6 +95,7 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
 
   @Override
   public void handleSuccess() {
+    control = false;
     checker.beginChecking(this.description.getRobotId());
   }
 
@@ -105,7 +109,7 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
   @Override
   public void handleFailure(String reason) {
     errorReason = reason;
-    description.setConnectionStatus(RobotDescription.ERROR);
+    description.setConnectionStatus(control ? RobotDescription.CONTROL : RobotDescription.ERROR);
     safePopulateView();
   }
 
@@ -136,6 +140,8 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
   private void populateView() {
     Log.i("MasterItem", "connection status = " + description.getConnectionStatus());
     boolean isOk = description.getConnectionStatus().equals(RobotDescription.OK);
+    boolean isControl = description.getConnectionStatus().equals(RobotDescription.CONTROL);
+    boolean isWifi = description.getConnectionStatus().equals(RobotDescription.WIFI);
     boolean isError = description.getConnectionStatus().equals(RobotDescription.ERROR);
     boolean isConnecting = description.getConnectionStatus().equals(RobotDescription.CONNECTING);
 
@@ -147,9 +153,11 @@ public class MasterItem implements MasterChecker.RobotDescriptionReceiver,
     errorImage.setVisibility(isError ? View.VISIBLE : View.GONE );
 
     ImageView iv = (ImageView) view.findViewById(R.id.robot_icon);
-    iv.setVisibility(isOk ? View.VISIBLE : View.GONE);
+    iv.setVisibility((isOk || isWifi || isControl) ? View.VISIBLE : View.GONE);
     if (description.getRobotType() == null) {
       iv.setImageResource(R.drawable.question_mark);
+    } else if (isWifi) {
+      iv.setImageResource(R.drawable.wifi_question_mark);
     } else if (description.getRobotType().equals("pr2")) {
       iv.setImageResource(R.drawable.pr2);
     } else if (description.getRobotType().equals("turtlebot")) {

@@ -34,6 +34,7 @@
 package org.ros.android.app_chooser;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -48,7 +49,7 @@ import ros.android.activity.AppStartCallback;
 import ros.android.activity.AppManager;
 import ros.android.activity.RosAppActivity;
 
-public class StubAppActivity extends RosAppActivity implements AppStartCallback {
+public class StubAppActivity extends RosAppActivity implements AppStartCallback, AppManager.TerminationCallback {
   private String robotAppName;
   private String robotAppDisplayName;
   private TextView statusView;
@@ -78,6 +79,10 @@ public class StubAppActivity extends RosAppActivity implements AppStartCallback 
     // running appManager, so disable the buttons until onNodeCreate()
     // is called with a valid appManager.
     setButtonsEnabled(false);
+  }
+
+  public void onAppTermination() {
+    safeSetStatus("Application finished.");
   }
 
   private void startApp() {
@@ -175,6 +180,8 @@ public class StubAppActivity extends RosAppActivity implements AppStartCallback 
   @Override
   protected void onNodeCreate(Node node) {
     super.onNodeCreate(node);
+    Log.i("StubAppActivity", "Name: " + robotAppName);
+    appManager.addTerminationCallback(robotAppName, this);
     if( appManager == null ) {
       safeSetStatus("Failed to initialize appManager.");
     } else {

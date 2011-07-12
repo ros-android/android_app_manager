@@ -74,6 +74,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   private Subscriber<AppStatus> statusSub;
   private TurtlebotDashboard dashboard;
   private String robotAppName;
+  private String baseControlTopic;
 
   /** Called when the activity is first created. */
   @Override
@@ -87,6 +88,12 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     robotAppName = getIntent().getStringExtra(AppManager.PACKAGE + ".robot_app_name");
     if( robotAppName == null ) {
       robotAppName = "turtlebot_teleop/android_teleop";
+    }
+
+    if (getIntent().hasExtra("base_control_topic")) {
+      baseControlTopic = getIntent().getStringExtra("base_control_topic");
+    } else {
+      baseControlTopic = "turtlebot_node/cmd_vel";
     }
 
     View joyView = findViewById(R.id.joystick);
@@ -156,7 +163,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
         }
       });
       Log.i("Teleop", "init twistPub");
-      twistPub = node.createPublisher("turtlebot_node/cmd_vel", "geometry_msgs/Twist");
+      twistPub = node.createPublisher(baseControlTopic, "geometry_msgs/Twist");
       createPublisherThread(twistPub, touchCmdMessage, 10);
     } catch (RosInitException e) {
       Log.e("Teleop", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());

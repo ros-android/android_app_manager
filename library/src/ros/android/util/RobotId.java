@@ -88,6 +88,18 @@ public class RobotId implements java.io.Serializable {
     return wifiPassword;
   }
 
+  @Override
+  public String toString() {
+    String str = getMasterUri() == null ? "" : getMasterUri();
+    if (getWifi() != null) {
+      str = str + " On Wifi: " + getWifi();
+    }
+    if (getControlUri() != null) {
+      str = str + " Controlled By: " + getControlUri();
+    }
+    return str;
+  }
+
   //TODO: not needed?
   private boolean nullSafeEquals(Object a, Object b) {
     if (a == b) { //Handles case where both are null.

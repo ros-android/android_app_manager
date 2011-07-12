@@ -221,7 +221,7 @@ public class AppChooser extends RosAppActivity {
   }
 
   public void deactivateRobotClicked(View view) {
-    new AlertDialog.Builder(this).setTitle("De-activate Robot").setCancelable(false)
+    new AlertDialog.Builder(this).setTitle("Deactivate Robot").setCancelable(false)
       .setMessage("Are you sure you want to deactivate the robot? This will power down the"
                   + " robot's arms and allow others to run custom software on it.")
       .setPositiveButton("Yes", new DialogInterface.OnClickListener() {

@@ -76,6 +76,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   private Dashboard.DashboardInterface dashboard;
   private String robotAppName;
   private String baseControlTopic;
+  private String cameraTopic;
 
   /** Called when the activity is first created. */
   @Override
@@ -95,6 +96,12 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       baseControlTopic = getIntent().getStringExtra("base_control_topic");
     } else {
       baseControlTopic = "turtlebot_node/cmd_vel";
+    }
+
+    if (getIntent().hasExtra("camera_topic")) {
+      cameraTopic = getIntent().getStringExtra("camera_topic");
+    } else {
+      cameraTopic = "camera/rgb/image_color/compressed_throttle";
     }
 
     View joyView = findViewById(R.id.joystick);
@@ -164,7 +171,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       NameResolver appNamespace = getAppNamespace(node);
       cameraView = (SensorImageView) findViewById(R.id.image);
       Log.i("Teleop", "init cameraView");
-      cameraView.start(node, appNamespace.resolve("camera/rgb/image_color/compressed_throttle"));
+      cameraView.start(node, appNamespace.resolve(cameraTopic));
       cameraView.post(new Runnable() {
 
         @Override

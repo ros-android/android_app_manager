@@ -13,10 +13,10 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:layout_weight=".75">
-    <ros.android.views.TurtlebotDashboard android:layout_width="wrap_content"
-                                          android:layout_height="wrap_content"
-                                          android:gravity="top"
-                                          android:id="@+id/dashboard"/>
+    <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content"
+                  android:background="#ff404040"
+	          android:id="@+id/top_bar" >
+    </LinearLayout>
     <ImageView android:layout_width="fill_parent"
                android:layout_height="fill_parent"
                android:adjustViewBounds="true"

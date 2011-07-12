@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import org.ros.exception.RosInitException;
 
 import org.ros.MessageListener;
+import org.ros.message.app_manager.App;
 import org.ros.message.app_manager.AppList;
 
 import org.ros.Node;
@@ -51,6 +52,7 @@ import org.ros.namespace.NameResolver;
 import org.ros.service.app_manager.ListApps;
 import org.ros.service.app_manager.StartApp;
 import org.ros.service.app_manager.StopApp;
+import android.util.Log;
 
 /**
  * Interact with a remote ROS App Manager.
@@ -65,20 +67,60 @@ public class AppManager {
   private ArrayList<Subscriber<AppList>> subscriptions;
   private NameResolver resolver;
 
+  public interface TerminationCallback {
+    public void onAppTermination();
+  }
+
+  private class TerminationCallbackInfo {
+    public TerminationCallback callback;
+    public String appname;
+    public TerminationCallbackInfo(String appname, TerminationCallback callback) {
+      this.appname = appname;
+      this.callback = callback;
+    }
+  }
+
+  private ArrayList<TerminationCallbackInfo> terminationCallbacks;
+
   public AppManager(Node node, NameResolver resolver)
       throws RosInitException {
     this.node = node;
     this.resolver = resolver;
     subscriptions = new ArrayList<Subscriber<AppList>>();
+    terminationCallbacks = new ArrayList<TerminationCallbackInfo>();
     addAppListCallback(new MessageListener<AppList>() {
-
       @Override
       public void onNewMessage(AppList message) {
+        if (appList != null) {
+          for (App a : appList.running_apps) {
+            boolean stillRunning = false;
+            for (App b : message.running_apps) {
+              if (b.name.equals(a.name)) {
+                stillRunning = true;
+              }
+            }
+            Log.i("AppManager", "Terminate application: " + a.name);
+            if (!stillRunning) {
+              for (TerminationCallbackInfo c : terminationCallbacks) {
+                if (c.appname.equals(a.name)) {
+                  Log.i("AppManager", "Terminate callback called");
+                  c.callback.onAppTermination();
+                }
+              }
+            }
+          }
+        }
         appList = message;
       }
     });
 
   }
+
+  public void addTerminationCallback(String appname, TerminationCallback callback) {
+    terminationCallbacks.add(new TerminationCallbackInfo(appname, callback));
+  }
+
+  
   
   public void addAppListCallback(MessageListener<AppList> callback) throws RosInitException {
     subscriptions.add(node.createSubscriber(resolver.resolve("app_list"), "app_manager/AppList", callback));

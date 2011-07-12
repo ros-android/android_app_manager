@@ -262,7 +262,7 @@ public class MasterChooserActivity extends Activity {
     while (iter.hasNext()) {
       RobotDescription robot = iter.next();
       if (robot == null || robot.getConnectionStatus() == null
-          || !robot.getConnectionStatus().equals("ok")) {
+          || robot.getConnectionStatus().equals(robot.ERROR)) {
         Log.i("RosAndroid", "Removing robot with connection status '" + robot.getConnectionStatus()
             + "'");
         iter.remove();

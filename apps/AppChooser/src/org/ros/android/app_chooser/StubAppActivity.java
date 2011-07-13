@@ -181,10 +181,10 @@ public class StubAppActivity extends RosAppActivity implements AppStartCallback,
   protected void onNodeCreate(Node node) {
     super.onNodeCreate(node);
     Log.i("StubAppActivity", "Name: " + robotAppName);
-    appManager.addTerminationCallback(robotAppName, this);
     if( appManager == null ) {
       safeSetStatus("Failed to initialize appManager.");
     } else {
+      appManager.addTerminationCallback(robotAppName, this);
       setButtonsEnabled(true);
     }
   }

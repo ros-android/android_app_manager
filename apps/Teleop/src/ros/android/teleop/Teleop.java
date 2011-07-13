@@ -117,6 +117,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   @Override
   protected void onNodeDestroy(Node node) {
     if (dashboard != null) {
+      dashboard.stop();
       runOnUiThread(new Runnable() {
           @Override
             public void run() {
@@ -141,7 +142,6 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
       pubThread.interrupt();
       pubThread = null;
     }
-    dashboard.stop();
     super.onNodeDestroy(node);
   }
 

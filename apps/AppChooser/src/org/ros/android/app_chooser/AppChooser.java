@@ -64,6 +64,7 @@ import java.util.ArrayList;
 public class AppChooser extends RosAppActivity {
 
   private ArrayList<App> availableAppsCache;
+  private ArrayList<App> runningAppsCache;
   private long availableAppsCacheTime;
   private Dashboard.DashboardInterface dashboard;
   private TextView robotNameView;
@@ -90,7 +91,7 @@ public class AppChooser extends RosAppActivity {
     super.onResume();
     setStatus("");
     // TODO: start spinner
-    updateAppList(availableAppsCache);
+    updateAppList(availableAppsCache, runningAppsCache);
   }
 
   /**
@@ -98,10 +99,10 @@ public class AppChooser extends RosAppActivity {
    * 
    * @param apps
    */
-  protected void updateAppList(final ArrayList<App> apps) {
+  protected void updateAppList(final ArrayList<App> apps, final ArrayList<App> runningApps) {
     Log.i("RosAndroid", "updating gridview");
     GridView gridview = (GridView) findViewById(R.id.gridview);
-    gridview.setAdapter(new AppAdapter(AppChooser.this, apps));
+    gridview.setAdapter(new AppAdapter(AppChooser.this, apps, runningApps));
     gridview.setOnItemClickListener(new OnItemClickListener() {
       @Override
       public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
@@ -163,27 +164,28 @@ public class AppChooser extends RosAppActivity {
       }
     }
 
-    if (System.currentTimeMillis() - availableAppsCacheTime < 2 * 1000) {
-      Log.i("RosAndroid", "using app cache");
-      return;
-    }
     if (appManager == null) {
       safeSetStatus("Robot not available");
       return;
     }
-    Log.i("RosAndroid", "sending list apps request");
+    
+    //Note, I've temporarily disabled caching.
+    if (System.currentTimeMillis() - availableAppsCacheTime >= 0 * 1000) {
+      Log.i("RosAndroid", "sending list apps request");
+    }
 
     try {
       appManager.addAppListCallback(new MessageListener<AppList>() {
         @Override
         public void onNewMessage(AppList message) {
           availableAppsCache = message.available_apps;
+          runningAppsCache = message.running_apps;
           Log.i("RosAndroid", "ListApps.Response: " + availableAppsCache.size() + " apps");
           availableAppsCacheTime = System.currentTimeMillis();
           runOnUiThread(new Runnable() {
             @Override
             public void run() {
-              updateAppList(availableAppsCache);
+              updateAppList(availableAppsCache, runningAppsCache);
             }
           });
         }

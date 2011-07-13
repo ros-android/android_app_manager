@@ -48,10 +48,12 @@ import java.util.ArrayList;
 public class AppAdapter extends BaseAdapter {
   private Context context;
   private ArrayList<App> apps;
+  private ArrayList<App> runningApps;
 
-  public AppAdapter(Context c, ArrayList<App> apps) {
+  public AppAdapter(Context c, ArrayList<App> apps, ArrayList<App> runningApps) {
     context = c;
     this.apps = apps;
+    this.runningApps = runningApps;
   }
 
   @Override
@@ -70,6 +72,18 @@ public class AppAdapter extends BaseAdapter {
   @Override
   public long getItemId(int position) {
     return 0;
+  }
+
+  boolean isAppRunning(App app) {
+    if (app.name == null) {
+      return false;
+    }
+    for (App c : this.runningApps) {
+      if (app.name.equals(c.name)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -92,6 +106,11 @@ public class AppAdapter extends BaseAdapter {
     }
     TextView tv = (TextView) view.findViewById(R.id.name);
     tv.setText(app.display_name);
+    if (isAppRunning(app)) {
+      view.setBackgroundResource(R.drawable.highlight);
+    } else {
+      view.setBackgroundResource(0);
+    }
     return view;
   }
 }

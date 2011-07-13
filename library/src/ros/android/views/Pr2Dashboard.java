@@ -244,18 +244,22 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
   }
 
   private void onModeButtonClicked() {
+    ServiceClient<Empty.Request, Empty.Response> motorServiceClient;
+    ServiceClient<PowerBoardCommand.Request, PowerBoardCommand.Response> modeServiceClient;
+    Empty.Request motorRequest = new Empty.Request();
+    PowerBoardCommand.Request modeRequest;
     switch (state) {
     case BREAKERS_OUT:
       waitingState = Pr2RobotState.MOTORS_OUT;
       setModeWaiting(true);
       clickOnTransition = true;
       //Send reset to the breakers.
-      for (int i = 0; i < nBreakers; i++) { //FIXME: hack for number of breakers
-        PowerBoardCommand.Request modeRequest = new PowerBoardCommand.Request();
+      for (int i = 0; i < nBreakers; i++) {
+        modeRequest = new PowerBoardCommand.Request();
         modeRequest.breaker_number = i;
         modeRequest.command = "start";
         modeRequest.serial_number = serialNumber;
-        ServiceClient<PowerBoardCommand.Request, PowerBoardCommand.Response> modeServiceClient =
+        modeServiceClient =
             node.createServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
         modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommand.Response>() {
             @Override
@@ -274,10 +278,9 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
       waitingState = Pr2RobotState.WORKING;
       setModeWaiting(true);
       //Send reset to the motors.
-      Empty.Request modeRequest = new Empty.Request();
-      ServiceClient<Empty.Request, Empty.Response> modeServiceClient =
+      motorServiceClient =
 	      node.createServiceClient("pr2_etherCAT/reset_motors", "std_srvs/Empty");
-      modeServiceClient.call(modeRequest, new ServiceResponseListener<Empty.Response>() {
+      motorServiceClient.call(motorRequest, new ServiceResponseListener<Empty.Response>() {
           @Override
           public void onSuccess(Empty.Response message) { } //Diagnostics will update. 
           @Override
@@ -290,8 +293,42 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
           }});
       break;
     case WORKING:
-      //Nothing to do. We only shutdown the PR2 using the app chooser, because it is different.
-      waitingState = Pr2RobotState.WORKING;
+      setModeWaiting(true);
+      waitingState = Pr2RobotState.BREAKERS_OUT;
+      //Stop the breakers
+      for (int i = 0; i < nBreakers; i++) {
+        modeRequest = new PowerBoardCommand.Request();
+        modeRequest.breaker_number = i;
+        modeRequest.command = "stop";
+        modeRequest.serial_number = serialNumber;
+        modeServiceClient =
+          node.createServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
+        modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommand.Response>() {
+            @Override
+            public void onSuccess(PowerBoardCommand.Response message) { } //Diagnostics will update. 
+            @Override
+            public void onFailure(Exception ex) {
+              final Exception e = ex;
+              Pr2Dashboard.this.post(new Runnable() {
+                  public void run() {
+                    alertBuilder.setMessage("Cannot reset the breakers: " + e.toString()).show();
+                  }});
+            }});
+      }
+      //Send halt to the motors.
+      motorServiceClient =
+	      node.createServiceClient("pr2_etherCAT/halt_motors", "std_srvs/Empty");
+      motorServiceClient.call(motorRequest, new ServiceResponseListener<Empty.Response>() {
+          @Override
+          public void onSuccess(Empty.Response message) { } //Diagnostics will update. 
+          @Override
+          public void onFailure(Exception ex) {
+            final Exception e = ex;
+            Pr2Dashboard.this.post(new Runnable() {
+                public void run() {
+                  alertBuilder.setMessage("Cannot reset the motors: " + e.toString()).show();
+                }});
+          }});
       break;
     default:
       Pr2Dashboard.this.post(new Runnable() {

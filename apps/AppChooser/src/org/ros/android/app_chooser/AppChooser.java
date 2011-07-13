@@ -55,6 +55,10 @@ import ros.android.util.Dashboard;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 
+import org.ros.ServiceResponseListener;
+import org.ros.message.app_manager.StatusCodes;
+import org.ros.service.app_manager.StopApp;
+
 import java.util.ArrayList;
 
 /**
@@ -69,6 +73,7 @@ public class AppChooser extends RosAppActivity {
   private Dashboard.DashboardInterface dashboard;
   private TextView robotNameView;
   private Button deactivate;
+  private Button stopApps;
 
   public AppChooser() {
     availableAppsCache = new ArrayList<App>();
@@ -84,6 +89,8 @@ public class AppChooser extends RosAppActivity {
 
     deactivate = (Button) findViewById(R.id.deactivate_robot);
     deactivate.setVisibility(deactivate.GONE);
+    stopApps = (Button) findViewById(R.id.stop_applications);
+    stopApps.setVisibility(stopApps.GONE);
   }
 
   @Override
@@ -109,6 +116,13 @@ public class AppChooser extends RosAppActivity {
         AppLauncher.launch(AppChooser.this, apps.get(position));
       }
     });
+    if (runningApps != null) {
+      if (runningApps.toArray().length != 0) {
+        stopApps.setVisibility(stopApps.VISIBLE);
+      } else {
+        stopApps.setVisibility(stopApps.GONE);
+      }
+    }
     Log.i("RosAndroid", "gridview updated");
   }
 
@@ -231,6 +245,24 @@ public class AppChooser extends RosAppActivity {
       .setNegativeButton("No", new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface dialog, int which) { }})
       .create().show();
+  }
+
+  public void stopApplicationsClicked(View view) {
+    appManager.stopApp("*", new ServiceResponseListener<StopApp.Response>() {
+      @Override
+      public void onSuccess(StopApp.Response message) {
+        if (message.stopped || message.error_code == StatusCodes.NOT_RUNNING) {
+          //safeSetStatus("Stopped.");
+        } else {
+          //safeSetStatus("ERROR: " + message.message);
+        }
+      }
+      @Override
+      public void onFailure(Exception e) {
+        //safeSetStatus("Failed: cannot contact robot!");
+      }
+    });
+    
   }
 
   private void setStatus(String status_message) {

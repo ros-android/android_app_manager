@@ -30,7 +30,12 @@
             android:layout_height="wrap_content"/>
   <Button android:layout_width="fill_parent" 
           android:layout_height="wrap_content" 
-          android:text="Deactivate Robot"
+          android:text="Stop all applications"
+          android:onClick="stopApplicationsClicked"
+	  android:id="@+id/stop_applications"/>
+  <Button android:layout_width="fill_parent" 
+          android:layout_height="wrap_content" 
+          android:text="Deactivate robot"
           android:onClick="deactivateRobotClicked"
 	  android:id="@+id/deactivate_robot"/>
   <Button android:layout_width="fill_parent" 

@@ -123,8 +123,8 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
             public void run() {
             LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
             top.removeView((View)dashboard);
+            dashboard = null;
           }});
-      dashboard = null;
     }
     if (twistPub != null) {
       twistPub.shutdown();
@@ -200,13 +200,14 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     try {
       
       if (dashboard != null) {
+        dashboard.stop();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
               LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
               top.removeView((View)dashboard);
+              dashboard = null;
             }});
-        dashboard = null;
       }
       dashboard = Dashboard.createDashboard(node, this);
       

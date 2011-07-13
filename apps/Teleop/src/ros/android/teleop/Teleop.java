@@ -218,7 +218,10 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
               LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
               LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-              top.addView((View)dashboard, lparams);
+              Dashboard.DashboardInterface dash = dashboard;
+              if (dash != null) {
+                top.addView((View)dash, lparams);
+              }
             }});
         dashboard.start(node);
       }

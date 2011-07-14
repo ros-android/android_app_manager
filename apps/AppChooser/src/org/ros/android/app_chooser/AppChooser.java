@@ -231,6 +231,7 @@ public class AppChooser extends RosAppActivity {
           public void run() {
             LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
             top.removeView((View)dashboard);
+            dashboard = null;
           }});
     }
   }

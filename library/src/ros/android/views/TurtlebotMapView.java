@@ -31,11 +31,18 @@ package ros.android.views;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.Log;
+import org.yaml.snakeyaml.Yaml;
+import java.util.List;
+import org.ros.ParameterTree;
+import java.lang.Thread;
 
 import org.ros.Node;
 import org.ros.exception.RosInitException;
@@ -50,6 +57,10 @@ import ros.android.activity.R;
 public class TurtlebotMapView extends PanZoomView {
   private PlaneTfChangeListener tfChangeListener;
   private BitmapDisplay robotDisplay;
+  private String footprintParam;
+  private String baseScanTopic;
+  private String baseScanFrame;
+  private LaserScanDisplay scanDisplay;
 
   private static final float turtlebotDiameter = .314f; // meters
 
@@ -97,18 +108,116 @@ public class TurtlebotMapView extends PanZoomView {
     addDisplay( robotDisplay );
 
     //******** configure laser scan display ********
-    LaserScanDisplay scanDisplay = new LaserScanDisplay();
-    scanDisplay.setTopic("narrow_scan");
-    tfChangeListener.addPosable( "/map", "/kinect_depth_frame", scanDisplay );
-    addDisplay( scanDisplay );
+    scanDisplay = null;
+  }
+
+  public void setFootprintParam(String footprintParam) {
+    this.footprintParam = footprintParam;
+  }
+
+
+  public void setBaseScanTopic(String s) {
+    this.baseScanTopic = s;
+  }
+
+  public void setBaseScanFrame(String s) {
+    this.baseScanFrame = s;
   }
 
   public PlaneTfChangeListener getPoser() {
     return tfChangeListener;
   }
 
+  private class FootprintThread extends Thread {
+    private TurtlebotMapView view;
+    private Node node;
+    private String footprintParam;
+    public FootprintThread(TurtlebotMapView view, Node node, String footprintParam) {
+      super();
+      this.view = view;
+      this.node = node;
+      this.footprintParam = footprintParam;
+    }
+    
+    public void run() {
+      //This is sort of a hack to wait for the footprint parameter.
+      int it = 0;
+      while (!node.createParameterClient().has(footprintParam) && it < 30) {
+        try {
+        Thread.sleep(1000);
+        } catch(java.lang.InterruptedException e) {
+          it = 30;
+        }
+        it++;
+      }
+
+      ParameterTree tree = node.createParameterClient();
+      Log.i("MapView", "Creating Footprint from " + footprintParam);
+      List footprint = tree.getList(footprintParam);
+      double[] footprintX = new double[footprint.toArray().length];
+      double[] footprintY = new double[footprint.toArray().length];
+
+      double mostExtremeX = 0, mostExtremeY = 0;
+
+      int i = 0;
+      for (Object o : footprint) {
+        Object[] ob = (Object[])o;
+        //This is a hack here - ATP
+        footprintX[i] = new Double(ob[0].toString()).doubleValue();
+        footprintY[i] = new Double(ob[1].toString()).doubleValue();
+        if ((footprintX[i] > mostExtremeX && footprintX[i] > 0)
+            || (footprintX[i] < -mostExtremeX && footprintX[i] < 0)
+            || i == 0) {
+          mostExtremeX = (footprintX[i] > 0) ? footprintX[i] : -footprintX[i];
+        }
+        if ((footprintY[i] > mostExtremeY && footprintY[i] > 0)
+            || (footprintY[i] < -mostExtremeY && footprintY[i] < 0)
+            || i == 0) {
+          mostExtremeY = (footprintY[i] > 0) ? footprintY[i] : -footprintY[i];
+        }
+        i++;
+      }
+
+      final int robotBitmapSize = 100;
+      double xScale = robotBitmapSize / 2.0 / (mostExtremeX);
+      double yScale = robotBitmapSize / 2.0 / (mostExtremeY);
+      double scale = (xScale < yScale) ? xScale : yScale;
+
+      Bitmap bitmap = Bitmap.createBitmap(robotBitmapSize, robotBitmapSize, Bitmap.Config.ARGB_8888);
+      Canvas c = new Canvas(bitmap);
+      Paint p = new Paint();
+
+      c.drawColor(Color.TRANSPARENT);
+
+      for (i = 0; i < footprintX.length; i++) {
+        Log.i("MapView", "(" + (footprintX[i] * scale + 50) + ", " + (footprintY[i] * scale + 50) + ")");
+        int l = (i != 0) ? i - 1 : footprintX.length - 1;
+        c.drawLine((float)(-footprintX[l] * scale + 50), (float)(footprintY[l] * scale + 50),
+                   (float)(-footprintX[i] * scale + 50), (float)(footprintY[i] * scale + 50), p);
+      }
+
+
+      
+      Matrix robotImageRelRobot = new Matrix();
+      robotImageRelRobot.setValues(new float[]{(float)-(1.0 / scale), 0, (float)(50.0 / scale),
+                                               0, (float)(1.0 / scale), (float)(-50.0 / scale),
+                                               0, 0, 1});
+      view.robotDisplay.setBitmapRelPose(robotImageRelRobot);
+      view.robotDisplay.setBitmap(bitmap);
+    }
+  }
+
   @Override
-  public void start(Node node) throws RosInitException {
+  public void start(Node node) throws RosInitException { 
+    if (footprintParam != null) {
+      new FootprintThread(this, node, footprintParam).start();
+    }
+    if (scanDisplay == null) {
+      scanDisplay = new LaserScanDisplay();
+      scanDisplay.setTopic(baseScanTopic != null ? baseScanTopic : "base_scan");
+      tfChangeListener.addPosable( "/map", baseScanFrame != null ? baseScanFrame : "/kinect_depth_frame", scanDisplay );
+      addDisplay( scanDisplay );
+    }
     super.start(node);
     tfChangeListener.start( node );
   }

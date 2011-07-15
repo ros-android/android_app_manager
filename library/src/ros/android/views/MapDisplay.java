@@ -35,6 +35,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import java.lang.Object;
 import android.util.Log;
 
 import org.ros.MessageListener;
@@ -53,6 +54,68 @@ public class MapDisplay extends PanZoomDisplay {
   private Paint paint = new Paint();
   private String mapTopic = "map";
   private boolean haveMap = false;
+  
+  private class MapUpdateThread extends Thread {
+    private OccupancyGrid msg;
+    private MapDisplay parent;
+
+    public MapUpdateThread(MapDisplay parent, final OccupancyGrid msg) {
+      this.msg = msg;
+      this.parent = parent;
+    }
+    /**
+     * Populate view with new map data. This must be called in the UI
+     * thread.
+     */
+    public void run() {
+      Log.i("MapDisplay", "handleMap() - " + msg.info.height + " by " + msg.info.width);
+      if (parent.mapBitmap != null && (parent.mapBitmap.getWidth() != (int)msg.info.width || parent.mapBitmap.getHeight() != (int)msg.info.height)) {
+        Log.i("MapDisplay", "Recycle map");
+        parent.mapBitmap.recycle();
+        parent.mapBitmap = null;
+      }
+      if (parent.mapBitmap == null) {
+        parent.mapBitmap = Bitmap.createBitmap((int)msg.info.width, (int)msg.info.height, Bitmap.Config.RGB_565);
+        Log.i("MapDisplay", "Create map");
+      }
+      
+      // copy the map data into the mapBitmap.
+      int data_i = 0;
+      
+      int black = Color.rgb(0, 0, 0);
+      int grey = Color.rgb(128, 128, 128);
+      int white = Color.rgb(255, 255, 255);
+      for (int y = 0; y < msg.info.height; y++) {
+        for (int x = 0; x < msg.info.width; x++) {
+          int cell = msg.data[data_i];
+          data_i++;
+          switch(cell) {
+          case 100:
+            parent.mapBitmap.setPixel(x, y, black);
+            break;
+          case 0:
+            parent.mapBitmap.setPixel(x, y, white);
+            break;
+          default:
+            parent.mapBitmap.setPixel(x, y, grey);
+          }
+        }
+      }
+      
+      // This matrix definition presumes the map is flat on the XY plane
+      // and that there is 0 rotation.  So just an offset and a scale.
+      float res = msg.info.resolution;
+      parent.mapGridRelMap.setValues(new float[]{ res,   0, (float)msg.info.origin.position.x,
+                                                    0, res, (float)msg.info.origin.position.y,
+                                                    0,   0, 1 });
+      Log.i("MapDisplay", "mapGridRelMap = " + parent.mapGridRelMap.toString());
+      
+      
+      haveMap = true;
+      parent.postInvalidate();
+    }
+  }
+
 
   /**
    * Set the topic name for the map messages.  Defaults to "/map".
@@ -66,18 +129,13 @@ public class MapDisplay extends PanZoomDisplay {
 
   @Override
   public void start( Node node ) throws RosInitException {
-      mapSubscriber = node.createSubscriber(mapTopic, "nav_msgs/OccupancyGrid",
-					    new MessageListener<OccupancyGrid>() {
-        @Override
-        public void onNewMessage(final OccupancyGrid msg) {
-          getParent().post(new Runnable() {
+    final MapDisplay parent = this;
+    mapSubscriber = node.createSubscriber(mapTopic, "nav_msgs/OccupancyGrid",
+        new MessageListener<OccupancyGrid>() {
               @Override
-              public void run() {
-                handleMap(msg);
-              }
-            });
-        }
-      });
+              public void onNewMessage(final OccupancyGrid msg) {
+                new MapUpdateThread(parent, msg).start();
+              }});
   }
 
   @Override
@@ -90,59 +148,9 @@ public class MapDisplay extends PanZoomDisplay {
 
   @Override
   public void draw( Canvas canvas ) {
-    if( haveMap ) {
-      canvas.drawBitmap(mapBitmap, mapGridRelMap, paint);
+    Bitmap localMapBitmap = mapBitmap; //avoids race conditions
+    if (localMapBitmap != null && haveMap) {
+      canvas.drawBitmap(localMapBitmap, mapGridRelMap, paint);
     }
-  }
-
-  /**
-   * Populate view with new map data. This must be called in the UI
-   * thread.
-   */
-  private void handleMap(OccupancyGrid msg) {
-    Log.i("MapDisplay", "handleMap()");
-    if( mapBitmap != null && (mapBitmap.getWidth() != (int)msg.info.width || mapBitmap.getHeight() != (int)msg.info.height)) {
-      mapBitmap.recycle();
-      mapBitmap = null;
-    }
-    if( mapBitmap == null ) {
-      mapBitmap = Bitmap.createBitmap((int)msg.info.width, (int)msg.info.height, Bitmap.Config.RGB_565);
-    }
-
-    // copy the map data into the mapBitmap.
-    int data_i = 0;
-    for (int y = 0; y < msg.info.height; y++) {
-      for (int x = 0; x < msg.info.width; x++) {
-        int cell = msg.data[data_i];
-        data_i++;
-        int red = 128;
-        int green = 128;
-        int blue = 128;
-        switch(cell) {
-        case 100:
-          red = 255;
-          green = 255;
-          blue = 255;
-          break;
-        case 0:
-          red = 0;
-          green = 0;
-          blue = 0;
-          break;
-        }
-        mapBitmap.setPixel(x, y, Color.rgb(blue, green, red));
-      }
-    }
-
-    haveMap = true;
-    // This matrix definition presumes the map is flat on the XY plane
-    // and that there is 0 rotation.  So just an offset and a scale.
-    float res = msg.info.resolution;
-    mapGridRelMap.setValues( new float[]{ res, 0, (float)msg.info.origin.position.x,
-                                          0, res, (float)msg.info.origin.position.y,
-                                          0, 0, 1 });
-    Log.i("TurtlebotMapView", "mapGridRelMap = " + mapGridRelMap.toString());
-
-    postInvalidate();
   }
 }

@@ -9,6 +9,7 @@
     <subant target="compile">
       <fileset file="AppChooser/build-wrapper.xml" />
       <fileset file="Teleop/build-wrapper.xml" />
+      <fileset file="MakeAMap/build-wrapper.xml" />
     </subant>
   </target>
 
@@ -16,6 +17,7 @@
     <subant target="debug">
       <fileset file="AppChooser/build-wrapper.xml" />
       <fileset file="Teleop/build-wrapper.xml" />
+      <fileset file="MakeAMap/build-wrapper.xml" />
     </subant>
   </target>
 
@@ -23,6 +25,7 @@
     <subant target="install">
       <fileset file="AppChooser/build-wrapper.xml" />
       <fileset file="Teleop/build-wrapper.xml" />
+      <fileset file="MakeAMap/build-wrapper.xml" />
     </subant>
   </target>
 
@@ -30,6 +33,7 @@
     <subant target="clean">
       <fileset file="AppChooser/build-wrapper.xml" />
       <fileset file="Teleop/build-wrapper.xml" />
+      <fileset file="MakeAMap/build-wrapper.xml" />
     </subant>
     <delete includeemptydirs="true">
       <fileset dir="${basedir}" includes="*/build/**"/>

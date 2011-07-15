@@ -33,6 +33,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+import android.widget.LinearLayout;
 
 import org.ros.Node;
 import org.ros.Publisher;
@@ -55,7 +56,7 @@ import ros.android.activity.RosAppActivity;
 import ros.android.views.SensorImageView;
 import ros.android.views.SetInitialPoseDisplay;
 import ros.android.views.SendGoalDisplay;
-import ros.android.views.TurtlebotDashboard;
+import ros.android.util.Dashboard;
 import ros.android.views.TurtlebotMapView;
 
 import java.text.DateFormat;
@@ -75,10 +76,12 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
   private float motionY;
   private float motionX;
   private Subscriber<AppStatus> statusSub;
-  private TurtlebotDashboard dashboard;
+  private Dashboard.DashboardInterface dashboard;
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
   private String robotAppName;
+  private String baseControlTopic;
+  private String cameraTopic;
   private SetInitialPoseDisplay poseSetter;
   private SendGoalDisplay goalSender;
 
@@ -113,8 +116,29 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     // cameraView.setOnTouchListener(this);
     touchCmdMessage = new Twist();
 
-    dashboard = (TurtlebotDashboard) findViewById(R.id.dashboard);
+    if (getIntent().hasExtra("base_control_topic")) {
+      baseControlTopic = getIntent().getStringExtra("base_control_topic");
+    } else {
+      baseControlTopic = "turtlebot_node/cmd_vel";
+    }
+
+    if (getIntent().hasExtra("camera_topic")) {
+      cameraTopic = getIntent().getStringExtra("camera_topic");
+    } else {
+      cameraTopic = "camera/rgb/image_color/compressed_throttle";
+    }
+    
+    dashboard = null;
     mapView = (TurtlebotMapView) findViewById(R.id.map_view);
+    if (getIntent().hasExtra("footprint_param")) {
+      mapView.setFootprintParam(getIntent().getStringExtra("footprint_param"));
+    }
+    if (getIntent().hasExtra("base_scan_topic")) {
+      mapView.setBaseScanTopic(getIntent().getStringExtra("base_scan_topic"));
+    }
+    if (getIntent().hasExtra("base_scan_frame")) {
+      mapView.setBaseScanFrame(getIntent().getStringExtra("base_scan_frame"));
+    }
 
     mainLayout = (ViewGroup) findViewById(R.id.main_layout);
     sideLayout = (ViewGroup) findViewById(R.id.side_layout);
@@ -204,7 +228,16 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       pubThread.interrupt();
       pubThread = null;
     }
-    dashboard.stop();
+    if (dashboard != null) {
+      dashboard.stop();
+      runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
+            top.removeView((View)dashboard);
+            dashboard = null;
+          }});
+    }
     mapView.stop();
     poseSetter.stop();
     goalSender.stop();
@@ -239,7 +272,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       NameResolver appNamespace = getAppNamespace(node);
       cameraView = (SensorImageView) findViewById(R.id.image);
       Log.i("MapNav", "init cameraView");
-      cameraView.start(node, appNamespace.resolve("camera/rgb/image_color/compressed_throttle"));
+      cameraView.start(node, appNamespace.resolve(cameraTopic));
       cameraView.post(new Runnable() {
 
         @Override
@@ -248,7 +281,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
         }
       });
       Log.i("MapNav", "init twistPub");
-      twistPub = node.createPublisher("turtlebot_node/cmd_vel", "geometry_msgs/Twist");
+      twistPub = node.createPublisher(baseControlTopic, "geometry_msgs/Twist");
       createPublisherThread(twistPub, touchCmdMessage, 10);
       poseSetter.start(node);
       goalSender.start(node);
@@ -269,7 +302,30 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     super.onNodeCreate(node);
     if( appManager != null ) {
       try {
-        dashboard.start(node);
+        if (dashboard != null) {
+          runOnUiThread(new Runnable() {
+              @Override
+                public void run() {
+                LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
+                top.removeView((View)dashboard);
+                dashboard = null;
+              }});
+        }
+        dashboard = Dashboard.createDashboard(node, this);
+        if (dashboard != null) {
+          runOnUiThread(new Runnable() {
+              @Override
+                public void run() {
+                LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
+                LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
+                           LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                Dashboard.DashboardInterface dash = dashboard;
+                if (dash != null) {
+                  top.addView((View)dash, lparams);
+                }
+              }});
+          dashboard.start(node);
+        }
         mapView.start(node);
         startApp();
       } catch (RosInitException ex) {

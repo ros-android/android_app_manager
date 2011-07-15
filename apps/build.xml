@@ -10,6 +10,7 @@
       <fileset file="AppChooser/build-wrapper.xml" />
       <fileset file="Teleop/build-wrapper.xml" />
       <fileset file="MakeAMap/build-wrapper.xml" />
+      <fileset file="MapNav/build-wrapper.xml" />
     </subant>
   </target>
 
@@ -18,6 +19,7 @@
       <fileset file="AppChooser/build-wrapper.xml" />
       <fileset file="Teleop/build-wrapper.xml" />
       <fileset file="MakeAMap/build-wrapper.xml" />
+      <fileset file="MapNav/build-wrapper.xml" />
     </subant>
   </target>
 
@@ -26,6 +28,7 @@
       <fileset file="AppChooser/build-wrapper.xml" />
       <fileset file="Teleop/build-wrapper.xml" />
       <fileset file="MakeAMap/build-wrapper.xml" />
+      <fileset file="MapNav/build-wrapper.xml" />
     </subant>
   </target>
 
@@ -34,6 +37,7 @@
       <fileset file="AppChooser/build-wrapper.xml" />
       <fileset file="Teleop/build-wrapper.xml" />
       <fileset file="MakeAMap/build-wrapper.xml" />
+      <fileset file="MapNav/build-wrapper.xml" />
     </subant>
     <delete includeemptydirs="true">
       <fileset dir="${basedir}" includes="*/build/**"/>

@@ -163,7 +163,6 @@ public class MapDisplay extends PanZoomDisplay {
     Bitmap localMapBitmap = mapBitmap; //avoids race conditions
     //Log.i("MapDisplay", "Display map");
     if (localMapBitmap != null && haveMap) {
-      Log.i("MapDisplay", "Good");
       canvas.drawBitmap(localMapBitmap, mapGridRelMap, paint);
     }
   }

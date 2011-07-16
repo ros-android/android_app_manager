@@ -37,6 +37,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import java.lang.Object;
 import android.util.Log;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.ros.MessageListener;
 import org.ros.Node;
@@ -49,11 +50,12 @@ import org.ros.message.nav_msgs.OccupancyGrid;
  */
 public class MapDisplay extends PanZoomDisplay {
   private Subscriber<OccupancyGrid> mapSubscriber;
-  private Bitmap mapBitmap;
+  private Bitmap mapBitmap, backgroundBitmap;
   private Matrix mapGridRelMap = new Matrix(); // from map metadata
   private Paint paint = new Paint();
   private String mapTopic = "map";
   private boolean haveMap = false;
+  private ReentrantLock mapLock = new ReentrantLock();
   
   private class MapUpdateThread extends Thread {
     private OccupancyGrid msg;
@@ -68,14 +70,16 @@ public class MapDisplay extends PanZoomDisplay {
      * thread.
      */
     public void run() {
+      Log.i("MapDisplay", "handleMap() - locking thread");
+      parent.mapLock.lock();
       Log.i("MapDisplay", "handleMap() - " + msg.info.height + " by " + msg.info.width);
-      if (parent.mapBitmap != null && (parent.mapBitmap.getWidth() != (int)msg.info.width || parent.mapBitmap.getHeight() != (int)msg.info.height)) {
+      if (parent.backgroundBitmap != null && (parent.backgroundBitmap.getWidth() != (int)msg.info.width || parent.backgroundBitmap.getHeight() != (int)msg.info.height)) {
         Log.i("MapDisplay", "Recycle map");
-        parent.mapBitmap.recycle();
-        parent.mapBitmap = null;
+        parent.backgroundBitmap.recycle();
+        parent.backgroundBitmap = null;
       }
-      if (parent.mapBitmap == null) {
-        parent.mapBitmap = Bitmap.createBitmap((int)msg.info.width, (int)msg.info.height, Bitmap.Config.RGB_565);
+      if (parent.backgroundBitmap == null) {
+        parent.backgroundBitmap = Bitmap.createBitmap((int)msg.info.width, (int)msg.info.height, Bitmap.Config.RGB_565);
         Log.i("MapDisplay", "Create map");
       }
       
@@ -91,13 +95,13 @@ public class MapDisplay extends PanZoomDisplay {
           data_i++;
           switch(cell) {
           case 100:
-            parent.mapBitmap.setPixel(x, y, black);
+            parent.backgroundBitmap.setPixel(x, y, black);
             break;
           case 0:
-            parent.mapBitmap.setPixel(x, y, white);
+            parent.backgroundBitmap.setPixel(x, y, white);
             break;
           default:
-            parent.mapBitmap.setPixel(x, y, grey);
+            parent.backgroundBitmap.setPixel(x, y, grey);
           }
         }
       }
@@ -109,10 +113,16 @@ public class MapDisplay extends PanZoomDisplay {
                                                     0, res, (float)msg.info.origin.position.y,
                                                     0,   0, 1 });
       Log.i("MapDisplay", "mapGridRelMap = " + parent.mapGridRelMap.toString());
+     
       
+      Bitmap temp = parent.backgroundBitmap;
+      parent.backgroundBitmap = parent.mapBitmap;
+      parent.mapBitmap = temp;
+      parent.haveMap = true;
       
-      haveMap = true;
       parent.postInvalidate();
+      
+      parent.mapLock.unlock();
     }
   }
 
@@ -134,8 +144,10 @@ public class MapDisplay extends PanZoomDisplay {
         new MessageListener<OccupancyGrid>() {
               @Override
               public void onNewMessage(final OccupancyGrid msg) {
+                Log.i("MapDisplay", "Map recieved");
                 new MapUpdateThread(parent, msg).start();
               }});
+    Log.i("MapDisplay", "Map display started");
   }
 
   @Override
@@ -149,7 +161,9 @@ public class MapDisplay extends PanZoomDisplay {
   @Override
   public void draw( Canvas canvas ) {
     Bitmap localMapBitmap = mapBitmap; //avoids race conditions
+    //Log.i("MapDisplay", "Display map");
     if (localMapBitmap != null && haveMap) {
+      Log.i("MapDisplay", "Good");
       canvas.drawBitmap(localMapBitmap, mapGridRelMap, paint);
     }
   }

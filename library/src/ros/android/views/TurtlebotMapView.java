@@ -37,6 +37,7 @@ import android.graphics.Paint;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.graphics.Path;
 import android.util.AttributeSet;
 import android.util.Log;
 import org.yaml.snakeyaml.Yaml;
@@ -144,7 +145,7 @@ public class TurtlebotMapView extends PanZoomView {
       int it = 0;
       while (!node.createParameterClient().has(footprintParam) && it < 30) {
         try {
-        Thread.sleep(1000);
+          Thread.sleep(1000);
         } catch(java.lang.InterruptedException e) {
           it = 30;
         }
@@ -163,7 +164,7 @@ public class TurtlebotMapView extends PanZoomView {
       for (Object o : footprint) {
         Object[] ob = (Object[])o;
         //This is a hack here - ATP
-        footprintX[i] = new Double(ob[0].toString()).doubleValue();
+        footprintX[i] = -new Double(ob[0].toString()).doubleValue();
         footprintY[i] = new Double(ob[1].toString()).doubleValue();
         if ((footprintX[i] > mostExtremeX && footprintX[i] > 0)
             || (footprintX[i] < -mostExtremeX && footprintX[i] < 0)
@@ -186,16 +187,17 @@ public class TurtlebotMapView extends PanZoomView {
       Bitmap bitmap = Bitmap.createBitmap(robotBitmapSize, robotBitmapSize, Bitmap.Config.ARGB_8888);
       Canvas c = new Canvas(bitmap);
       Paint p = new Paint();
+      Path path = new Path();
 
       c.drawColor(Color.TRANSPARENT);
 
+      path.lineTo((float)(footprintX[footprintX.length - 1] * scale + 50), 
+                  (float)(footprintY[footprintY.length - 1] * scale + 50));
       for (i = 0; i < footprintX.length; i++) {
         Log.i("MapView", "(" + (footprintX[i] * scale + 50) + ", " + (footprintY[i] * scale + 50) + ")");
-        int l = (i != 0) ? i - 1 : footprintX.length - 1;
-        c.drawLine((float)(-footprintX[l] * scale + 50), (float)(footprintY[l] * scale + 50),
-                   (float)(-footprintX[i] * scale + 50), (float)(footprintY[i] * scale + 50), p);
+        path.lineTo((float)(footprintX[i] * scale + 50), (float)(footprintY[i] * scale + 50));
       }
-
+      c.drawPath(path, p);
 
       
       Matrix robotImageRelRobot = new Matrix();

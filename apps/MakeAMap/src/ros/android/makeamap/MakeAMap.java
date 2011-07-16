@@ -298,7 +298,7 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
       mapView.start(node);
       startApp();
     } catch (RosInitException ex) {
-      Toast.makeText(MakeAMap.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+      safeToastStatus("Failed: " + ex.getMessage());
     }
   }
 

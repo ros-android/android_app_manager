@@ -55,7 +55,7 @@ import ros.android.activity.R;
 /**
  * View of the latest map with the turtlebot drawn in where TF thinks it is.
  */
-public class TurtlebotMapView extends PanZoomView {
+public class MapView extends PanZoomView {
   private PlaneTfChangeListener tfChangeListener;
   private BitmapDisplay robotDisplay;
   private String footprintParam;
@@ -65,17 +65,17 @@ public class TurtlebotMapView extends PanZoomView {
 
   private static final float turtlebotDiameter = .314f; // meters
 
-  public TurtlebotMapView(Context ctx) {
+  public MapView(Context ctx) {
     super(ctx);
     init(ctx);
   }
 
-  public TurtlebotMapView(Context context, AttributeSet attrs, int defStyle) {
+  public MapView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
     init(context);
   }
 
-  public TurtlebotMapView(Context context, AttributeSet attrs) {
+  public MapView(Context context, AttributeSet attrs) {
     super(context, attrs);
     init(context);
   }
@@ -90,7 +90,7 @@ public class TurtlebotMapView extends PanZoomView {
     robotDisplay = new BitmapDisplay();
     Bitmap robotBitmap = BitmapFactory.decodeResource( context.getResources(), R.drawable.turtlebot_top_view );
     robotDisplay.setBitmap( robotBitmap );
-    Log.i("TurtlebotMapView", "robot image is " + robotBitmap.getWidth() + " by " + robotBitmap.getHeight() );
+    Log.i("MapView", "robot image is " + robotBitmap.getWidth() + " by " + robotBitmap.getHeight() );
     // This transform assumes the robot in the image has its +x
     // pointing to the left and its +y pointing down.
     Matrix robotImageRelRobot = new Matrix();
@@ -130,10 +130,10 @@ public class TurtlebotMapView extends PanZoomView {
   }
 
   private class FootprintThread extends Thread {
-    private TurtlebotMapView view;
+    private MapView view;
     private Node node;
     private String footprintParam;
-    public FootprintThread(TurtlebotMapView view, Node node, String footprintParam) {
+    public FootprintThread(MapView view, Node node, String footprintParam) {
       super();
       this.view = view;
       this.node = node;

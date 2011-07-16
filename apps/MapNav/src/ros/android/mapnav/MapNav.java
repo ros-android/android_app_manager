@@ -57,7 +57,7 @@ import ros.android.views.SensorImageView;
 import ros.android.views.SetInitialPoseDisplay;
 import ros.android.views.SendGoalDisplay;
 import ros.android.util.Dashboard;
-import ros.android.views.TurtlebotMapView;
+import ros.android.views.MapView;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ import java.util.Date;
 public class MapNav extends RosAppActivity implements OnTouchListener {
   private Publisher<Twist> twistPub;
   private SensorImageView cameraView;
-  private TurtlebotMapView mapView;
+  private MapView mapView;
   private Thread pubThread;
   private Twist touchCmdMessage;
   private float motionY;
@@ -129,7 +129,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     }
     
     dashboard = null;
-    mapView = (TurtlebotMapView) findViewById(R.id.map_view);
+    mapView = (MapView) findViewById(R.id.map_view);
     if (getIntent().hasExtra("footprint_param")) {
       mapView.setFootprintParam(getIntent().getStringExtra("footprint_param"));
     }

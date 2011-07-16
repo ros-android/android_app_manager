@@ -18,10 +18,10 @@
     <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content"
                   android:background="#ff404040"
 	          android:id="@+id/top_bar" />
-    <ros.android.views.TurtlebotMapView android:layout_width="fill_parent"
-                                        android:layout_height="fill_parent"
-                                        android:layout_weight=".25"
-                                        android:id="@+id/map_view"/>
+    <ros.android.views.MapView android:layout_width="fill_parent"
+                               android:layout_height="fill_parent"
+                               android:layout_weight=".25"
+                               android:id="@+id/map_view"/>
     <ImageView android:layout_width="fill_parent"
                android:layout_height="fill_parent"
                android:layout_weight=".25"

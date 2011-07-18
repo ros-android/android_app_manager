@@ -35,6 +35,9 @@ package ros.android.util;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
+import android.app.Activity;
 import org.ros.Node;
 import org.ros.ParameterTree;
 import org.ros.exception.RosInitException;
@@ -48,6 +51,58 @@ public class Dashboard {
      */
     public void start(Node node) throws RosInitException;
     public void stop();
+  }
+
+  private DashboardInterface dashboard;
+  private Activity activity;
+  private ViewGroup view;
+  private ViewGroup.LayoutParams lparams;
+
+  public Dashboard(Activity activity) {
+    dashboard = null;
+    this.activity = activity;
+    this.view = null;
+    this.lparams = null;
+  }
+
+  public void setView(ViewGroup view, ViewGroup.LayoutParams lparams) {
+    this.view = view;
+    this.lparams = lparams;
+  }
+
+  public void stop() {
+    activity.runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          Dashboard.DashboardInterface dash = dashboard;
+          if (dash != null) {
+            dash.stop();
+            view.removeView((View)dash);
+          }
+          dashboard = null;
+        }});
+  }
+
+  public void start(Node node) throws RosInitException {
+    if (dashboard != null) { //FIXME: should we re-start the dashboard? I think this is really an error.
+      return;
+    }
+    dashboard = Dashboard.createDashboard(node, activity);
+    if (dashboard != null) {
+      activity.runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            //LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
+            /*LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
+              LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);*/
+            Dashboard.DashboardInterface dash = dashboard;
+            ViewGroup localView = view;
+            if (dash != null && localView != null) {
+              localView.addView((View)dash, lparams);
+            }
+          }});
+      dashboard.start(node);
+    }
   }
 
   private static DashboardInterface createDashboard(Class dashClass, Context context) {
@@ -81,7 +136,7 @@ public class Dashboard {
   /**
    * Dynamically locate and create a dashboard.
    */
-  public static DashboardInterface createDashboard(Node node, Context context) {
+  private static DashboardInterface createDashboard(Node node, Context context) {
     ParameterTree tree = node.createParameterClient();
     String dashboardClassName = tree.getString("robot/dashboard/class_name");
     if (dashboardClassName != null) {

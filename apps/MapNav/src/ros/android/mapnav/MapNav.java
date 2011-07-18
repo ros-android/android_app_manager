@@ -76,7 +76,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
   private float motionY;
   private float motionX;
   private Subscriber<AppStatus> statusSub;
-  private Dashboard.DashboardInterface dashboard;
+  private Dashboard dashboard;
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
   private String robotAppName;
@@ -128,7 +128,10 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       cameraTopic = "camera/rgb/image_color/compressed_throttle";
     }
     
-    dashboard = null;
+    dashboard = new Dashboard(this);
+    dashboard.setView((LinearLayout)findViewById(R.id.top_bar),
+                      new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 
+                                                    LinearLayout.LayoutParams.WRAP_CONTENT));
     mapView = (MapView) findViewById(R.id.map_view);
     if (getIntent().hasExtra("footprint_param")) {
       mapView.setFootprintParam(getIntent().getStringExtra("footprint_param"));
@@ -228,16 +231,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
       pubThread.interrupt();
       pubThread = null;
     }
-    if (dashboard != null) {
-      dashboard.stop();
-      runOnUiThread(new Runnable() {
-          @Override
-          public void run() {
-            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-            top.removeView((View)dashboard);
-            dashboard = null;
-          }});
-    }
+    dashboard.stop();
     mapView.stop();
     poseSetter.stop();
     goalSender.stop();
@@ -302,30 +296,7 @@ public class MapNav extends RosAppActivity implements OnTouchListener {
     super.onNodeCreate(node);
     if( appManager != null ) {
       try {
-        if (dashboard != null) {
-          runOnUiThread(new Runnable() {
-              @Override
-                public void run() {
-                LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-                top.removeView((View)dashboard);
-                dashboard = null;
-              }});
-        }
-        dashboard = Dashboard.createDashboard(node, this);
-        if (dashboard != null) {
-          runOnUiThread(new Runnable() {
-              @Override
-                public void run() {
-                LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-                LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
-                           LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                Dashboard.DashboardInterface dash = dashboard;
-                if (dash != null) {
-                  top.addView((View)dash, lparams);
-                }
-              }});
-          dashboard.start(node);
-        }
+        dashboard.start(node);
         mapView.start(node);
         startApp();
       } catch (RosInitException ex) {

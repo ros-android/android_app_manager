@@ -64,7 +64,7 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
   private float motionY;
   private float motionX;
   private Subscriber<AppStatus> statusSub;
-  private Dashboard.DashboardInterface dashboard;
+  private Dashboard dashboard;
   private ViewGroup mainLayout;
   private ViewGroup sideLayout;
   private String robotAppName;
@@ -123,7 +123,10 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
     // cameraView.setOnTouchListener(this);
     touchCmdMessage = new Twist();
 
-    dashboard = null;
+    dashboard = new Dashboard(this);
+    dashboard.setView((LinearLayout)findViewById(R.id.top_bar),
+                      new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 
+                                                    LinearLayout.LayoutParams.WRAP_CONTENT));
 
     mainLayout = (ViewGroup) findViewById(R.id.main_layout);
     sideLayout = (ViewGroup) findViewById(R.id.side_layout);
@@ -204,16 +207,7 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
       pubThread = null;
     }
     mapView.stop();
-    if (dashboard != null) {
-      dashboard.stop();
-      runOnUiThread(new Runnable() {
-          @Override
-          public void run() {
-            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-            top.removeView((View)dashboard);
-            dashboard = null;
-          }});
-    }
+    dashboard.stop();
     super.onNodeDestroy(node);
   }
 
@@ -270,30 +264,7 @@ public class MakeAMap extends RosAppActivity implements OnTouchListener {
     Log.i("MakeAMap", "startAppFuture");
     super.onNodeCreate(node);
     try {
-      if (dashboard != null) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-              top.removeView((View)dashboard);
-              dashboard = null;
-            }});
-      }
-      dashboard = Dashboard.createDashboard(node, this);
-      if (dashboard != null) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-              LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
-                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-              Dashboard.DashboardInterface dash = dashboard;
-              if (dash != null) {
-                top.addView((View)dash, lparams);
-              }
-            }});
-        dashboard.start(node);
-      }
+      dashboard.start(node);
       
       mapView.start(node);
       startApp();

@@ -73,7 +73,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
   private float motionY;
   private float motionX;
   private Subscriber<AppStatus> statusSub;
-  private Dashboard.DashboardInterface dashboard;
+  private Dashboard dashboard;
   private String robotAppName;
   private String baseControlTopic;
   private String cameraTopic;
@@ -111,21 +111,15 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     // cameraView.setOnTouchListener(this);
     touchCmdMessage = new Twist();
 
-    dashboard = null;
+    dashboard = new Dashboard(this);
+    dashboard.setView((LinearLayout)findViewById(R.id.top_bar),
+                      new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 
+                                                    LinearLayout.LayoutParams.WRAP_CONTENT));
   }
 
   @Override
   protected void onNodeDestroy(Node node) {
-    if (dashboard != null) {
-      dashboard.stop();
-      runOnUiThread(new Runnable() {
-          @Override
-            public void run() {
-            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-            top.removeView((View)dashboard);
-            dashboard = null;
-          }});
-    }
+    dashboard.stop();
     if (twistPub != null) {
       twistPub.shutdown();
       twistPub = null;
@@ -198,33 +192,7 @@ public class Teleop extends RosAppActivity implements OnTouchListener {
     Log.i("Teleop", "startAppFuture");
     super.onNodeCreate(node);
     try {
-      
-      if (dashboard != null) {
-        dashboard.stop();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-              top.removeView((View)dashboard);
-              dashboard = null;
-            }});
-      }
-      dashboard = Dashboard.createDashboard(node, this);
-      
-      if (dashboard != null) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-              LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-              Dashboard.DashboardInterface dash = dashboard;
-              if (dash != null) {
-                top.addView((View)dash, lparams);
-              }
-            }});
-        dashboard.start(node);
-      }
+      dashboard.start(node);
       startApp();
     } catch (RosInitException ex) {
       Toast.makeText(Teleop.this, "Failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();

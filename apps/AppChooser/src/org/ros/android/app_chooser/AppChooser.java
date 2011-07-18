@@ -70,7 +70,7 @@ public class AppChooser extends RosAppActivity {
   private ArrayList<App> availableAppsCache;
   private ArrayList<App> runningAppsCache;
   private long availableAppsCacheTime;
-  private Dashboard.DashboardInterface dashboard;
+  private Dashboard dashboard;
   private TextView robotNameView;
   private Button deactivate;
   private Button stopApps;
@@ -78,7 +78,7 @@ public class AppChooser extends RosAppActivity {
   public AppChooser() {
     availableAppsCache = new ArrayList<App>();
     availableAppsCacheTime = 0;
-    dashboard = null;
+    dashboard = new Dashboard(this);
   }
 
   @Override
@@ -91,6 +91,10 @@ public class AppChooser extends RosAppActivity {
     deactivate.setVisibility(deactivate.GONE);
     stopApps = (Button) findViewById(R.id.stop_applications);
     stopApps.setVisibility(stopApps.GONE);
+
+    dashboard.setView((LinearLayout)findViewById(R.id.top_bar),
+                      new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 
+                                                    LinearLayout.LayoutParams.WRAP_CONTENT));
   }
 
   @Override
@@ -137,21 +141,6 @@ public class AppChooser extends RosAppActivity {
       return;
     }
 
-    runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        robotNameView.setText(getCurrentRobot().getRobotName());
-      }});
-    
-    if (dashboard != null) {
-      runOnUiThread(new Runnable() {
-          @Override
-          public void run() {
-            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-            top.removeView((View)dashboard);
-            dashboard = null;
-          }});
-    }
     if (getCurrentRobot().getRobotId().getControlUri() != null) {
       runOnUiThread(new Runnable() {
           @Override
@@ -159,27 +148,20 @@ public class AppChooser extends RosAppActivity {
             deactivate.setVisibility(deactivate.VISIBLE);
           }});
     }
-    dashboard = Dashboard.createDashboard(node, this);
-    
-    if (dashboard != null) {
-      runOnUiThread(new Runnable() {
-          @Override
-            public void run() {
-            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-            LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
-                   LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            Dashboard.DashboardInterface dash = dashboard;
-            if (dash != null) {
-              top.addView((View)dash, lparams);
-            }
-          }});
-      
-      try {
-        dashboard.start(node);
-      } catch (RosInitException ex) {
-        safeSetStatus("Failed: " + ex.getMessage());
-      }
+
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        robotNameView.setText(getCurrentRobot().getRobotName());
+      }});
+
+
+    try {
+      dashboard.start(node);
+    } catch (RosInitException ex) {
+      safeSetStatus("Failed: " + ex.getMessage());
     }
+    
 
     if (appManager == null) {
       safeSetStatus("Robot not available");
@@ -224,16 +206,7 @@ public class AppChooser extends RosAppActivity {
         public void run() {
           deactivate.setVisibility(deactivate.GONE);
         }});
-    if (dashboard != null) {
-      dashboard.stop();
-      runOnUiThread(new Runnable() {
-          @Override
-          public void run() {
-            LinearLayout top = (LinearLayout)findViewById(R.id.top_bar);
-            top.removeView((View)dashboard);
-            dashboard = null;
-          }});
-    }
+    dashboard.stop();
   }
 
   public void chooseNewMasterClicked(View view) {

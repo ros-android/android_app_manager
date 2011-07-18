@@ -57,11 +57,8 @@ import org.ros.message.diagnostic_msgs.DiagnosticArray;
 import org.ros.message.diagnostic_msgs.DiagnosticStatus;
 import org.ros.message.diagnostic_msgs.KeyValue;
 import org.ros.message.pr2_msgs.DashboardState;
-import org.ros.message.turtlebot_node.TurtlebotSensorState;
 import org.ros.namespace.NameResolver;
 import org.ros.internal.namespace.GraphName;
-import org.ros.service.turtlebot_node.SetDigitalOutputs;
-import org.ros.service.turtlebot_node.SetTurtlebotMode;
 import org.ros.service.std_srvs.Empty;
 import org.ros.service.pr2_power_board.PowerBoardCommand;
 import ros.android.activity.R;
@@ -74,10 +71,8 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
   private ImageButton modeButton;
   private ProgressBar modeWaitingSpinner;
   private BatteryLevelView robotBattery;
-  private BatteryLevelView laptopBattery; //TRASH
   private ImageView wirelessEstop;
   private ImageView physicalEstop;
-  private Context context; //TRASH
 
   private enum Pr2RobotState {
     UNKNOWN,
@@ -98,20 +93,13 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
   private boolean clickOnTransition = false;
   AlertDialog.Builder alertBuilder;
 
-  //TRASH
-  private boolean powerOn = false;
-  private int numModeResponses;
-  private int numModeErrors;
-
   public Pr2Dashboard(Context context) {
     super(context);
-    this.context = context;
     inflateSelf(context);
   }
 
   public Pr2Dashboard(Context context, AttributeSet attrs) {
     super(context, attrs);
-    this.context = context;
     inflateSelf(context);
   }
 
@@ -336,80 +324,6 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
             alertBuilder.setMessage("Robot is in an unknown or invalid state. Please wait and try again.").show();
           }});
       break;
-    }
-  }
-  
-  private void foo() {
-
-      powerOn = !powerOn;
-
-      SetTurtlebotMode.Request modeRequest = new SetTurtlebotMode.Request();
-      SetDigitalOutputs.Request setDigOutRequest = new SetDigitalOutputs.Request();
-      setDigOutRequest.digital_out_1 = 0;
-      setDigOutRequest.digital_out_2 = 0;
-      if (powerOn) {
-        modeRequest.mode = TurtlebotSensorState.OI_MODE_FULL;
-        setDigOutRequest.digital_out_0 = 1; // main breaker on
-      } else {
-        modeRequest.mode = TurtlebotSensorState.OI_MODE_PASSIVE;
-        setDigOutRequest.digital_out_0 = 0; // main breaker off
-      }
-
-      setModeWaiting( true );
-
-      numModeResponses = 0;
-      numModeErrors = 0;
-
-      // TODO: can't I save the modeServiceClient? Causes trouble.
-      try {
-	  ServiceClient<SetTurtlebotMode.Request, SetTurtlebotMode.Response> modeServiceClient =
-	      node.createServiceClient("turtlebot_node/set_operation_mode", "turtlebot_node/SetTurtlebotMode");
-        modeServiceClient.call(modeRequest, new ServiceResponseListener<SetTurtlebotMode.Response>() {
-            @Override
-              public void onSuccess(SetTurtlebotMode.Response message) {
-              numModeResponses++;
-              updateModeWaiting();
-            }
-
-            @Override
-              public void onFailure(Exception e) {
-              numModeResponses++;
-              numModeErrors++;
-              updateModeWaiting();
-            }
-          });
-      } catch(Exception ex) {
-        Toast.makeText(getContext(), "Exception in service call for set_operation_mode: " + ex.getMessage(), Toast.LENGTH_LONG).show();
-        Log.i("TurtlebotDashboard", "making toast.");
-      }
-
-      try {
-        ServiceClient<SetDigitalOutputs.Request, SetDigitalOutputs.Response> setDigOutServiceClient =
-          node.createServiceClient("turtlebot_node/set_digital_outputs", "turtlebot_node/SetDigitalOutputs");
-        setDigOutServiceClient.call(setDigOutRequest,
-                                    new ServiceResponseListener<SetDigitalOutputs.Response>() {
-                                      @Override
-                                        public void onSuccess(final SetDigitalOutputs.Response msg) {
-                                        numModeResponses++;
-                                        updateModeWaiting();
-                                      }
-
-                                      @Override
-                                        public void onFailure(Exception e) {
-                                        numModeResponses++;
-                                        numModeErrors++;
-                                        updateModeWaiting();
-                                      }
-                                    });
-      } catch(Exception ex) {
-        Toast.makeText(getContext(), "Exception in service call for set_digital_outputs: " + ex.getMessage(), Toast.LENGTH_LONG).show();
-        Log.i("TurtlebotDashboard", "making toast.");
-      }
-  }
-
-  private void updateModeWaiting() {
-    if( numModeResponses >= 2 ) {
-      setModeWaiting( false );
     }
   }
 

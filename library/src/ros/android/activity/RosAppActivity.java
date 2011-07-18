@@ -73,8 +73,8 @@ public class RosAppActivity extends RosActivity {
     }
     NameResolver resolver = node.getResolver();
     GraphName name = new GraphName(robotDescription.getRobotName());
-    name.join(new GraphName("application"));
-    return resolver.createResolver(name);
+    GraphName apps = name.join(new GraphName("application"));
+    return resolver.createResolver(apps);
   }
 
   @Override

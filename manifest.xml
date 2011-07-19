@@ -32,7 +32,6 @@
 
   <export>
     <rosjava-src location="library/src" />
-    <rosjava-pathelement location="library/bin/appmanandroid_lib.jar" />
+    <rosjava-android path="library" />
   </export>
-  
 </package>

@@ -8,8 +8,6 @@
   <target name="compile">
     <subant target="compile">
       <fileset file="AppChooser/build-wrapper.xml" />
-      <fileset file="Teleop/build-wrapper.xml" />
-      <fileset file="MapNav/build-wrapper.xml" />
     </subant>
   </target>
 
@@ -23,14 +21,12 @@
   <target name="install">
     <subant target="install">
       <fileset file="AppChooser/build-wrapper.xml" />
-      <fileset file="Teleop/build-wrapper.xml" />
     </subant>
   </target>
 
   <target name="clean">
     <subant target="clean">
       <fileset file="AppChooser/build-wrapper.xml" />
-      <fileset file="Teleop/build-wrapper.xml" />
     </subant>
     <delete includeemptydirs="true">
       <fileset dir="${basedir}" includes="*/build/**"/>

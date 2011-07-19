@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project name="build-wrapper" default="debug" basedir=".">
-
-  <property name="app.dir" location="${basedir}"/>
-
-  <import file="../build-app-common.xml"/>
-
-</project>

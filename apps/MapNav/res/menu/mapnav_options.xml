@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-  <item android:title="Choose Map" android:id="@+id/choose_map"></item>
-  <item android:title="Set Pose" android:id="@+id/set_pose"></item>
-  <item android:title="Set Goal" android:id="@+id/set_goal"></item>
-  <item android:title="Kill" android:id="@+id/kill"></item>
-</menu>

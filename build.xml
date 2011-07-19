@@ -14,21 +14,17 @@
   </target>
 
   <target name="clean">    
-    <ant dir="apps" target="clean"/>
   </target>
 
   <target name="compile" depends="init">
   </target>
     
   <target name="compile-apps" depends="compile">
-    <ant dir="apps" target="compile"/>
   </target>
 
   <target name="debug-apps" depends="compile">
-    <ant dir="apps" target="debug"/>
   </target>
 
   <target name="install-apps" depends="compile">
-    <ant dir="apps" target="install"/>
   </target>
 </project>

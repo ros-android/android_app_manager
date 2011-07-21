@@ -32,6 +32,6 @@
 
   <export>
     <rosjava-src location="library/src" />
-    <rosjava-android path="library" />
+    <rosjava-android-lib path="library" />
   </export>
 </package>

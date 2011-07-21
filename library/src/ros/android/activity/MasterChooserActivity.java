@@ -170,7 +170,7 @@ public class MasterChooserActivity extends Activity {
   }
 
   private void updateListView() {
-    setContentView(R.layout.master_chooser);
+    setContentView(R.layout.advanced_master_chooser);
     ListView listview = (ListView) findViewById(R.id.master_list);
     listview.setAdapter(new MasterAdapter(this, robots));
     listview.setOnItemClickListener(new OnItemClickListener() {

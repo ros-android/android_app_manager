@@ -523,4 +523,16 @@ public class RosActivity extends Activity {
     }
     return node;
   }
+
+  public NodeConfiguration getNodeConfiguration() {
+    NodeConfiguration r = null;
+    if (masterChooser != null) {
+      try {
+        r = masterChooser.createConfiguration();
+      } catch (Exception e) {
+        r = null;
+      }
+    }
+    return r;
+  }
 }

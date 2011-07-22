@@ -138,7 +138,10 @@ public class Dashboard {
    */
   private static DashboardInterface createDashboard(Node node, Context context) {
     ParameterTree tree = node.newParameterTree();
-    String dashboardClassName = tree.getString("robot/dashboard/class_name");
+    String dashboardClassName = null;
+    if (tree.has("robot/dashboard/class_name")) {
+      dashboardClassName = tree.getString("robot/dashboard/class_name");
+    }
     if (dashboardClassName != null) {
       if (!dashboardClassName.equals("")) {
         return createDashboard(dashboardClassName, context);

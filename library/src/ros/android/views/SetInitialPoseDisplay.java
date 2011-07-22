@@ -41,10 +41,10 @@ import android.view.MotionEvent;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Matrix3f;
 
-import org.ros.MessageListener;
-import org.ros.Node;
-import org.ros.Publisher;
-import org.ros.exception.RosInitException;
+import org.ros.message.MessageListener;
+import org.ros.node.Node;
+import org.ros.node.topic.Publisher;
+import org.ros.exception.RosException;
 import org.ros.message.geometry_msgs.PoseWithCovarianceStamped;
 
 import ros.android.util.Posable;
@@ -95,10 +95,10 @@ public class SetInitialPoseDisplay extends PoseInputDisplay {
   }
 
   @Override
-  public void start( Node node ) throws RosInitException {
+  public void start( Node node ) throws RosException {
     super.start( node );
     initialPosePublisher =
-	node.createPublisher( initialPoseTopic, "geometry_msgs/PoseWithCovarianceStamped" );
+	node.newPublisher( initialPoseTopic, "geometry_msgs/PoseWithCovarianceStamped" );
   }
 
   @Override

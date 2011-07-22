@@ -34,10 +34,10 @@
 package ros.android.activity;
 
 import android.util.Log;
-import org.ros.Node;
-import org.ros.exception.RosInitException;
+import org.ros.node.Node;
+import org.ros.exception.RosException;
 import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
-import org.ros.internal.namespace.GraphName;
+import org.ros.namespace.GraphName;
 import org.ros.namespace.NameResolver;
 import ros.android.util.RobotDescription;
 
@@ -55,10 +55,10 @@ public class RosAppActivity extends RosActivity {
   }
 
   private AppManager createAppManagerCb(Node node, RobotDescription robotDescription)
-      throws RosInitException, XmlRpcTimeoutException, AppManagerNotAvailableException {
+      throws RosException, XmlRpcTimeoutException, AppManagerNotAvailableException {
     //TODO: prevent connecting to app manager of unknown robots
     if (robotDescription == null) {
-      throw new RosInitException("no robot available");
+      throw new RosException("no robot available");
     } else {
       Log.i("RosAndroid", "Using Robot: " + robotDescription.getRobotName() + " "
             + robotDescription.getRobotId().toString());
@@ -66,10 +66,10 @@ public class RosAppActivity extends RosActivity {
     }
   }
 
-  protected NameResolver getAppNamespace(Node node) throws RosInitException {
+  protected NameResolver getAppNamespace(Node node) throws RosException {
     RobotDescription robotDescription = getCurrentRobot();
     if (robotDescription == null) {
-      throw new RosInitException("no robot available");
+      throw new RosException("no robot available");
     }
     NameResolver resolver = node.getResolver();
     GraphName name = new GraphName(robotDescription.getRobotName());
@@ -84,7 +84,7 @@ public class RosAppActivity extends RosActivity {
     RobotDescription robotDescription = getCurrentRobot();
     try {
       appManager = createAppManagerCb(node, robotDescription);
-    } catch (RosInitException e) {
+    } catch (RosException e) {
       Log.e("RosAndroid", "ros init failed", e);
       appManager = null;
     } catch (XmlRpcTimeoutException e) {

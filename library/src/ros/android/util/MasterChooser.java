@@ -37,10 +37,10 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.util.Log;
-import org.ros.NodeConfiguration;
-import org.ros.RosLoader;
-import org.ros.exception.RosInitException;
-import org.ros.internal.namespace.GraphName;
+import org.ros.node.NodeConfiguration;
+//import org.ros.RosLoader;
+import org.ros.exception.RosException;
+import org.ros.namespace.GraphName;
 import org.ros.namespace.NameResolver;
 import org.yaml.snakeyaml.Yaml;
 import ros.android.activity.MasterChooserActivity;
@@ -61,7 +61,7 @@ import java.util.HashMap;
  * Helper class for launching the {@link MasterChooserActivity} for choosing a
  * ROS master. Keep this object around for the lifetime of an {@link Activity}.
  */
-public class MasterChooser extends RosLoader {
+public class MasterChooser /*extends RosLoader*/ {
 
   private Activity callingActivity;
   private RobotDescription currentRobot;
@@ -212,27 +212,27 @@ public class MasterChooser extends RosLoader {
    * Create and return a new ROS NodeContext object based on the current value
    * of the internal masterUri variable.
    * 
-   * @throws RosInitException
+   * @throws RosException
    *           If the master URI is invalid or if we cannot get a hostname for
    *           the device we are running on.
    */
-  @Override
-  public NodeConfiguration createConfiguration() throws RosInitException {
+  //@Override
+  public NodeConfiguration createConfiguration() throws RosException {
     return createConfiguration(currentRobot.getRobotId());
   }
 
   /**
    * Create and return a new ROS NodeContext object.
    * 
-   * @throws RosInitException
+   * @throws RosException
    *           If masterUri is invalid or if we cannot get a hostname for the
    *           device we are running on.
    */
-  static public NodeConfiguration createConfiguration(RobotId robotId) throws RosInitException {
+  static public NodeConfiguration createConfiguration(RobotId robotId) throws RosException {
     Log.i("MasterChooser", "createConfiguration(" + robotId.toString() + ")");
     if (robotId == null || robotId.getMasterUri() == null) {
       // TODO: different exception type for invalid master uri
-      throw new RosInitException("ROS Master URI is not set");
+      throw new RosException("ROS Master URI is not set");
     }
     String namespace = "/";
     HashMap<GraphName, GraphName> remappings = new HashMap<GraphName, GraphName>();
@@ -243,17 +243,17 @@ public class MasterChooser extends RosLoader {
       uri = new URI(robotId.getMasterUri());
     } catch (URISyntaxException e) {
       Log.i("MasterChooser", "createConfiguration(" + robotId.toString() + ") invalid master uri.");
-      throw new RosInitException("Invalid master URI");
+      throw new RosException("Invalid master URI");
     }
 
     Log.i("MasterChooser", "createConfiguration() creating configuration.");
-    NodeConfiguration configuration = NodeConfiguration.createDefault();
+    NodeConfiguration configuration = 
+      NodeConfiguration.newPublic(getNonLoopbackHostName());
     configuration.setParentResolver(resolver);
     configuration.setRosPackagePath(null);
     configuration.setMasterUri(uri);
 
-    configuration.setHost(getNonLoopbackHostName());
-    Log.i("MasterChooser", "createConfiguration() returning configuration with host = " + configuration.getHost());
+    Log.i("MasterChooser", "createConfiguration() returning configuration with host = " + getNonLoopbackHostName());
     return configuration;
   }
 

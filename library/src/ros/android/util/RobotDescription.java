@@ -33,8 +33,8 @@
 
 package ros.android.util;
 
-import org.ros.exception.RosNameException;
-import org.ros.internal.namespace.GraphName;
+import org.ros.exception.RosException;
+import org.ros.namespace.GraphName;
 
 import java.net.URI;
 import java.util.Date;
@@ -96,9 +96,7 @@ public class RobotDescription implements java.io.Serializable {
   }
 
   public void setRobotName(String robotName) throws InvalidRobotDescriptionException {
-    try {
-      GraphName.validate(robotName);
-    } catch (RosNameException e) {
+    if (!GraphName.validate(robotName)) {
       throw new InvalidRobotDescriptionException("Bad robot name: " + robotName);
     }
     this.robotName = robotName;

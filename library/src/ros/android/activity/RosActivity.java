@@ -43,17 +43,18 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-import org.ros.DefaultNode;
-import org.ros.Node;
-import org.ros.exception.RosInitException;
+import org.ros.node.DefaultNodeFactory;
+import org.ros.node.Node;
+import org.ros.exception.RosException;
 import ros.android.util.RobotId;
 import ros.android.util.MasterChooser;
 import ros.android.util.MasterChecker;
 import ros.android.util.WiFiChecker;
 import ros.android.util.ControlChecker;
 import ros.android.util.RobotDescription;
-import org.ros.NodeConfiguration;
+import org.ros.node.NodeConfiguration;
 import java.lang.Runnable;
+import java.lang.System;
 import android.net.wifi.WifiManager;
 
 import java.io.BufferedReader;
@@ -453,7 +454,10 @@ public class RosActivity extends Activity {
           if (config == null) {
             Log.e("RosAndroid", "Configuration for node is null!");
           }
-          node = new DefaultNode("android", config);
+          String milis = Long.toString(System.currentTimeMillis());
+          String name = "android" + milis;
+          Log.i("RosAndroid", "Creating node \"" + name + "\"");
+          node = new DefaultNodeFactory().newNode(name, config);
         } catch (Exception e) {
 	    Log.e("RosAndroid", "Exception while creating node.", e);
           node = null;
@@ -513,13 +517,13 @@ public class RosActivity extends Activity {
    * instance.
    *
    * @return Initialized {@link Node} instance.
-   * @throws RosInitException
+   * @throws RosException
    *           If {@link Node} was not successfully initialized. Exception will
    *           contain original initialization exception.
    */
-  public Node getNode() throws RosInitException {
+  public Node getNode() throws RosException {
     if (node == null) {
-      throw new RosInitException(getErrorException());
+      throw new RosException(getErrorException());
     }
     return node;
   }

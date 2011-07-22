@@ -44,19 +44,20 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-import org.ros.DefaultNode;
-import org.ros.MessageListener;
-import org.ros.Node;
-import org.ros.ServiceResponseListener;
-import org.ros.Subscriber;
-import org.ros.exception.RosInitException;
-import org.ros.ServiceClient;
+import org.ros.internal.node.DefaultNode;
+import org.ros.message.MessageListener;
+import org.ros.node.Node;
+import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Subscriber;
+import org.ros.exception.RosException;
+import org.ros.exception.RemoteException;
+import org.ros.node.service.ServiceClient;
 import org.ros.message.diagnostic_msgs.DiagnosticArray;
 import org.ros.message.diagnostic_msgs.DiagnosticStatus;
 import org.ros.message.diagnostic_msgs.KeyValue;
 import org.ros.message.turtlebot_node.TurtlebotSensorState;
 import org.ros.namespace.NameResolver;
-import org.ros.internal.namespace.GraphName;
+import org.ros.namespace.GraphName;
 import org.ros.service.turtlebot_node.SetDigitalOutputs;
 import org.ros.service.turtlebot_node.SetTurtlebotMode;
 import ros.android.activity.R;
@@ -113,12 +114,12 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
    * the previous node if there was one.
    */
   @Override
-  public void start(Node node) throws RosInitException {
+  public void start(Node node) throws RosException {
     stop();
     this.node = node;
     try {
       diagnosticSubscriber =
-          node.createSubscriber("diagnostics_agg", "diagnostic_msgs/DiagnosticArray", new MessageListener<DiagnosticArray>() {
+          node.newSubscriber("diagnostics_agg", "diagnostic_msgs/DiagnosticArray", new MessageListener<DiagnosticArray>() {
             @Override
             public void onNewMessage(final DiagnosticArray msg) {
               TurtlebotDashboard.this.post(new Runnable() {
@@ -133,7 +134,7 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
       NameResolver resolver = node.getResolver().createResolver(new GraphName("/turtlebot_node"));
     } catch( Exception ex ) {
       this.node = null;
-      throw( new RosInitException( ex ));
+      throw( new RosException( ex ));
     }
   }
 
@@ -189,16 +190,16 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
       // TODO: can't I save the modeServiceClient? Causes trouble.
       try {
 	  ServiceClient<SetTurtlebotMode.Request, SetTurtlebotMode.Response> modeServiceClient =
-	      node.createServiceClient("turtlebot_node/set_operation_mode", "turtlebot_node/SetTurtlebotMode");
+	      node.newServiceClient("turtlebot_node/set_operation_mode", "turtlebot_node/SetTurtlebotMode");
         modeServiceClient.call(modeRequest, new ServiceResponseListener<SetTurtlebotMode.Response>() {
             @Override
-              public void onSuccess(SetTurtlebotMode.Response message) {
+            public void onSuccess(SetTurtlebotMode.Response message) {
               numModeResponses++;
               updateModeWaiting();
             }
 
             @Override
-              public void onFailure(Exception e) {
+            public void onFailure(RemoteException e) {
               numModeResponses++;
               numModeErrors++;
               updateModeWaiting();
@@ -211,7 +212,7 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
 
       try {
         ServiceClient<SetDigitalOutputs.Request, SetDigitalOutputs.Response> setDigOutServiceClient =
-          node.createServiceClient("turtlebot_node/set_digital_outputs", "turtlebot_node/SetDigitalOutputs");
+          node.newServiceClient("turtlebot_node/set_digital_outputs", "turtlebot_node/SetDigitalOutputs");
         setDigOutServiceClient.call(setDigOutRequest,
                                     new ServiceResponseListener<SetDigitalOutputs.Response>() {
                                       @Override
@@ -221,7 +222,7 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
                                       }
 
                                       @Override
-                                        public void onFailure(Exception e) {
+                                      public void onFailure(RemoteException e) {
                                         numModeResponses++;
                                         numModeErrors++;
                                         updateModeWaiting();

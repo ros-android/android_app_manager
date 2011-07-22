@@ -41,8 +41,8 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
-import org.ros.Node;
-import org.ros.exception.RosInitException;
+import org.ros.node.Node;
+import org.ros.exception.RosException;
 
 import ros.android.activity.R;
 
@@ -123,7 +123,7 @@ public class PanZoomView extends View {
           @Override public void run() {
             try {
               display.start( thisNode );
-            } catch( RosInitException ex ) {
+            } catch( RosException ex ) {
               Log.e( "PanZoomView", "failed to start display.", ex );
             }
           }
@@ -150,7 +150,7 @@ public class PanZoomView extends View {
     }
   }
 
-  public void start(Node node) throws RosInitException {
+  public void start(Node node) throws RosException {
     stop();
 
     this.node = node;

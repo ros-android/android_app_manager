@@ -46,19 +46,21 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-import org.ros.DefaultNode;
-import org.ros.MessageListener;
-import org.ros.Node;
-import org.ros.ServiceResponseListener;
-import org.ros.Subscriber;
-import org.ros.exception.RosInitException;
-import org.ros.ServiceClient;
+import org.ros.internal.node.DefaultNode;
+import org.ros.message.MessageListener;
+import org.ros.node.Node;
+import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Subscriber;
+import org.ros.exception.RosException;
+import org.ros.exception.RemoteException;
+import org.ros.exception.ServiceNotFoundException;
+import org.ros.node.service.ServiceClient;
 import org.ros.message.diagnostic_msgs.DiagnosticArray;
 import org.ros.message.diagnostic_msgs.DiagnosticStatus;
 import org.ros.message.diagnostic_msgs.KeyValue;
 import org.ros.message.pr2_msgs.DashboardState;
 import org.ros.namespace.NameResolver;
-import org.ros.internal.namespace.GraphName;
+import org.ros.namespace.GraphName;
 import org.ros.service.std_srvs.Empty;
 import org.ros.service.pr2_power_board.PowerBoardCommand;
 import ros.android.activity.R;
@@ -138,12 +140,12 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
    * Set the ROS Node to use to get status data and connect it up. Disconnects
    * the previous node if there was one.
    */
-  public void start(Node node) throws RosInitException {
+  public void start(Node node) throws RosException {
     stop();
     this.node = node;
     try {
       dashboardSubscriber =
-          node.createSubscriber("dashboard_agg", "pr2_msgs/DashboardState", new MessageListener<DashboardState>() {
+          node.newSubscriber("dashboard_agg", "pr2_msgs/DashboardState", new MessageListener<DashboardState>() {
             @Override
             public void onNewMessage(final DashboardState msg) {
               Pr2Dashboard.this.post(new Runnable() {
@@ -158,7 +160,7 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
       NameResolver resolver = node.getResolver().createResolver(new GraphName("/"));
     } catch( Exception ex ) {
       this.node = null;
-      throw( new RosInitException( ex ));
+      throw( new RosException( ex ));
     }
   }
 
@@ -232,8 +234,8 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
   }
 
   private void onModeButtonClicked() {
-    ServiceClient<Empty.Request, Empty.Response> motorServiceClient;
-    ServiceClient<PowerBoardCommand.Request, PowerBoardCommand.Response> modeServiceClient;
+    ServiceClient<Empty.Request, Empty.Response> motorServiceClient = null;
+    ServiceClient<PowerBoardCommand.Request, PowerBoardCommand.Response> modeServiceClient = null;
     Empty.Request motorRequest = new Empty.Request();
     PowerBoardCommand.Request modeRequest;
     switch (state) {
@@ -247,13 +249,18 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
         modeRequest.breaker_number = i;
         modeRequest.command = "start";
         modeRequest.serial_number = serialNumber;
-        modeServiceClient =
-            node.createServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
+        try {
+          modeServiceClient =
+            node.newServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
+        } catch( ServiceNotFoundException ex ) {
+          this.node = null;
+          //throw( new RosException( ex.toString() ));
+        }
         modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommand.Response>() {
             @Override
             public void onSuccess(PowerBoardCommand.Response message) { } //Diagnostics will update. 
             @Override
-            public void onFailure(Exception ex) {
+            public void onFailure(RemoteException ex) {
               final Exception e = ex;
               Pr2Dashboard.this.post(new Runnable() {
                   public void run() {
@@ -266,13 +273,18 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
       waitingState = Pr2RobotState.WORKING;
       setModeWaiting(true);
       //Send reset to the motors.
-      motorServiceClient =
-	      node.createServiceClient("pr2_etherCAT/reset_motors", "std_srvs/Empty");
+      try {
+        motorServiceClient =
+          node.newServiceClient("pr2_etherCAT/reset_motors", "std_srvs/Empty");
+      } catch( ServiceNotFoundException ex ) {
+        this.node = null;
+        //throw( new RosException( ex.toString() ));
+      }
       motorServiceClient.call(motorRequest, new ServiceResponseListener<Empty.Response>() {
           @Override
           public void onSuccess(Empty.Response message) { } //Diagnostics will update. 
           @Override
-          public void onFailure(Exception ex) {
+          public void onFailure(RemoteException ex) {
             final Exception e = ex;
             Pr2Dashboard.this.post(new Runnable() {
                 public void run() {
@@ -289,13 +301,18 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
         modeRequest.breaker_number = i;
         modeRequest.command = "stop";
         modeRequest.serial_number = serialNumber;
-        modeServiceClient =
-          node.createServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
+        try {
+          modeServiceClient =
+            node.newServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
+        } catch( ServiceNotFoundException ex ) {
+          this.node = null;
+          //throw( new RosException( ex.toString() ));
+        }
         modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommand.Response>() {
             @Override
             public void onSuccess(PowerBoardCommand.Response message) { } //Diagnostics will update. 
             @Override
-            public void onFailure(Exception ex) {
+            public void onFailure(RemoteException ex) {
               final Exception e = ex;
               Pr2Dashboard.this.post(new Runnable() {
                   public void run() {
@@ -304,13 +321,18 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
             }});
       }
       //Send halt to the motors.
-      motorServiceClient =
-	      node.createServiceClient("pr2_etherCAT/halt_motors", "std_srvs/Empty");
+      try {
+        motorServiceClient =
+          node.newServiceClient("pr2_etherCAT/halt_motors", "std_srvs/Empty");
+      } catch( ServiceNotFoundException ex ) {
+        this.node = null;
+        //throw( new RosException( ex.toString() ));
+      }
       motorServiceClient.call(motorRequest, new ServiceResponseListener<Empty.Response>() {
           @Override
           public void onSuccess(Empty.Response message) { } //Diagnostics will update. 
           @Override
-          public void onFailure(Exception ex) {
+          public void onFailure(RemoteException ex) {
             final Exception e = ex;
             Pr2Dashboard.this.post(new Runnable() {
                 public void run() {

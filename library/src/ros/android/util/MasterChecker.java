@@ -37,6 +37,7 @@ import android.util.Log;
 import org.ros.internal.node.server.SlaveIdentifier;
 import org.ros.internal.node.client.ParameterClient;
 import org.ros.namespace.NameResolver;
+import org.ros.namespace.GraphName;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -126,9 +127,9 @@ public class MasterChecker {
     public void run() {
       try {
         ParameterClient paramClient = new ParameterClient(
-                  SlaveIdentifier.createFromStrings("/master_checker", masterUri.toString()), masterUri);
-        String robotName = (String) paramClient.getParam("robot/name").getResult();
-        String robotType = (String) paramClient.getParam("robot/type").getResult();
+                  SlaveIdentifier.newFromStrings("/master_checker", masterUri.toString()), masterUri);
+        String robotName = (String) paramClient.getParam(new GraphName("robot/name")).getResult();
+        String robotType = (String) paramClient.getParam(new GraphName("robot/type")).getResult();
         Date timeLastSeen = new Date(); // current time.
         RobotDescription robotDescription = new RobotDescription(robotId, robotName, robotType,
                                                                  timeLastSeen);

@@ -38,10 +38,10 @@ import javax.vecmath.Matrix4d;
 import javax.vecmath.Quat4d;
 import javax.vecmath.Vector3d;
 
-import org.ros.MessageListener;
-import org.ros.Node;
-import org.ros.Subscriber;
-import org.ros.exception.RosInitException;
+import org.ros.message.MessageListener;
+import org.ros.node.Node;
+import org.ros.node.topic.Subscriber;
+import org.ros.exception.RosException;
 import org.ros.message.geometry_msgs.TransformStamped;
 import org.ros.message.tf.tfMessage;
 
@@ -119,8 +119,8 @@ public class PlaneTfChangeListener {
   /**
    * Start listening to tf messages.
    */
-  public void start( Node node ) throws RosInitException {
-      tfSubscriber = node.createSubscriber(tfTopic, "tf/tfMessage", new MessageListener<tfMessage>() {
+  public void start( Node node ) throws RosException {
+      tfSubscriber = node.newSubscriber(tfTopic, "tf/tfMessage", new MessageListener<tfMessage>() {
         @Override
         public void onNewMessage(final tfMessage msg) {
           if (msg != null) {

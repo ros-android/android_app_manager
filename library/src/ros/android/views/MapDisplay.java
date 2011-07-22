@@ -39,10 +39,10 @@ import java.lang.Object;
 import android.util.Log;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.ros.MessageListener;
-import org.ros.Node;
-import org.ros.Subscriber;
-import org.ros.exception.RosInitException;
+import org.ros.message.MessageListener;
+import org.ros.node.Node;
+import org.ros.node.topic.Subscriber;
+import org.ros.exception.RosException;
 import org.ros.message.nav_msgs.OccupancyGrid;
 
 /**
@@ -138,9 +138,9 @@ public class MapDisplay extends PanZoomDisplay {
   }
 
   @Override
-  public void start( Node node ) throws RosInitException {
+  public void start( Node node ) throws RosException {
     final MapDisplay parent = this;
-    mapSubscriber = node.createSubscriber(mapTopic, "nav_msgs/OccupancyGrid",
+    mapSubscriber = node.newSubscriber(mapTopic, "nav_msgs/OccupancyGrid",
         new MessageListener<OccupancyGrid>() {
               @Override
               public void onNewMessage(final OccupancyGrid msg) {

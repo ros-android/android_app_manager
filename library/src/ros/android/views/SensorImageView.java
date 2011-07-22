@@ -34,9 +34,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.AttributeSet;
 import android.widget.ImageView;
-import org.ros.MessageListener;
-import org.ros.Node;
-import org.ros.exception.RosInitException;
+import org.ros.message.MessageListener;
+import org.ros.node.Node;
+import org.ros.node.topic.Subscriber;
+import org.ros.exception.RosException;
 import org.ros.message.sensor_msgs.CompressedImage;
 
 /**
@@ -46,7 +47,7 @@ import org.ros.message.sensor_msgs.CompressedImage;
  */
 public class SensorImageView extends ImageView implements MessageListener<CompressedImage>, Runnable {
 
-  private org.ros.Subscriber<CompressedImage> imageSub;
+  private org.ros.node.topic.Subscriber<CompressedImage> imageSub;
   private Bitmap bitmap;
 
   public SensorImageView(Context ctx) {
@@ -61,8 +62,8 @@ public class SensorImageView extends ImageView implements MessageListener<Compre
     super(context, attrs);
   }
 
-  public void start(Node node, String topic) throws RosInitException {
-      imageSub = node.createSubscriber(topic, "sensor_msgs/CompressedImage", this); // todo this??? (the callback)
+  public void start(Node node, String topic) throws RosException {
+      imageSub = node.newSubscriber(topic, "sensor_msgs/CompressedImage", this); // todo this??? (the callback)
   }
 
   public void stop() {

@@ -36,10 +36,10 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.FloatMath;
 
-import org.ros.MessageListener;
-import org.ros.Node;
-import org.ros.Subscriber;
-import org.ros.exception.RosInitException;
+import org.ros.message.MessageListener;
+import org.ros.node.Node;
+import org.ros.node.topic.Subscriber;
+import org.ros.exception.RosException;
 import org.ros.message.sensor_msgs.LaserScan;
 
 /**
@@ -64,10 +64,10 @@ public class LaserScanDisplay extends PosablePanZoomDisplay {
   }
 
   @Override
-  public void start( Node node ) throws RosInitException {
+  public void start( Node node ) throws RosException {
     super.start( node );
     scanSubscriber =
-        node.createSubscriber(scanTopic, "sensor_msgs/LaserScan", new MessageListener<LaserScan>() {
+        node.newSubscriber(scanTopic, "sensor_msgs/LaserScan", new MessageListener<LaserScan>() {
           @Override
           public void onNewMessage(final LaserScan msg) {
             rangeScan = msg;

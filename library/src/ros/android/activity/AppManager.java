@@ -33,21 +33,22 @@
 
 package ros.android.activity;
 
-import org.ros.Subscriber;
+import org.ros.node.topic.Subscriber;
 
 import java.util.ArrayList;
 
-import org.ros.exception.RosInitException;
+import org.ros.exception.RosException;
+import org.ros.exception.RemoteException;
 
-import org.ros.MessageListener;
+import org.ros.message.MessageListener;
 import org.ros.message.app_manager.App;
 import org.ros.message.app_manager.AppList;
 
-import org.ros.Node;
-import org.ros.ServiceResponseListener;
-import org.ros.ServiceClient;
+import org.ros.node.Node;
+import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.service.ServiceClient;
 import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
-import org.ros.internal.namespace.GraphName;
+import org.ros.namespace.GraphName;
 import org.ros.namespace.NameResolver;
 import org.ros.service.app_manager.ListApps;
 import org.ros.service.app_manager.StartApp;
@@ -83,7 +84,7 @@ public class AppManager {
   private ArrayList<TerminationCallbackInfo> terminationCallbacks;
 
   public AppManager(Node node, NameResolver resolver)
-      throws RosInitException {
+      throws RosException {
     this.node = node;
     this.resolver = resolver;
     subscriptions = new ArrayList<Subscriber<AppList>>();
@@ -122,8 +123,8 @@ public class AppManager {
 
   
   
-  public void addAppListCallback(MessageListener<AppList> callback) throws RosInitException {
-    subscriptions.add(node.createSubscriber(resolver.resolve("app_list"), "app_manager/AppList", callback));
+  public void addAppListCallback(MessageListener<AppList> callback) throws RosException {
+    subscriptions.add(node.newSubscriber(resolver.resolve("app_list"), "app_manager/AppList", callback));
   }
 
   public AppList getAppList() {
@@ -133,10 +134,10 @@ public class AppManager {
     public void listApps(final ServiceResponseListener<ListApps.Response> callback) {
 	try {
 	    ServiceClient<ListApps.Request, ListApps.Response> listAppsClient =
-              node.createServiceClient(resolver.resolve("list_apps"), "app_manager/ListApps");
+              node.newServiceClient(resolver.resolve("list_apps"), "app_manager/ListApps");
 	    listAppsClient.call(new ListApps.Request(), callback);
 	} catch (Throwable ex) {
-	    callback.onFailure(new Exception(ex));
+          //callback.onFailure(new RemoteException(ex.toString()));
 	}
     }
 
@@ -144,24 +145,24 @@ public class AppManager {
 			 final ServiceResponseListener<StartApp.Response> callback) {
 	try {
 	    ServiceClient<StartApp.Request, StartApp.Response> startAppClient =
-              node.createServiceClient(resolver.resolve("start_app"), "app_manager/StartApp");
+              node.newServiceClient(resolver.resolve("start_app"), "app_manager/StartApp");
 	    StartApp.Request request = new StartApp.Request();
 	    request.name = appName;
 	    startAppClient.call(request, callback);
 	} catch (Throwable ex) {
-	    callback.onFailure(new Exception(ex));
+          //callback.onFailure(new RemoteException(ex.toString()));
 	}
     }
 
     public void stopApp(final String appName, final ServiceResponseListener<StopApp.Response> callback) {
 	try {
 	    ServiceClient<StopApp.Request, StopApp.Response> stopAppClient =
-              node.createServiceClient(resolver.resolve("stop_app"), "app_manager/StopApp");
+              node.newServiceClient(resolver.resolve("stop_app"), "app_manager/StopApp");
 	    StopApp.Request request = new StopApp.Request();
 	    request.name = appName;
 	    stopAppClient.call(request, callback);
 	} catch (Throwable ex) {
-	    callback.onFailure(new Exception(ex));
+          //callback.onFailure(new RemoteException(ex.toString()));
 	}
     }
 
@@ -172,10 +173,10 @@ public class AppManager {
    * @param robotName
    * @return
    * @throws AppManagerNotAvailableException
-   * @throws RosInitException
+   * @throws RosException
    */
   public static AppManager create(Node node, String robotName) throws XmlRpcTimeoutException,
-      AppManagerNotAvailableException, RosInitException {
+      AppManagerNotAvailableException, RosException {
     NameResolver resolver = node.getResolver().createResolver(new GraphName(robotName));
     try {
       return new AppManager(node, resolver);

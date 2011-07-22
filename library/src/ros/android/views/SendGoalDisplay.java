@@ -33,9 +33,9 @@ import android.graphics.Matrix;
 import android.util.FloatMath;
 import android.util.Log;
 
-import org.ros.Node;
-import org.ros.Publisher;
-import org.ros.exception.RosInitException;
+import org.ros.node.Node;
+import org.ros.node.topic.Publisher;
+import org.ros.exception.RosException;
 import org.ros.message.geometry_msgs.PoseStamped;
 
 /**
@@ -101,9 +101,9 @@ public class SendGoalDisplay extends PoseInputDisplay {
   }
 
   @Override
-  public void start( Node node ) throws RosInitException {
+  public void start( Node node ) throws RosException {
     super.start( node );
-    publisher = node.createPublisher( goalTopic, "geometry_msgs/PoseStamped" );
+    publisher = node.newPublisher( goalTopic, "geometry_msgs/PoseStamped" );
   }
 
   @Override

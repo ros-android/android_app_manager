@@ -42,11 +42,11 @@ import android.util.AttributeSet;
 import android.util.Log;
 import org.yaml.snakeyaml.Yaml;
 import java.util.List;
-import org.ros.ParameterTree;
+import org.ros.node.parameter.ParameterTree;
 import java.lang.Thread;
 
-import org.ros.Node;
-import org.ros.exception.RosInitException;
+import org.ros.node.Node;
+import org.ros.exception.RosException;
 
 import ros.android.util.PlaneTfChangeListener;
 
@@ -143,7 +143,7 @@ public class MapView extends PanZoomView {
     public void run() {
       //This is sort of a hack to wait for the footprint parameter.
       int it = 0;
-      while (!node.createParameterClient().has(footprintParam) && it < 30) {
+      while (!node.newParameterTree().has(footprintParam) && it < 30) {
         try {
           Thread.sleep(1000);
         } catch(java.lang.InterruptedException e) {
@@ -152,7 +152,7 @@ public class MapView extends PanZoomView {
         it++;
       }
 
-      ParameterTree tree = node.createParameterClient();
+      ParameterTree tree = node.newParameterTree();
       Log.i("MapView", "Creating Footprint from " + footprintParam);
       List footprint = tree.getList(footprintParam);
       double[] footprintX = new double[footprint.toArray().length];
@@ -210,7 +210,7 @@ public class MapView extends PanZoomView {
   }
 
   @Override
-  public void start(Node node) throws RosInitException { 
+  public void start(Node node) throws RosException { 
     if (footprintParam != null) {
       new FootprintThread(this, node, footprintParam).start();
     }

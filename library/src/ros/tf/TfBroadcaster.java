@@ -32,8 +32,8 @@ package ros.tf;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Quat4d;
 
-import org.ros.Node;
-import org.ros.Publisher;
+import org.ros.node.Node;
+import org.ros.node.topic.Publisher;
 import org.ros.message.Time;
 import org.ros.message.tf.tfMessage;
 import org.ros.message.geometry_msgs.TransformStamped;
@@ -58,9 +58,9 @@ public class TfBroadcaster {
    * Create a publisher from the given node.  Must be called before
    * any sendTransform() calls.
    */
-  public void start(Node node) throws org.ros.exception.RosInitException {
+  public void start(Node node) throws org.ros.exception.RosException {
     stop();
-    tfPublisher = node.createPublisher("/tf", "tf/tfMessage");
+    tfPublisher = node.newPublisher("/tf", "tf/tfMessage");
   }
 
   /**

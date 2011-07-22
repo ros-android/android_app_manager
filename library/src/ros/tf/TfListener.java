@@ -30,9 +30,9 @@
 
 package ros.tf;
 
-import org.ros.Node;
-import org.ros.MessageListener;
-import org.ros.Subscriber;
+import org.ros.node.Node;
+import org.ros.message.MessageListener;
+import org.ros.node.topic.Subscriber;
 import org.ros.message.Duration;
 import org.ros.message.Time;
 import org.ros.message.tf.tfMessage;
@@ -111,7 +111,7 @@ public class TfListener {
   public boolean start(Node node) {
     stop();
     try {
-	tfSubscriber = node.createSubscriber(getTopic(), "tf/tfMessage", new MessageListener<tfMessage>() {
+	tfSubscriber = node.newSubscriber(getTopic(), "tf/tfMessage", new MessageListener<tfMessage>() {
           @Override
           public void onNewMessage(final tfMessage msg) {
             if (msg != null) {

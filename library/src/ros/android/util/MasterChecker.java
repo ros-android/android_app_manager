@@ -128,12 +128,19 @@ public class MasterChecker {
       try {
         ParameterClient paramClient = new ParameterClient(
                   SlaveIdentifier.newFromStrings("/master_checker", masterUri.toString()), masterUri);
-        String robotName = (String) paramClient.getParam(new GraphName("robot/name")).getResult();
-        String robotType = (String) paramClient.getParam(new GraphName("robot/type")).getResult();
-        Date timeLastSeen = new Date(); // current time.
-        RobotDescription robotDescription = new RobotDescription(robotId, robotName, robotType,
-                                                                 timeLastSeen);
-        foundMasterCallback.receive(robotDescription);
+        boolean hasName = ((Boolean)paramClient.hasParam(new GraphName("robot/name")).getResult()).booleanValue();
+        boolean hasType = ((Boolean)paramClient.hasParam(new GraphName("robot/type")).getResult()).booleanValue();
+        if (hasName && hasType) {
+          String robotName = (String) paramClient.getParam(new GraphName("robot/name")).getResult();
+          String robotType = (String) paramClient.getParam(new GraphName("robot/type")).getResult();
+          Date timeLastSeen = new Date(); // current time.
+          RobotDescription robotDescription = new RobotDescription(
+                             robotId, robotName, robotType, timeLastSeen);
+          foundMasterCallback.receive(robotDescription);
+        } else {
+          Log.e("RosAndroid", "No parameters");
+          failureCallback.handleFailure("The parameters on the server are not set. Please set robot/name and robot/type.");
+        }
         return;
       } catch (Throwable ex) {
         Log.e("RosAndroid", "Exception while creating node in MasterChecker for master URI "

@@ -463,8 +463,12 @@ public class RosActivity extends Activity {
           node = null;
           setErrorMessage("failed to create node" + e.getMessage());
           setErrorException(e);
+          return;
         }
-        if( node != null ) {
+        if( node == null ) {
+          setErrorMessage("failed to create node for unknown reasons");
+          Log.e("RosAndroid", "Unknown error upon node creation");
+        } else {
           onNodeCreate(node);
           try {
             while (!doShutdown) {

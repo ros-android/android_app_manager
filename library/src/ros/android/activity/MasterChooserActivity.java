@@ -205,7 +205,7 @@ public class MasterChooserActivity extends Activity {
       Map<String, Object> data = (Map<String, Object>)yaml.load(scanResult.getContents().toString());
       Log.i("MasterChooserActivity", "OBJECT: " + data.toString());
       try {
-        addMaster(new RobotId(data));
+        addMaster(new RobotId(data), true);
       } catch (InvalidRobotDescriptionException e) {
         Toast.makeText(this, "Invalid robot description: "+e.getMessage(), Toast.LENGTH_SHORT).show();
       }
@@ -215,34 +215,24 @@ public class MasterChooserActivity extends Activity {
   }
 
   private void addMaster(RobotId robotId) throws InvalidRobotDescriptionException {
+    addMaster(robotId, false);
+  }
+
+  private void addMaster(RobotId robotId, boolean connectToDuplicates) throws InvalidRobotDescriptionException {
     Log.i("MasterChooserActivity", "addMaster ["+robotId.toString()+"]");
     if (robotId == null || robotId.getMasterUri() == null) {
       throw new InvalidRobotDescriptionException("Empty master URI");
     } else {
-      //TODO: in YAML loading!!!
-      /*if (!masterUri.startsWith("http://") && !masterUri.startsWith("https://")) {
-        masterUri = "http://" + masterUri;
-      }
-      URI uri;
-      try {
-        uri = new URI(masterUri);
-      } catch (URISyntaxException e) {
-        throw new InvalidRobotDescriptionException("Invalid master URI");
-      }
-      if (uri.getPort() < 0) {
-        try {
-          uri = new URI(uri.getScheme() + "://" + uri.getHost() + ":11311");
-        } catch (URISyntaxException e) {
-          throw new InvalidRobotDescriptionException("internal error");
-        }
-        }*/
-
-      Iterator<RobotDescription> iter = robots.iterator();
-      while (iter.hasNext()) {
-        RobotDescription robot = iter.next();
+      for (int i = 0; i < robots.toArray().length; i++) {
+        RobotDescription robot = robots.get(i);
         if (robot.getRobotId().equals(robotId)) {
-          Toast.makeText(this, "That robot is already listed.", Toast.LENGTH_SHORT).show();
-          return;
+          if (connectToDuplicates) {
+            choose(i);
+            return;
+          } else {
+            Toast.makeText(this, "That robot is already listed.", Toast.LENGTH_SHORT).show();
+            return;
+          }
         }
       }
       Log.i("MasterChooserActivity", "creating robot description: "+robotId.toString());

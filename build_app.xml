@@ -5,7 +5,7 @@
   <!--property name="target" value="1.6"/>
   <property name="source" value="1.6"/ -->
   
-  <property name="sdk.dir" value="${android.sdk.dir}" />
+  <property file="default.properties" />
 
   <!-- directories -->
   <property name="pwd" location="."/>
@@ -19,9 +19,9 @@
 
   <mkdir dir="build/libs"/>
   <echo message="to dir build/libs" />
-  <echo message="${ros.jarfileset}" />
+  <echo message="${ros.compile.jarfileset}" />
   <copy todir="build/libs" flatten="true">
-    <files includes="${ros.jarfileset}" />
+    <files includes="${ros.compile.jarfileset}" />
   </copy>
   <!-- Needed to delete two jar files that interfere with eachother. 
        Hopefully this can be removed in the future. -->

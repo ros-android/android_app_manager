@@ -6,6 +6,7 @@ if [ "x$1" == "x--create" ] ; then
    rootclass=$4
    icon=$5
    appdisplay=$6
+   resourcename=$7
    cat > AndroidManifest.xml << EOF
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -60,6 +61,10 @@ EOF
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ TODO</url>
   <depend package="appmanandroid"/>
+
+  <export>
+    <rosjava-android-app />
+  </export>
 </package>
 EOF
    cat > Makefile << EOF
@@ -76,6 +81,8 @@ EOF
 
    mkdir -p res/values
    mkdir -p res/drawable
+   mkdir -p res/layout
+   mkdir -p res/drawable
    mkdir -p src
 
    cat > res/values/strings.xml << EOF
@@ -84,10 +91,186 @@ EOF
     <string name="app_name">$appdisplay</string>
 </resources>
 EOF
+   cat > res/layout/main.xml <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:id="@+id/main_layout">
+  <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="vertical"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:id="@+id/main_layout">
+    <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content"
+                  android:background="#ff404040"
+                  android:id="@+id/top_bar" />
+    <!--Add your layout here -->
+  </LinearLayout>
+</LinearLayout>
+EOF
+
+   cat > res/menu/${resourcename}_menu.xml <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:title="Kill" android:id="@+id/kill"></item>
+</menu>
+EOF
+
+
+   dir=src/`echo $package | sed s/\\\\./\\\\//g`
+   mkdir -p $dir
+   cat > $dir/${rootclass}.java <<EOF
+/*
+ * Copyright (C) 2011 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package $package;
+
+import org.ros.exception.RemoteException;
+import ros.android.activity.AppManager;
+import ros.android.activity.RosAppActivity;
+import android.os.Bundle;
+import org.ros.node.Node;
+import android.view.Window;
+import android.view.WindowManager;
+import android.util.Log;
+import org.ros.node.service.ServiceClient;
+import org.ros.service.app_manager.StartApp;
+import org.ros.node.service.ServiceResponseListener;
+import android.widget.Toast;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import ros.android.util.Dashboard;
+import android.widget.LinearLayout;
+
+/**
+ * @author damonkohler@google.com (Damon Kohler)
+ * @author pratkanis@willowgarage.com (Tony Pratkanis)
+ */
+public class $rootclass extends RosAppActivity {
+  
+  private String robotAppName;
+  private String cameraTopic;
+  private Dashboard dashboard;
+
+  /** Called when the activity is first created. */
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+        WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    setContentView(R.layout.main);
+
+    robotAppName = getIntent().getStringExtra(AppManager.PACKAGE + ".robot_app_name");
+    if( robotAppName == null ) {
+      robotAppName = "turtlebot_teleop/android_make_a_map";
+    }
+    
+    //TODO: Put your object creation/resource lookup code here.
+    
+    dashboard = new Dashboard(this);
+    dashboard.setView((LinearLayout)findViewById(R.id.top_bar),
+                      new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 
+                                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+  }
+  
+  @Override
+  protected void onNodeCreate(Node node) {
+    super.onNodeCreate(node);
+    try {
+      startApp();
+      dashboard.start(node);
+      //TODO: Put your initialization code here
+    } catch (Exception ex) {
+      Log.e("$rootclass", "Init error: " + ex.toString());
+      safeToastStatus("Failed: " + ex.getMessage());
+    }
+  }
+
+  @Override
+  protected void onNodeDestroy(Node node) {
+    super.onNodeDestroy(node);
+    dashboard.stop();
+    //TODO: Put your shutdown code here
+  }
+
+
+  private void initRos() {
+    /*try {
+      //TODO: Put your namespace resolution/get code here
+    } catch (RosException e) {
+      Log.e("$rootclass", "initRos() caught exception: " + e.toString() + ", message = " + e.getMessage());
+    }*/
+  }
+  
+  private void startApp() {
+    appManager.startApp(robotAppName,
+        new ServiceResponseListener<StartApp.Response>() {
+          @Override
+          public void onSuccess(StartApp.Response message) {
+            initRos();
+            // TODO(kwc): add status code for app already running
+            /*
+             * if (message.started) { safeToastStatus("started"); initRos(); }
+             * else { safeToastStatus(message.message); }
+             */
+          }
+
+          @Override
+          public void onFailure(RemoteException e) {
+            safeToastStatus("Failed: " + e.getMessage());
+          }
+        });
+  }
+
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    MenuInflater inflater = getMenuInflater();
+    inflater.inflate(R.menu.${resourcename}_menu, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    switch (item.getItemId()) {
+    case R.id.kill:
+      android.os.Process.killProcess(android.os.Process.myPid());
+      return true;
+    default:
+      return super.onOptionsItemSelected(item);
+    }
+  }
+
+  private void safeToastStatus(final String message) {
+    runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          Toast.makeText($rootclass.this, message, Toast.LENGTH_SHORT).show();
+        }
+      });
+  } 
+}
+EOF
 else
-   echo "Usage: $0 --create <appname> <package> <rootclass> <icon> <display-name>:"
+   echo "Usage: $0 --create <appname> <package> <rootclass> <icon> <display-name> <resource-name>:"
    echo "              creates all the files for a ros android app"
    echo "              WARNING: will overwrite existing files!"
+   echo "Example: $0 --create PanTilt ros.android.pantilt PanTilt pantilt \"Pan and Tilt Viewer\" pan_tilt"
 fi
 
 

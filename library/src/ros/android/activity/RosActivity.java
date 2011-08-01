@@ -479,7 +479,11 @@ public class RosActivity extends Activity {
           }
           Log.i("RosAndroid", "Shutting down");
           onNodeDestroy(node);
-          node.shutdown();
+          try {
+            node.shutdown();
+          } catch (Exception e) {
+            Log.i("RosAndroid", "Master already down");
+          }
           node = null;
           if (doShutdown) {
             if (doTerminate) {

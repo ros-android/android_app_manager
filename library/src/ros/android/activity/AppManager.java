@@ -127,45 +127,84 @@ public class AppManager {
     subscriptions.add(node.newSubscriber(resolver.resolve("app_list"), "app_manager/AppList", callback));
   }
 
+  public void addAppStoreListCallback(MessageListener<AppList> callback) throws RosException {
+    subscriptions.add(node.newSubscriber(resolver.resolve("store_app_list"), "app_manager/AppList", callback));
+  }
+
   public AppList getAppList() {
     return appList;
   }
-
-    public void listApps(final ServiceResponseListener<ListApps.Response> callback) {
-	try {
-	    ServiceClient<ListApps.Request, ListApps.Response> listAppsClient =
-              node.newServiceClient(resolver.resolve("list_apps"), "app_manager/ListApps");
-	    listAppsClient.call(new ListApps.Request(), callback);
-	} catch (Throwable ex) {
-          //callback.onFailure(new RemoteException(ex.toString()));
-	}
+  
+  public void listApps(final ServiceResponseListener<ListApps.Response> callback) {
+    try {
+      ServiceClient<ListApps.Request, ListApps.Response> listAppsClient =
+        node.newServiceClient(resolver.resolve("list_apps"), "app_manager/ListApps");
+      listAppsClient.call(new ListApps.Request(), callback);
+    } catch (Throwable ex) {
+      //callback.onFailure(new RemoteException(ex.toString()));
     }
-
-    public void startApp(final String appName,
-			 final ServiceResponseListener<StartApp.Response> callback) {
-	try {
-	    ServiceClient<StartApp.Request, StartApp.Response> startAppClient =
-              node.newServiceClient(resolver.resolve("start_app"), "app_manager/StartApp");
-	    StartApp.Request request = new StartApp.Request();
-	    request.name = appName;
-	    startAppClient.call(request, callback);
-	} catch (Throwable ex) {
-          //callback.onFailure(new RemoteException(ex.toString()));
-	}
+  }
+  
+  public void listStoreApps(final ServiceResponseListener<ListApps.Response> callback) {
+    try {
+      ServiceClient<ListApps.Request, ListApps.Response> listAppsClient =
+        node.newServiceClient(resolver.resolve("list_store_apps"), "app_manager/ListApps");
+      listAppsClient.call(new ListApps.Request(), callback);
+    } catch (Throwable ex) {
+      //callback.onFailure(new RemoteException(ex.toString()));
     }
-
-    public void stopApp(final String appName, final ServiceResponseListener<StopApp.Response> callback) {
-	try {
-	    ServiceClient<StopApp.Request, StopApp.Response> stopAppClient =
-              node.newServiceClient(resolver.resolve("stop_app"), "app_manager/StopApp");
-	    StopApp.Request request = new StopApp.Request();
-	    request.name = appName;
-	    stopAppClient.call(request, callback);
-	} catch (Throwable ex) {
-          //callback.onFailure(new RemoteException(ex.toString()));
-	}
+  }
+  
+  public void startApp(final String appName,
+                       final ServiceResponseListener<StartApp.Response> callback) {
+    try {
+      ServiceClient<StartApp.Request, StartApp.Response> startAppClient =
+        node.newServiceClient(resolver.resolve("start_app"), "app_manager/StartApp");
+      StartApp.Request request = new StartApp.Request();
+      request.name = appName;
+      startAppClient.call(request, callback);
+    } catch (Throwable ex) {
+      //callback.onFailure(new RemoteException(ex.toString()));
     }
-
+  }
+  
+  public void stopApp(final String appName, final ServiceResponseListener<StopApp.Response> callback) {
+    try {
+      ServiceClient<StopApp.Request, StopApp.Response> stopAppClient =
+        node.newServiceClient(resolver.resolve("stop_app"), "app_manager/StopApp");
+      StopApp.Request request = new StopApp.Request();
+      request.name = appName;
+      stopAppClient.call(request, callback);
+    } catch (Throwable ex) {
+      //callback.onFailure(new RemoteException(ex.toString()));
+    }
+  }
+  
+  public void installApp(final String appName,
+                       final ServiceResponseListener<StartApp.Response> callback) {
+    try {
+      ServiceClient<StartApp.Request, StartApp.Response> startAppClient =
+        node.newServiceClient(resolver.resolve("install_app"), "app_manager/StartApp");
+      StartApp.Request request = new StartApp.Request();
+      request.name = appName;
+      startAppClient.call(request, callback);
+    } catch (Throwable ex) {
+      //callback.onFailure(new RemoteException(ex.toString()));
+    }
+  }
+  
+  public void removeApp(final String appName, final ServiceResponseListener<StopApp.Response> callback) {
+    try {
+      ServiceClient<StopApp.Request, StopApp.Response> stopAppClient =
+        node.newServiceClient(resolver.resolve("remove_app"), "app_manager/StopApp");
+      StopApp.Request request = new StopApp.Request();
+      request.name = appName;
+      stopAppClient.call(request, callback);
+    } catch (Throwable ex) {
+      //callback.onFailure(new RemoteException(ex.toString()));
+    }
+  }
+  
   /**
    * Blocks until App Manager is located.
    *

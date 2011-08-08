@@ -381,7 +381,11 @@ public class RosActivity extends Activity {
                      public void run() {
                        progress.dismiss();
                      }});
-                 wifiDialog.setMessage("To use this robot, you must switch wifi networks. Do you want to switch from " + from + " to " + to + "?");
+                 if (from == null) {
+                   wifiDialog.setMessage("To use this robot, you must connect to a wifi network. You are currently not connected to a wifi network. Would you like to connect to the correct wireless network?");
+                 } else {
+                   wifiDialog.setMessage("To use this robot, you must switch wifi networks. Do you want to switch from " + from + " to " + to + "?");
+                 }
                  runOnUiThread(new Runnable() { 
                      public void run() {
                        progress.show("Connecting...", "Switching wifi networks");

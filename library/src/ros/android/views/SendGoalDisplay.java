@@ -35,8 +35,13 @@ import android.util.Log;
 
 import org.ros.node.Node;
 import org.ros.node.topic.Publisher;
+import org.ros.node.topic.Subscriber;
+import org.ros.message.MessageListener;
+import org.ros.message.Time;
 import org.ros.exception.RosException;
 import org.ros.message.geometry_msgs.PoseStamped;
+import org.ros.message.actionlib_msgs.GoalStatusArray;
+import org.ros.message.actionlib_msgs.GoalStatus;
 
 /**
  * PanZoomDisplay which implements a draggable goal-pose setter.
@@ -58,22 +63,30 @@ import org.ros.message.geometry_msgs.PoseStamped;
  */
 public class SendGoalDisplay extends PoseInputDisplay {
   private String goalTopic = "move_base_simple/goal";
+  private String statusTopic = "move_base/status";
   private String fixedFrame = "/map";
+  private boolean failed = false;
   private Publisher<PoseStamped> publisher;
+  private Subscriber<GoalStatusArray> subscriber;
   private boolean followRobotMode;
 
   public SendGoalDisplay() {
     super();
-    Log.i("SendGoalDisplay", "constructor");
     setColor( 0x80ff80 );
   }
 
   public void setTopic( String topic ) {
-    Log.i("SendGoalDisplay", "setTopic");
     this.goalTopic = topic;
   }
   public String getTopic() {
     return goalTopic;
+  }
+
+  public void setStatusTopic( String topic ) {
+    this.statusTopic = topic;
+  }
+  public String getStatusTopic() {
+    return statusTopic;
   }
 
   /**
@@ -100,10 +113,36 @@ public class SendGoalDisplay extends PoseInputDisplay {
     }
   }
 
+  public void onStatusRecieved(final GoalStatusArray msg) {
+    boolean hasFailed = false;
+    Time latest = null;
+    for (GoalStatus status : msg.status_list) {
+      if (latest == null || status.goal_id.stamp.compareTo(latest) == 1) {
+        latest = status.goal_id.stamp;
+        hasFailed = (status.status == GoalStatus.ABORTED || status.status == GoalStatus.REJECTED);
+      }
+    }
+    if (hasFailed) {
+      setColor( 0xff8080 );
+    } else {
+      setColor( 0x80ff80 );
+    }
+    if (failed != hasFailed) {
+      postInvalidate();
+      failed = hasFailed;
+    }
+  }
+
   @Override
   public void start( Node node ) throws RosException {
     super.start( node );
     publisher = node.newPublisher( goalTopic, "geometry_msgs/PoseStamped" );
+    subscriber = node.newSubscriber( statusTopic, "actionlib_msgs/GoalStatusArray",
+        new MessageListener<GoalStatusArray>() {
+              @Override
+              public void onNewMessage(final GoalStatusArray msg) {
+                SendGoalDisplay.this.onStatusRecieved(msg);
+              }});
   }
 
   @Override
@@ -113,6 +152,10 @@ public class SendGoalDisplay extends PoseInputDisplay {
       publisher.shutdown();
     }
     publisher = null;
+    if( subscriber != null) {
+      subscriber.shutdown();
+    }
+    subscriber = null;
   }
 
   @Override

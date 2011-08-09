@@ -114,9 +114,21 @@ public class PanZoomView extends View {
    * Add the given display to this view.  If the view has already been
    * started (via start()), the display is started as well.
    */
-  public void addDisplay( final PanZoomDisplay display ) {
+  public void addDisplay(final PanZoomDisplay display) {
+    addDisplay(-1, display);
+  }
+
+  /**
+   * Add the given display to this view.  If the view has already been
+   * started (via start()), the display is started as well.
+   */
+  public void addDisplay( int id, final PanZoomDisplay display ) {
     display.setParent( this );
-    displays.add( display );
+    if (id < 0) {
+      displays.add( display );
+    } else {
+      displays.add( id, display );
+    }
     if( node != null ) {
       final Node thisNode = node;
       new Thread( new Runnable() {

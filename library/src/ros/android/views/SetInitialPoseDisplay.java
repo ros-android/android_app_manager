@@ -73,7 +73,7 @@ public class SetInitialPoseDisplay extends PoseInputDisplay {
 
   public SetInitialPoseDisplay() {
     super();
-    setColor( 0xff8080 );
+    setColor( 0x8080ff );
   }
 
   public void setTopic( String topic ) {

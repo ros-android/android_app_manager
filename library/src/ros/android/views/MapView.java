@@ -218,7 +218,7 @@ public class MapView extends PanZoomView {
       scanDisplay = new LaserScanDisplay();
       scanDisplay.setTopic(baseScanTopic != null ? baseScanTopic : "scan");
       tfChangeListener.addPosable( "/map", baseScanFrame != null ? baseScanFrame : "/kinect_depth_frame", scanDisplay );
-      addDisplay( scanDisplay );
+      addDisplay( 1, scanDisplay );
     }
     super.start(node);
     tfChangeListener.start( node );

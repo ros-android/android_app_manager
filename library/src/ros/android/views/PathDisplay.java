@@ -46,7 +46,7 @@ import android.graphics.Paint;
  * PanZoomDisplay which shows a path in a PanZoomView.
  */
 public class PathDisplay extends PanZoomDisplay {
-  private String pathTopic = "/move_base_node/NavfnROS/plan";
+  private String pathTopic = "/move_base/NavfnROS/plan";
   private Subscriber pathSubscriber;
   private ArrayList<double []> path;
   private Paint paint = new Paint();
@@ -84,7 +84,6 @@ public class PathDisplay extends PanZoomDisplay {
         new MessageListener<Path>() {
               @Override
               public void onNewMessage(final Path msg) {
-                Log.i("PathDisplay", "Path recieved");
                 PathDisplay.this.onPathRecieved(msg);
               }});
     Log.i("PathDisplay", "Path display started");

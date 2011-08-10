@@ -62,6 +62,7 @@ public class MapView extends PanZoomView {
   private String baseScanTopic;
   private String baseScanFrame;
   private LaserScanDisplay scanDisplay;
+  private MapDisplay mapDisplay;
 
   private static final float turtlebotDiameter = .314f; // meters
 
@@ -84,7 +85,8 @@ public class MapView extends PanZoomView {
     tfChangeListener = new PlaneTfChangeListener();
 
     //******** configure map display ********
-    addDisplay( new MapDisplay() );
+    mapDisplay = new MapDisplay();
+    addDisplay( mapDisplay );
 
     //******** configure robot display ********
     robotDisplay = new BitmapDisplay();
@@ -127,6 +129,10 @@ public class MapView extends PanZoomView {
 
   public PlaneTfChangeListener getPoser() {
     return tfChangeListener;
+  }
+
+  public void addMapDisplayCallback(MapDisplay.MapDisplayStateCallback c) {
+    mapDisplay.addCallback(c);
   }
 
   private class FootprintThread extends Thread {

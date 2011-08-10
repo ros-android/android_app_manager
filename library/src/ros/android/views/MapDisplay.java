@@ -38,12 +38,18 @@ import android.graphics.Paint;
 import java.lang.Object;
 import android.util.Log;
 import java.util.concurrent.locks.ReentrantLock;
+import org.ros.node.service.ServiceResponseListener;
 
 import org.ros.message.MessageListener;
 import org.ros.node.Node;
 import org.ros.node.topic.Subscriber;
 import org.ros.exception.RosException;
+import org.ros.exception.RemoteException;
 import org.ros.message.nav_msgs.OccupancyGrid;
+import org.ros.service.nav_msgs.GetMap;
+import org.ros.node.service.ServiceClient;
+
+import java.util.ArrayList;
 
 /**
  * PanZoomDisplay which shows an OccupancyGrid map in a PanZoomView.
@@ -56,6 +62,39 @@ public class MapDisplay extends PanZoomDisplay {
   private String mapTopic = "map";
   private boolean haveMap = false;
   private ReentrantLock mapLock = new ReentrantLock();
+  private ArrayList<MapDisplayStateCallback> callbacks = new ArrayList();
+
+  public enum State {
+    STATE_STARTING,
+    STATE_NEED_MAP,
+    STATE_LOADING,
+    STATE_WORKING,
+    STATE_UNKNOWN
+  }
+
+  public interface MapDisplayStateCallback {
+    public void onMapDisplayState(MapDisplay.State state);
+  }
+
+  private State state = MapDisplay.State.STATE_UNKNOWN;
+
+  public void addCallback(MapDisplayStateCallback c) {
+    callbacks.add(c);
+  }
+
+  private void setState(State newState) {
+    if (state != newState) {
+      Log.i("MapDisplay", "New state: " + newState + ".");
+      for (MapDisplayStateCallback c : callbacks) {
+        c.onMapDisplayState(newState);
+      }
+    }
+    state = newState;
+  }
+
+  public State getState() {
+    return state;
+  }
   
   private class MapUpdateThread extends Thread {
     private OccupancyGrid msg;
@@ -70,6 +109,16 @@ public class MapDisplay extends PanZoomDisplay {
      * thread.
      */
     public void run() {
+      if (msg.info.height < 1 && msg.info.width < 1) {
+        Log.e("MapDisplay", "Map message has no data.");
+        return;
+      }
+      if (MapDisplay.this.getState() != MapDisplay.State.STATE_WORKING) {
+        Log.i("MapDisplay", "Loading");
+        MapDisplay.this.setState(MapDisplay.State.STATE_LOADING);
+      }  else {
+        Log.i("MapDisplay", "Already started, not setting state");
+      }
       Log.i("MapDisplay", "handleMap() - locking thread");
       parent.mapLock.lock();
       Log.i("MapDisplay", "handleMap() - " + msg.info.height + " by " + msg.info.width);
@@ -119,10 +168,14 @@ public class MapDisplay extends PanZoomDisplay {
       parent.backgroundBitmap = parent.mapBitmap;
       parent.mapBitmap = temp;
       parent.haveMap = true;
-      
-      parent.postInvalidate();
+      Log.i("MapDisplay", "Done");
+      MapDisplay.this.setState(MapDisplay.State.STATE_WORKING);
       
       parent.mapLock.unlock();
+
+      parent.postInvalidate();
+      
+
     }
   }
 
@@ -140,6 +193,28 @@ public class MapDisplay extends PanZoomDisplay {
   @Override
   public void start( Node node ) throws RosException {
     final MapDisplay parent = this;
+    try {
+      setState(State.STATE_STARTING);
+      Log.i("MapDisplay", "Waiting for map");
+      ServiceClient<GetMap.Request, GetMap.Response> client = node.newServiceClient("/dynamic_map", "nav_msgs/GetMap");
+      client.call(new GetMap.Request(),
+                  new ServiceResponseListener<GetMap.Response>() {
+                    @Override               
+                    public void onSuccess(GetMap.Response message) {
+                      new MapUpdateThread(parent, message.map).start();
+                    }
+                    @Override
+                    public void onFailure(RemoteException e) {
+                      //Often occurs if service is not started.
+                      Log.i("MapDisplay", "Dynamic map service call failed: " + e.toString());
+                      Log.i("MapDisplay", "Likely, the service is not present. This is not a problem, the user needs to pick a map");
+                      MapDisplay.this.setState(State.STATE_NEED_MAP);
+                    }});
+    } catch (Exception e) {
+      Log.i("MapDisplay", "Map could not be requested");
+      MapDisplay.this.setState(State.STATE_NEED_MAP);
+    }
+    Log.i("MapDisplay", "Done map selection");
     mapSubscriber = node.newSubscriber(mapTopic, "nav_msgs/OccupancyGrid",
         new MessageListener<OccupancyGrid>() {
               @Override
@@ -156,6 +231,7 @@ public class MapDisplay extends PanZoomDisplay {
       mapSubscriber.shutdown();
     }
     mapSubscriber = null;
+    state = State.STATE_UNKNOWN;
   }
 
   @Override

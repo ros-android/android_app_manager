@@ -81,6 +81,10 @@ public class MapView extends PanZoomView {
     init(context);
   }
 
+  public void refreshMap() {
+    mapDisplay.refreshMap();
+  }
+
   private void init(Context context) {
     tfChangeListener = new PlaneTfChangeListener();
 

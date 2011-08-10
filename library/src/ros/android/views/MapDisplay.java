@@ -63,6 +63,7 @@ public class MapDisplay extends PanZoomDisplay {
   private boolean haveMap = false;
   private ReentrantLock mapLock = new ReentrantLock();
   private ArrayList<MapDisplayStateCallback> callbacks = new ArrayList();
+  private Node node;
 
   public enum State {
     STATE_STARTING,
@@ -190,26 +191,43 @@ public class MapDisplay extends PanZoomDisplay {
     return mapTopic;
   }
 
-  @Override
-  public void start( Node node ) throws RosException {
-    final MapDisplay parent = this;
+  public void refreshMap() {
+    refreshMap(false);
+  }
+
+  public void refreshMap(final boolean setStateOnFailure) {
     try {
-      setState(State.STATE_STARTING);
-      Log.i("MapDisplay", "Waiting for map");
       ServiceClient<GetMap.Request, GetMap.Response> client = node.newServiceClient("/dynamic_map", "nav_msgs/GetMap");
       client.call(new GetMap.Request(),
                   new ServiceResponseListener<GetMap.Response>() {
                     @Override               
                     public void onSuccess(GetMap.Response message) {
-                      new MapUpdateThread(parent, message.map).start();
+                      new MapUpdateThread(MapDisplay.this, message.map).start();
                     }
                     @Override
                     public void onFailure(RemoteException e) {
                       //Often occurs if service is not started.
                       Log.i("MapDisplay", "Dynamic map service call failed: " + e.toString());
-                      Log.i("MapDisplay", "Likely, the service is not present. This is not a problem, the user needs to pick a map");
-                      MapDisplay.this.setState(State.STATE_NEED_MAP);
+                      if (setStateOnFailure) {
+                        Log.i("MapDisplay", "Likely, the service is not present. This is not a problem, the user needs to pick a map");
+                        MapDisplay.this.setState(State.STATE_NEED_MAP);
+                      }
                     }});
+    } catch (Exception e) {
+      Log.i("MapDisplay", "Map could not be requested");
+      if (setStateOnFailure) {
+        MapDisplay.this.setState(State.STATE_NEED_MAP);
+      }
+    }
+  }
+
+  @Override
+  public void start( Node node ) throws RosException {
+    this.node = node;
+    try {
+      setState(State.STATE_STARTING);
+      Log.i("MapDisplay", "Waiting for map");
+      refreshMap(true);
     } catch (Exception e) {
       Log.i("MapDisplay", "Map could not be requested");
       MapDisplay.this.setState(State.STATE_NEED_MAP);
@@ -220,7 +238,7 @@ public class MapDisplay extends PanZoomDisplay {
               @Override
               public void onNewMessage(final OccupancyGrid msg) {
                 Log.i("MapDisplay", "Map recieved");
-                new MapUpdateThread(parent, msg).start();
+                new MapUpdateThread(MapDisplay.this, msg).start();
               }});
     Log.i("MapDisplay", "Map display started");
   }
@@ -232,6 +250,7 @@ public class MapDisplay extends PanZoomDisplay {
     }
     mapSubscriber = null;
     state = State.STATE_UNKNOWN;
+    node = null;
   }
 
   @Override

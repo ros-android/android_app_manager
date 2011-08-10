@@ -67,6 +67,7 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
   private Matrix estimatedRobotRelView = new Matrix();
   private boolean dragging = false;
   private boolean turning = false;
+  private boolean placeClick = false;
   private Runnable disabler = new Runnable() {
       @Override public void run() {
         disable();
@@ -90,6 +91,26 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
       private PointF touchOffset = new PointF(); // distance from touch to center of control
 
       @Override public boolean onDown( float x, float y ) {
+        if (placeClick) {
+          dragging = true;
+          float[] center = new float[2];
+          center[0] = x;
+          center[1] = y;
+          Matrix inv = new Matrix();
+          if (!getParent().getFixedRelView().invert(inv)) {
+            Log.e("PoseInputDisplay", "No inverse for matrix, can't transform");
+            return false;
+          }
+          inv.mapPoints( center );
+          centerX = center[0];
+          centerY = center[1];
+          setHandleAngleRadians( handleAngleRadians );
+          postInvalidate();
+          outputPose();
+          dragging = false;
+          placeClick = false;
+          return true;
+        }
         float[] center = new float[2];
         center[0] = centerX;
         center[1] = centerY;
@@ -173,6 +194,10 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
 
   private FingerTracker fingerTracker;
   private int color;
+
+  public void placeOnClick() {
+    placeClick = true;
+  }
 
   public void setColor( int newColor ) {
     color = newColor;

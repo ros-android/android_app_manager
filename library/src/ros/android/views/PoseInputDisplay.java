@@ -74,11 +74,12 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
     };
 
   // All these spot and handle geometry values are in view coordinates.
-  private float handleCenterDistance = 150;
-  private float spotDiameter = 100;
-  private float handleDiameter = 75;
+  private float handleCenterDistance = 2.0f * 1.5f; //150;
+  private float spotDiameter = 2.0f; //100;
+  private float handleDiameter = 2.0f * 0.75f; //75;
   private float spotRadius = spotDiameter / 2f;
   private float handleRadius = handleDiameter / 2f;
+  private float handleWidth = spotDiameter * 0.20f;
   private float centerX; // coordinates of the center spot relative to the view.
   private float centerY;
   private float handleX; // coordinates of the center spot relative to the view.
@@ -89,10 +90,13 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
       private PointF touchOffset = new PointF(); // distance from touch to center of control
 
       @Override public boolean onDown( float x, float y ) {
-        if( inCircle( x, y, centerX, centerY, spotRadius )) {
-          touchOffset.set( centerX - x, centerY - y );
+        float[] center = new float[2];
+        center[0] = centerX;
+        center[1] = centerY;
+        getParent().getFixedRelView().mapPoints( center );
+        if( inCircle( x, y, center[0], center[1], getParent().getFixedRelView().mapRadius(spotRadius) )) {
+          touchOffset.set( center[0] - x, center[1] - y );
           dragging = true;
-          postponeTimeout();
           postInvalidate();
           return true;
         } else {
@@ -102,18 +106,25 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
 
       @Override public void onMove( float x, float y ) {
         if( dragging ) {
-          centerX = x + touchOffset.x;
-          centerY = y + touchOffset.y;
+          float[] center = new float[2];
+          center[0] = x + touchOffset.x;
+          center[1] = y + touchOffset.y;
+          Matrix inv = new Matrix();
+          if (!getParent().getFixedRelView().invert(inv)) {
+            Log.e("PoseInputDisplay", "No inverse for matrix, can't transform");
+            return;
+          }
+          inv.mapPoints( center );
+          centerX = center[0];
+          centerY = center[1];
           setHandleAngleRadians( handleAngleRadians ); // update handleX and handleY based on the new center.
           outputPose();
-          postponeTimeout();
           postInvalidate();
         }
       }
 
       @Override public void onUp() {
         dragging = false;
-        postponeTimeout();
         postInvalidate();
       }
     };
@@ -122,10 +133,14 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
       private PointF touchOffset = new PointF(); // distance from touch to center of control
 
       @Override public boolean onDown( float x, float y ) {
-        if( inCircle( x, y, handleX, handleY, handleRadius )) {
-          touchOffset.set( handleX - x, handleY - y );
+        getParent().getFixedRelView();
+        float[] handle = new float[2];
+        handle[0] = handleX;
+        handle[1] = handleY;
+        getParent().getFixedRelView().mapPoints( handle );
+        if( inCircle( x, y, handle[0], handle[1], getParent().getFixedRelView().mapRadius(handleRadius) )) {
+          touchOffset.set( handle[0] - x, handle[1] - y );
           turning = true;
-          postponeTimeout();
           postInvalidate();
           return true;
         } else {
@@ -135,18 +150,23 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
 
       @Override public void onMove( float x, float y ) {
         if( turning ) {
-          float newHandleX = x + touchOffset.x;
-          float newHandleY = y + touchOffset.y;
-          setHandleAngleRadians( (float) Math.atan2( (float)(newHandleY - centerY), (float)(newHandleX - centerX) ));
+          float[] newHandle = new float[2];
+          newHandle[0] = x + touchOffset.x;
+          newHandle[1] = y + touchOffset.y;
+          Matrix inv = new Matrix();
+          if (!getParent().getFixedRelView().invert(inv)) {
+            Log.e("PoseInputDisplay", "No inverse for matrix, can't transform");
+            return;
+          }
+          inv.mapPoints( newHandle );
+          setHandleAngleRadians( (float) Math.atan2( (float)-(newHandle[1] - centerY), (float)(newHandle[0] - centerX) ));
           outputPose();
-          postponeTimeout();
           postInvalidate();
         }
       }
 
       @Override public void onUp() {
         turning = false;
-        postponeTimeout();
         postInvalidate();
       }
     };
@@ -168,12 +188,12 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
   private void setHandleAngleRadians( float radians ) {
     handleAngleRadians = radians;
     handleX = centerX + FloatMath.cos( handleAngleRadians ) * handleCenterDistance;
-    handleY = centerY + FloatMath.sin( handleAngleRadians ) * handleCenterDistance;
+    handleY = centerY - FloatMath.sin( handleAngleRadians ) * handleCenterDistance;
   }
 
   public PoseInputDisplay() {
     setColor(0);
-    linePaint.setStrokeWidth(20);
+    linePaint.setStrokeWidth(handleWidth);
 
     fingerTracker = new FingerTracker();
     fingerTracker.addReceiver( translationHandler );
@@ -203,15 +223,15 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
       float[] center = new float[2];
       center[0] = 0f;
       center[1] = 0f;
-      estimatedRobotRelView.mapPoints( center );
+      estimatedRobotRelMap.mapPoints( center );
       centerX = center[0];
       centerY = center[1];
 
       // Find the direction vector (which way the robot is pointing) in view coordinates.
       float[] dirVector = {1f, 0f};
-      estimatedRobotRelView.mapVectors( dirVector );
+      estimatedRobotRelMap.mapVectors( dirVector );
       
-      setHandleAngleRadians( (float) Math.atan2( (double)dirVector[1], (double)dirVector[0] ));
+      setHandleAngleRadians( (float) Math.atan2( -(double)dirVector[1], (double)dirVector[0] ));
     }
   }
 
@@ -237,26 +257,15 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
       paint.setAlpha( 0x60 );
       linePaint.setAlpha( 0x60 );
     }
-
-    Matrix oldMatrix = canvas.getMatrix();
-    canvas.setMatrix( getParent().getViewMatrix() );
-
     canvas.drawCircle( centerX, centerY, spotRadius, paint );
     canvas.drawCircle( handleX, handleY, handleRadius, paint );
     canvas.drawLine( centerX, centerY, handleX, handleY, linePaint );
-
-    canvas.setMatrix( oldMatrix );
   }
 
   private boolean inCircle( float x, float y, float cx, float cy, float radius ) {
     float dx = x - cx;
     float dy = y - cy;
     return FloatMath.sqrt( dx*dx + dy*dy ) < radius;
-  }
-
-  private void postponeTimeout() {
-    getParent().removeCallbacks( disabler );
-    getParent().postDelayed( disabler, 3 * 1000 );
   }
 
   private void outputPose() {
@@ -280,7 +289,7 @@ abstract public class PoseInputDisplay extends PanZoomDisplay implements Posable
       float angleRelMap = (float) Math.atan2( (double)dirVector[1], (double)dirVector[0] );
       Log.i("PoseInputDisplay", "angleRelMap = " + angleRelMap);
 
-      onPose( values[2], values[5], angleRelMap );
+      onPose( centerX, centerY, angleRelMap );
     } else {
       Log.e("PoseInputDisplay", "fixed frame rel view matrix not invertible!  Not calling onPose().");
     }

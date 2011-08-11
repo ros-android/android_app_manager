@@ -49,6 +49,10 @@ import android.os.Bundle;
 import org.ros.service.app_manager.StartApp;
 import org.ros.node.service.ServiceResponseListener;
 import android.widget.Toast;
+import java.lang.Thread;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 
 /**
  * Activity for Android that acts as a client for an external ROS app.
@@ -64,6 +68,7 @@ public class RosAppActivity extends RosActivity {
   private String robotAppName = null, defaultAppName = null;
   private Dashboard dashboard = null;
   private boolean startApplication = true;
+  private boolean applicationStarted = false;
 
   public RosAppActivity() {
 
@@ -142,6 +147,8 @@ public class RosAppActivity extends RosActivity {
     return resolver.createResolver(apps);
   }
 
+  private ProgressDialog progress;
+
   @Override
   protected void onNodeCreate(Node node) {
     Log.i("RosAndroid", "RosAppActivity.onNodeCreate");
@@ -161,10 +168,34 @@ public class RosAppActivity extends RosActivity {
     }   
     try {
       //Start up the application on the robot and start the dashboard.
-      if (startApplication) {
-        startApp();
-      }
       dashboard.start(node);
+      if (startApplication) {
+        applicationStarted = false;
+        startApp();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              if (progress != null) {
+                progress.dismiss();
+              }
+              progress = ProgressDialog.show(RosAppActivity.this, "Starting...", "Starting application...", true, false);
+              progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            }});
+        try {
+          while (!applicationStarted) {
+            Thread.sleep(100);
+          }
+        } catch (java.lang.InterruptedException e) {
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              if (progress != null) {
+                progress.dismiss();
+              }
+              progress = null;
+            }});
+      }
     } catch (Exception ex) {
       Log.e("$rootclass", "Init error: " + ex.toString());
       safeToastStatus("Failed: " + ex.getMessage());
@@ -186,10 +217,20 @@ public class RosAppActivity extends RosActivity {
         new ServiceResponseListener<StartApp.Response>() {
           @Override
           public void onSuccess(StartApp.Response message) {
+            RosAppActivity.this.applicationStarted = true;
           }
           @Override
           public void onFailure(RemoteException e) {
-            safeToastStatus("Failed: " + e.getMessage());
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  new AlertDialog.Builder(RosAppActivity.this).setTitle("Failed").setCancelable(false)
+                    .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                          RosAppActivity.this.applicationStarted = true; //Sort of a hack so that the app does not continue
+                          android.os.Process.killProcess(android.os.Process.myPid());
+                        }}).setMessage("The application failed to load").create();
+                }});
           }
         });
   }

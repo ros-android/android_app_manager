@@ -36,10 +36,19 @@ package ros.android.activity;
 import android.util.Log;
 import org.ros.node.Node;
 import org.ros.exception.RosException;
+import org.ros.exception.RemoteException;
 import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
 import org.ros.namespace.GraphName;
+import android.view.Window;
+import android.view.WindowManager;
 import org.ros.namespace.NameResolver;
 import ros.android.util.RobotDescription;
+import ros.android.util.Dashboard;
+import android.widget.LinearLayout;
+import android.os.Bundle;
+import org.ros.service.app_manager.StartApp;
+import org.ros.node.service.ServiceResponseListener;
+import android.widget.Toast;
 
 /**
  * Activity for Android that acts as a client for an external ROS app.
@@ -50,8 +59,29 @@ public class RosAppActivity extends RosActivity {
 
   protected AppManager appManager;
 
+  private int dashboardResourceId = 0;
+  private int mainWindowId = 0;
+  private String robotAppName = null, defaultAppName = null;
+  private Dashboard dashboard = null;
+  private boolean startApplication = true;
+
   public RosAppActivity() {
 
+  }
+
+  protected void setDashboardResource(int r) {
+    dashboardResourceId = r;
+  }
+  
+  protected void setMainWindowResource(int r) {
+    mainWindowId = r;
+  }
+  
+  protected void setDefaultAppName(String name) {
+    if (name == null) {
+      startApplication = false;
+    }
+    defaultAppName = name;
   }
 
   private AppManager createAppManagerCb(Node node, RobotDescription robotDescription)
@@ -63,6 +93,41 @@ public class RosAppActivity extends RosActivity {
       Log.i("RosAndroid", "Using Robot: " + robotDescription.getRobotName() + " "
             + robotDescription.getRobotId().toString());
       return AppManager.create(node, robotDescription.getRobotName());
+    }
+  }
+  /** Called when the activity is first created. */
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    if (dashboardResourceId == 0) {
+      Log.e("RosAndroid", "You must set the dashboard resource ID in your RosAppActivity");
+      return;
+    }
+    if (mainWindowId == 0) {
+      Log.e("RosAndroid", "You must set the dashboard resource ID in your RosAppActivity");
+      return;
+    }
+    if (defaultAppName == null && startApplication) {
+      Log.e("RosAndroid", "You must set the default app name in your RosAppActivity");
+      return;
+    }
+
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+        WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    setContentView(mainWindowId);
+
+    robotAppName = getIntent().getStringExtra(AppManager.PACKAGE + ".robot_app_name");
+    if( robotAppName == null ) {
+      robotAppName = defaultAppName;
+    }
+
+    if (dashboard == null) {
+      dashboard = new Dashboard(this);
+      dashboard.setView((LinearLayout)findViewById(dashboardResourceId),
+                        new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 
+                                                      LinearLayout.LayoutParams.WRAP_CONTENT));
+
     }
   }
 
@@ -93,7 +158,50 @@ public class RosAppActivity extends RosActivity {
     } catch (AppManagerNotAvailableException e) {
       Log.e("RosAndroid", "ros init failed", e);
       appManager = null;
+    }   
+    try {
+      //Start up the application on the robot and start the dashboard.
+      if (startApplication) {
+        startApp();
+      }
+      dashboard.start(node);
+    } catch (Exception ex) {
+      Log.e("$rootclass", "Init error: " + ex.toString());
+      safeToastStatus("Failed: " + ex.getMessage());
+    }
+
+  }
+
+  @Override
+  protected void onNodeDestroy(Node node) {
+    super.onNodeDestroy(node);
+    if (dashboard != null) {
+      dashboard.stop();
     }
   }
+
+  /** Starts the application on the robot. Calls the service with the name */
+  private void startApp() {
+    appManager.startApp(robotAppName,
+        new ServiceResponseListener<StartApp.Response>() {
+          @Override
+          public void onSuccess(StartApp.Response message) {
+          }
+          @Override
+          public void onFailure(RemoteException e) {
+            safeToastStatus("Failed: " + e.getMessage());
+          }
+        });
+  }
+
+  /** Displays a status tip at the bottom of the screen from any thread. */
+  protected void safeToastStatus(final String message) {
+    runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          Toast.makeText(RosAppActivity.this, message, Toast.LENGTH_SHORT).show();
+        }
+      });
+  } 
 
 }

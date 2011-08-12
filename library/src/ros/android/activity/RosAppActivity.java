@@ -186,6 +186,7 @@ public class RosAppActivity extends RosActivity {
             Thread.sleep(100);
           }
         } catch (java.lang.InterruptedException e) {
+          Log.i("RosAndroid", "Caught interrupted exception while spinning");
         }
         runOnUiThread(new Runnable() {
             @Override
@@ -218,16 +219,27 @@ public class RosAppActivity extends RosActivity {
           @Override
           public void onSuccess(StartApp.Response message) {
             RosAppActivity.this.applicationStarted = true;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  if (progress != null) {
+                    progress.dismiss();
+                  }
+                  progress = null;
+                }});
           }
           @Override
           public void onFailure(RemoteException e) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                  if (progress != null) {
+                    progress.dismiss();
+                  }
+                  progress = null;
                   new AlertDialog.Builder(RosAppActivity.this).setTitle("Failed").setCancelable(false)
                     .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                          RosAppActivity.this.applicationStarted = true; //Sort of a hack so that the app does not continue
                           android.os.Process.killProcess(android.os.Process.myPid());
                         }}).setMessage("The application failed to load").create();
                 }});

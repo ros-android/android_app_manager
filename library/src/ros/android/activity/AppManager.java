@@ -135,13 +135,16 @@ public class AppManager {
     return appList;
   }
   
+  private final org.ros.internal.node.response.StatusCode ERROR_STATUS 
+    = org.ros.internal.node.response.StatusCode.ERROR;
+
   public void listApps(final ServiceResponseListener<ListApps.Response> callback) {
     try {
       ServiceClient<ListApps.Request, ListApps.Response> listAppsClient =
         node.newServiceClient(resolver.resolve("list_apps"), "app_manager/ListApps");
       listAppsClient.call(new ListApps.Request(), callback);
     } catch (Throwable ex) {
-      //callback.onFailure(new RemoteException(ex.toString()));
+      callback.onFailure(new RemoteException(ERROR_STATUS, ex.toString()));
     }
   }
   
@@ -151,7 +154,7 @@ public class AppManager {
         node.newServiceClient(resolver.resolve("list_store_apps"), "app_manager/ListApps");
       listAppsClient.call(new ListApps.Request(), callback);
     } catch (Throwable ex) {
-      //callback.onFailure(new RemoteException(ex.toString()));
+      callback.onFailure(new RemoteException(ERROR_STATUS, ex.toString()));
     }
   }
   
@@ -164,7 +167,7 @@ public class AppManager {
       request.name = appName;
       startAppClient.call(request, callback);
     } catch (Throwable ex) {
-      //callback.onFailure(new RemoteException(ex.toString()));
+      callback.onFailure(new RemoteException(ERROR_STATUS, ex.toString()));
     }
   }
   
@@ -176,7 +179,7 @@ public class AppManager {
       request.name = appName;
       stopAppClient.call(request, callback);
     } catch (Throwable ex) {
-      //callback.onFailure(new RemoteException(ex.toString()));
+      callback.onFailure(new RemoteException(ERROR_STATUS, ex.toString()));
     }
   }
   
@@ -189,7 +192,7 @@ public class AppManager {
       request.name = appName;
       startAppClient.call(request, callback);
     } catch (Throwable ex) {
-      //callback.onFailure(new RemoteException(ex.toString()));
+      callback.onFailure(new RemoteException(ERROR_STATUS, ex.toString()));
     }
   }
   
@@ -201,7 +204,7 @@ public class AppManager {
       request.name = appName;
       stopAppClient.call(request, callback);
     } catch (Throwable ex) {
-      //callback.onFailure(new RemoteException(ex.toString()));
+      callback.onFailure(new RemoteException(ERROR_STATUS, ex.toString()));
     }
   }
   

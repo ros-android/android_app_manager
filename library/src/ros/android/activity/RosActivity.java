@@ -56,6 +56,7 @@ import org.ros.node.NodeConfiguration;
 import java.lang.Runnable;
 import java.lang.System;
 import android.net.wifi.WifiManager;
+import android.os.Bundle;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -83,10 +84,23 @@ public class RosActivity extends Activity {
   private boolean doShutdown = false;
   private boolean doTerminate = false;
 
+  //Create alert dialog to see if the user wants to switch WiFi networks.
+  private AlertDialogWrapper wifiDialog;
+  
+  //Create alert dialog to see if the user wants to evict another user.
+  private AlertDialogWrapper evictDialog;
+  
+  //Create alert dialog for issues.
+  private AlertDialogWrapper errorDialog;
+  
+  //Create the progress bar
+  private ProgressDialogWrapper progress;
+
   public RosActivity() {
     doShutdown = false;
     masterChooser = new MasterChooser(this);
   }
+
 
   public Exception getErrorException() {
     return errorException;
@@ -118,6 +132,10 @@ public class RosActivity extends Activity {
     doTerminate = true;
   }
 
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+  }
 
   /**
    * Re-launch the MasterChooserActivity to choose a new ROS master. The results
@@ -135,6 +153,26 @@ public class RosActivity extends Activity {
       nodeThread.interrupt();
       nodeThread = null;
     }
+    closeAllDialogs();
+  }
+
+  public void closeAllDialogs() {
+    runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          if (wifiDialog != null) {
+            wifiDialog.dismiss();
+          }
+          if (evictDialog != null) {
+            evictDialog.dismiss();
+          }
+          if (errorDialog != null) {
+            errorDialog.dismiss();
+          }
+          if (progress != null) {
+            progress.dismiss();
+          }
+        }});
   }
 
   @Override
@@ -203,6 +241,12 @@ public class RosActivity extends Activity {
       return state == 1;
     }
     
+    public void dismiss() {
+      if (progress != null) {
+        progress.dismiss();
+      }
+      progress = null;
+    }
   }
 
   private class ProgressDialogWrapper {
@@ -242,29 +286,21 @@ public class RosActivity extends Activity {
     doTerminate = false;
 
     super.onResume();
+
+    closeAllDialogs();
+    wifiDialog = new AlertDialogWrapper(this,
+        new AlertDialog.Builder(this).setTitle("Change Wifi?").setCancelable(false), "Yes", "No");
+    evictDialog = new AlertDialogWrapper(this,
+        new AlertDialog.Builder(this).setTitle("Evict User?").setCancelable(false), "Yes", "No");
+    errorDialog = new AlertDialogWrapper(this,
+        new AlertDialog.Builder(this).setTitle("Could Not Connect").setCancelable(false), "Ok");
+    progress = new ProgressDialogWrapper(this);
+
     if (node == null) {
       masterChooser.loadCurrentRobot();
       if (masterChooser.hasRobot()) { //A robot is in the current robot YAML file
         final RobotId id = masterChooser.getCurrentRobot().getRobotId(); //Used in the classes below to find the robot id.
-
-        //Create alert dialog to see if the user wants to switch WiFi networks.
-        final AlertDialogWrapper wifiDialog =  new AlertDialogWrapper(this,
-                   new AlertDialog.Builder(this).setTitle("Change Wifi?").setCancelable(false),
-                   "Yes", "No");
         
-        //Create alert dialog to see if the user wants to evict another user.
-        final AlertDialogWrapper evictDialog =  new AlertDialogWrapper(this,
-                   new AlertDialog.Builder(this).setTitle("Evict User?").setCancelable(false),
-                   "Yes", "No");
-
-        //Create alert dialog for issues.
-        final AlertDialogWrapper errorDialog =  new AlertDialogWrapper(this,
-                   new AlertDialog.Builder(this).setTitle("Could Not Connect").setCancelable(false),
-                   "Ok");
-
-        //Create the progress bar
-        final ProgressDialogWrapper progress = new ProgressDialogWrapper(this);
-
         //Run a set of checkers in series.
 
         //The last step - ensure the master is up.
@@ -394,6 +430,7 @@ public class RosActivity extends Activity {
                }
              });
 
+          
         progress.show("Connecting...", "Checking wifi connection");
         //Start the checkers.
         wc.beginChecking(id, (WifiManager)getSystemService(WIFI_SERVICE));
@@ -518,8 +555,7 @@ public class RosActivity extends Activity {
    *
    * @param node
    */
-  protected void onNodeDestroy(Node node) {
-
+  protected void onNodeDestroy(Node node) {    
   }
 
   /**

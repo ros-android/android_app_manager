@@ -11,7 +11,7 @@ cd `rospack find android_teleop`
 ant install
 cd `rospack find android_pr2_props`
 ant install
-cd `rospack find voice_recoginition`
+cd `rospack find voice_recognition`
 ant install
 
 

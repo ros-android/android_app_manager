@@ -14,4 +14,4 @@
 - other: {local-name: rosjava_android }
 - hg: {local-name: map_store, uri: 'https://kforge.ros.org/mapstore/hg', version: default}
 - hg: {uri: 'https://kforge.ros.org/warehousewg/warehouse-hg', local-name: warehouse}
-- hg: {uri: 'https://kforge.ros.org/appmanandroid/voice_recoghg', local-name: warehouse}
+- hg: {uri: 'https://kforge.ros.org/appmanandroid/voice_recoghg', local-name: voice_recognition}

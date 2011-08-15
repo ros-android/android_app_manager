@@ -163,10 +163,13 @@ public class AppManager {
     try {
       ServiceClient<StartApp.Request, StartApp.Response> startAppClient =
         node.newServiceClient(resolver.resolve("start_app"), "app_manager/StartApp");
+      Log.i("AppManager", "Start app service client created");
       StartApp.Request request = new StartApp.Request();
       request.name = appName;
       startAppClient.call(request, callback);
+      Log.i("AppManager", "Done call");
     } catch (Throwable ex) {
+      Log.i("AppManager", "Start apps failed: " + ex.toString());
       callback.onFailure(new RemoteException(ERROR_STATUS, ex.toString()));
     }
   }

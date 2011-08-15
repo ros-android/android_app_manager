@@ -196,6 +196,8 @@ public class RosAppActivity extends RosActivity {
               }
               progress = null;
             }});
+      } else {
+        Log.i("RosAndroid", "Not starting application");
       }
     } catch (Exception ex) {
       Log.e("$rootclass", "Init error: " + ex.toString());
@@ -214,10 +216,12 @@ public class RosAppActivity extends RosActivity {
 
   /** Starts the application on the robot. Calls the service with the name */
   private void startApp() {
+    Log.i("RosAndroid", "Starting application");
     appManager.startApp(robotAppName,
         new ServiceResponseListener<StartApp.Response>() {
           @Override
           public void onSuccess(StartApp.Response message) {
+            Log.i("RosAndroid", "App started successfully");
             RosAppActivity.this.applicationStarted = true;
             runOnUiThread(new Runnable() {
                 @Override
@@ -230,6 +234,7 @@ public class RosAppActivity extends RosActivity {
           }
           @Override
           public void onFailure(RemoteException e) {
+            Log.e("RosAndroid", "App failed to start!");
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

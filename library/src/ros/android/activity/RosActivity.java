@@ -360,12 +360,16 @@ public class RosActivity extends Activity {
                }
              },
              new ControlChecker.EvictionHandler() {
-               public boolean doEviction(String current) {
+               public boolean doEviction(String current, String message) {
                  runOnUiThread(new Runnable() { 
                      public void run() {
                        progress.dismiss();
                      }});
-                 evictDialog.setMessage(current + " is running custom software on this robot. Do you want to evict this user?");
+                 String m = "";
+                 if (message != null) {
+                   m = " The user says: \"" + message + "\"";
+                 }
+                 evictDialog.setMessage(current + " is running custom software on this robot. Do you want to evict this user?" + m);
                  runOnUiThread(new Runnable() { 
                      public void run() {
                        progress.show("Connecting...", "Deactivating robot");

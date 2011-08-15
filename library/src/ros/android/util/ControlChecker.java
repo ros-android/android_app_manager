@@ -66,7 +66,7 @@ public class ControlChecker {
   }
   public interface EvictionHandler {
     /** Called to prompt the user to evict another user */
-    boolean doEviction(String user);
+    boolean doEviction(String user, String message);
   }
 
   public interface StartHandler {
@@ -86,7 +86,7 @@ public class ControlChecker {
     this.robotReadyCallback = robotReadyCallback;
     this.failureCallback = failureCallback;
     this.evictionCallback = new EvictionHandler() {
-        public boolean doEviction(String user) { 
+        public boolean doEviction(String user, String message) { 
           return false; 
         }};
     this.startCallback = null;
@@ -135,7 +135,57 @@ public class ControlChecker {
       checkerThread.interrupt();
     }
   }
-
+  
+  private enum State {
+    IN_USE, 
+    OFF,
+    VALID
+  }
+  private class RobotState {
+    private final String IN_USE_TAG = "STATE_IN_USE";
+    private final String VALID_TAG = "STATE_VALID";
+    private final String OFF_TAG = "STATE_OFF";
+    private final String USER_TAG = "USER:";
+    private final String MESSAGE_TAG = "MESSAGE:";
+    
+    public State state;
+    public String user;
+    public String message;
+    public boolean readError;
+    
+    public RobotState(String page) {
+      String[] pageLines = page.split("\n");
+      
+      boolean stateFound = false;
+      
+      for (String i : pageLines) {
+        if (i.trim().indexOf(IN_USE_TAG) >= 0) {
+          state = State.IN_USE;
+          stateFound = true;
+        }
+        if (i.trim().indexOf(VALID_TAG) >= 0) {
+          state = State.VALID;
+          stateFound = true;
+        }
+        if (i.trim().indexOf(OFF_TAG) >= 0) {
+          state = State.OFF;
+          stateFound = true;
+        }
+        if (i.trim().indexOf(USER_TAG) >= 0) {
+          user = i.trim().substring(USER_TAG.length() + 1).trim();
+        }
+        if (i.trim().indexOf(MESSAGE_TAG) >= 0) {
+          message = i.trim().substring(MESSAGE_TAG.length() + 1).trim();
+        }
+      }
+      
+      if (!stateFound) {
+        readError = true;
+      }
+    }
+  }
+  
+  
   private class CheckerThread extends Thread {
 
     private RobotId robotId;
@@ -179,51 +229,33 @@ public class ControlChecker {
       return null;
     }
 
-    final String USER_TAG = "ACTIVE_USER:";
-    final String VALID_USER = "applications";
-    final String NO_USER = "None";
-
-    private String getActiveUser() {
-        String page = getPage(robotId.getControlUri() + "?action=GET_STATE");
-        if (page == null) {
-          return null;
-        }
-
-        String[] pageLines = page.split("\n");
-        String activeUser = NO_USER;
-     
-
-        for (String i : pageLines) {
-          if (i.trim().indexOf(USER_TAG) >= 0) {
-            activeUser = i.trim().substring(USER_TAG.length() + 1).trim();
-          }
-        }
-        return activeUser;
+    private RobotState getRobotState() {
+      String page = getPage(robotId.getControlUri() + "?action=GET_STATE");
+      if (page == null) {
+        return null;
+      }
+      RobotState state = new RobotState(page);
+      if (state.readError) {
+        return null;
+      }
+      return state;
     }
 
     @Override
     public void run() {
       try {
-        String activeUser = getActiveUser();
-        Log.d("ControlChecker", "Active user: " + activeUser);
-        if (activeUser == null) {
+        RobotState state = getRobotState();
+        if (state == null) {
           failureCallback.handleFailure("Could not connect to the control page");
           return;
         }
+        Log.d("ControlChecker", "Active user: " + state.user + " (" + state.state + ")");
 
-        boolean goodState = false;
-        boolean badUser = false;
-        if (activeUser.equals(VALID_USER)) {
-          goodState = true;
-        } else if (!activeUser.equals(NO_USER)) {
-          badUser = true;
-        }
-
-        if (goodState) {
+        if (state.state == ControlChecker.State.VALID) {
           robotReadyCallback.handleSuccess();
         } else {
-          if (badUser) {
-            if (evictionCallback.doEviction(activeUser)) { //Prompt
+          if (state.state == ControlChecker.State.IN_USE) {
+            if (evictionCallback.doEviction(state.user, state.message)) { //Prompt
               Log.d("ControlChecker", "Stopping robot");
               getPage(robotId.getControlUri() + "?action=STOP_ROBOT");
             } else {
@@ -240,12 +272,17 @@ public class ControlChecker {
             
             int i = 0;
             
-            while (i < 30 && !VALID_USER.equals(getActiveUser())) {
+            while (i < 30 && state.state != ControlChecker.State.VALID) {
               i++;
               Thread.sleep(1000L);
+              state = getRobotState();
+              if (state == null) {
+                failureCallback.handleFailure("Lost connection with robot");
+                return;
+              }
             }
             
-            if (VALID_USER.equals(getActiveUser())) {
+            if (state.state == ControlChecker.State.VALID) {
               robotReadyCallback.handleSuccess();
             } else {
               failureCallback.handleFailure("Re-started the robot, but it is still not working");

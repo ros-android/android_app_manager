@@ -447,7 +447,6 @@ public class RosActivity extends Activity {
   }
 
   private void controlTerminate() {
-    final ProgressDialogWrapper progress = new ProgressDialogWrapper(this);
     if (getCurrentRobot() != null) {
       if (getCurrentRobot().getRobotId() != null) {
         if (getCurrentRobot().getRobotId().getControlUri() != null) {

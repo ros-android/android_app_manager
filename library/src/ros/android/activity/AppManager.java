@@ -100,10 +100,13 @@ public class AppManager {
                 stillRunning = true;
               }
             }
-            Log.i("AppManager", "Terminate application: " + a.name);
             if (!stillRunning) {
+              Log.i("AppManager", "Terminate application: " + a.name);
               for (TerminationCallbackInfo c : terminationCallbacks) {
-                if (c.appname.equals(a.name)) {
+                if (c.appname == null) {
+                  Log.i("AppManager", "Terminate callback called");
+                  c.callback.onAppTermination();
+                } else if (c.appname.equals(a.name)) {
                   Log.i("AppManager", "Terminate callback called");
                   c.callback.onAppTermination();
                 }

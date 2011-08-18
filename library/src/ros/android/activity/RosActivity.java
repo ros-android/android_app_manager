@@ -309,7 +309,10 @@ public class RosActivity extends Activity {
                public void receive(RobotDescription robotDescription) {
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                       }
                      }});
                  createNode();
                }
@@ -319,7 +322,10 @@ public class RosActivity extends Activity {
                  final String reason2 = reason;
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                       }
                      }
                    });
                  errorDialog.show("Cannot contact ROS master: " + reason2);
@@ -337,8 +343,11 @@ public class RosActivity extends Activity {
                public void handleSuccess() {
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
-                       progress.show("Connecting...", "Connecting to ROS master");
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                         p.show("Connecting...", "Connecting to ROS master");
+                       }
                      }});
                  mc.beginChecking(id);
                }
@@ -348,7 +357,10 @@ public class RosActivity extends Activity {
                  final String reason2 = reason;
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                       }
                      }
                    });
                  errorDialog.show("Cannot connect to control robot: " + reason2);
@@ -363,7 +375,10 @@ public class RosActivity extends Activity {
                public boolean doEviction(String current, String message) {
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                       }
                      }});
                  String m = "";
                  if (message != null) {
@@ -372,7 +387,10 @@ public class RosActivity extends Activity {
                  evictDialog.setMessage(current + " is running custom software on this robot. Do you want to evict this user?" + m);
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.show("Connecting...", "Deactivating robot");
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.show("Connecting...", "Deactivating robot");
+                       }
                      }});
                  return evictDialog.show();
                }
@@ -381,8 +399,11 @@ public class RosActivity extends Activity {
                public void handleStarting() {
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
-                       progress.show("Connecting...", "Starting robot");
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                         p.show("Connecting...", "Starting robot");
+                       }
                      }});
                }
              });
@@ -393,8 +414,11 @@ public class RosActivity extends Activity {
                public void handleSuccess() {
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
-                       progress.show("Connecting...", "Checking robot state");
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                         p.show("Connecting...", "Checking robot state");
+                       }
                      }});
                  cc.beginChecking(id);
                }
@@ -404,7 +428,10 @@ public class RosActivity extends Activity {
                  final String reason2 = reason;
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                       }
                      }
                    });
                  errorDialog.show("Cannot connect to robot WiFi: " + reason2);
@@ -419,7 +446,10 @@ public class RosActivity extends Activity {
                public boolean doReconnection(String from, String to) {
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.dismiss();
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.dismiss();
+                       }
                      }});
                  if (from == null) {
                    wifiDialog.setMessage("To use this robot, you must connect to a wifi network. You are currently not connected to a wifi network. Would you like to connect to the correct wireless network?");
@@ -428,7 +458,10 @@ public class RosActivity extends Activity {
                  }
                  runOnUiThread(new Runnable() { 
                      public void run() {
-                       progress.show("Connecting...", "Switching wifi networks");
+                       final ProgressDialogWrapper p = progress;
+                       if (p != null) {
+                         p.show("Connecting...", "Switching wifi networks");
+                       }
                      }});
                  return wifiDialog.show();
                }

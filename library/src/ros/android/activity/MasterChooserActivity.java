@@ -36,6 +36,7 @@ package ros.android.activity;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.ContentValues;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -49,6 +50,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
+import android.net.Uri;
 import org.yaml.snakeyaml.Yaml;
 import ros.android.util.InvalidRobotDescriptionException;
 import ros.android.util.MasterChooser;
@@ -57,6 +59,8 @@ import ros.android.util.RobotId;
 import ros.android.util.SdCardSetup;
 import ros.android.util.zxing.IntentIntegrator;
 import ros.android.util.zxing.IntentResult;
+import ros.android.util.RobotsContentProvider;
+import android.database.Cursor;
 
 import java.util.Map;
 import java.io.BufferedReader;
@@ -87,65 +91,41 @@ public class MasterChooserActivity extends Activity {
     currentRobotAccessor = new MasterChooser(this);
   }
 
-  private File getRobotListFile() {
-    if (!SdCardSetup.isReady()) {
-      SdCardSetup.promptUserForMount(this);
-      return null;
-    } else {
-      try {
-        File rosDir = SdCardSetup.getRosDir();
-        File robotListFile = new File(rosDir, "robots.yaml");
-        if (!robotListFile.exists()) {
-          Log.i("RosAndroid", "robots.yaml file does not exist, creating.");
-          robotListFile.createNewFile();
-        }
-        return robotListFile;
-      } catch (Exception ex) {
-        Log.e("RosAndroid", "exception in getRobotListFile: " + ex.getMessage());
-        return null;
-      }
-    }
-  }
-
   public void writeRobotList() {
-    File robotListFile = getRobotListFile();
-    if (robotListFile == null) {
-      Log.e("RosAndroid", "writeNewRobot(): no robots file.");
-      return;
+    Log.i("MasterChooserActivity", "Saving robot...");
+    Yaml yaml = new Yaml();
+    String txt = null;
+    final List<RobotDescription> robot = robots; //Avoid race conditions
+    if (robot != null) { 
+      txt = yaml.dump(robot);
     }
-
-    try {
-      FileWriter writer = new FileWriter(robotListFile);
-      Yaml yaml = new Yaml();
-      yaml.dump(robots, writer);
-      writer.close();
-      Log.i("RosAndroid", "Wrote robots.yaml file.");
-    } catch (Exception ex) {
-      Log.e("RosAndroid", "exception writing robots.yaml to sdcard: " + ex.getMessage());
+    ContentValues cv = new ContentValues();
+    cv.put(RobotsContentProvider.TABLE_COLUMN, txt);
+    Uri newEmp = getContentResolver().insert(RobotsContentProvider.CONTENT_URI, cv);
+    if (newEmp != RobotsContentProvider.CONTENT_URI) {
+      Log.e("MasterChooserActivity", "Could not save, non-equal URI's");
     }
   }
 
   @SuppressWarnings("unchecked")
   private void readRobotList() {
-    try {
-      File robotListFile = getRobotListFile();
-      if (robotListFile == null) {
-        Log.e("RosAndroid", "readRobotList(): no robots.yaml file.");
-        return;
-      }
-
-      BufferedReader reader = new BufferedReader(new FileReader(robotListFile));
-      try {
-        Yaml yaml = new Yaml();
-        robots = (List<RobotDescription>) yaml.load(reader);
-        if (robots == null) {
-          robots = new ArrayList<RobotDescription>();
-        }
-      } finally {
-        reader.close();
-      }
-    } catch (Exception ex) {
-      Log.e("RosAndroid", "exception reading list of previous master URIs: " + ex.getMessage());
+    String str = null;
+    Cursor c = getContentResolver().query(RobotsContentProvider.CONTENT_URI, null, null, null, null);
+    if (c == null) {
+      robots = new ArrayList<RobotDescription>();
+      Log.e("MasterChooserActivity", "Content provider failed!!!");
+      return;
+    }
+    if (c.getCount() > 0) {
+      c.moveToFirst();
+      str = c.getString(c.getColumnIndex(RobotsContentProvider.TABLE_COLUMN));
+      Log.i("MasterChooserActivity", "Found: " + str);
+    }
+    if (str != null) {
+      Yaml yaml = new Yaml();
+      robots = (List<RobotDescription>) yaml.load(str);
+    } else {
+      robots = new ArrayList<RobotDescription>();
     }
   }
 

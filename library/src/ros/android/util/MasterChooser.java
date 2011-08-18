@@ -36,14 +36,15 @@ package ros.android.util;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.ContentValues;
 import android.util.Log;
 import org.ros.node.NodeConfiguration;
-//import org.ros.RosLoader;
 import org.ros.exception.RosException;
 import org.ros.namespace.GraphName;
 import org.ros.namespace.NameResolver;
 import org.yaml.snakeyaml.Yaml;
 import ros.android.activity.MasterChooserActivity;
+import ros.android.util.CurrentRobotContentProvider;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -53,15 +54,17 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
+import android.net.Uri;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
 import java.util.HashMap;
+import android.database.Cursor;
 
 /**
  * Helper class for launching the {@link MasterChooserActivity} for choosing a
  * ROS master. Keep this object around for the lifetime of an {@link Activity}.
  */
-public class MasterChooser /*extends RosLoader*/ {
+public class MasterChooser {
 
   private Activity callingActivity;
   private RobotDescription currentRobot;
@@ -81,6 +84,7 @@ public class MasterChooser /*extends RosLoader*/ {
     currentRobot = null;
   }
 
+
   public RobotDescription getCurrentRobot() {
     return currentRobot;
   }
@@ -90,49 +94,22 @@ public class MasterChooser /*extends RosLoader*/ {
   }
 
   /**
-   * Returns a File for the current-robot file if the sdcard is ready and
-   * there's no error, null otherwise. The actual file on "disk" does not have
-   * to exist for this to work and return a File object.
-   */
-  private File getCurrentRobotFile() {
-    if (!SdCardSetup.isReady()) {
-      return null;
-    } else {
-      try {
-        File rosDir = SdCardSetup.getRosDir();
-        return new File(rosDir, "current_robot.yaml");
-      } catch (Exception ex) {
-        Log.e("MasterChooser", "exception in getCurrentRobotFile: " + ex.getMessage());
-        return null;
-      }
-    }
-  }
-
-  /**
    * Write the current value of private currentRobot variable to a common file
    * on the sdcard, so it can be shared between ROS apps.
    */
   public void saveCurrentRobot() {
-    File currentRobotFile = getCurrentRobotFile();
-    if (currentRobotFile == null) {
-      Log.e("MasterChooser", "saveCurrentRobot(): could not get current-robot File object.");
-      return;
+    Log.i("MasterChooser", "Saving robot...");
+    Yaml yaml = new Yaml();
+    String txt = null;
+    final RobotDescription robot = currentRobot; //Avoid race conditions
+    if (robot != null) { 
+      txt = yaml.dump(robot);
     }
-
-    try {
-      if (!currentRobotFile.exists()) {
-        Log.i("MasterChooser", "current-robot file does not exist, creating.");
-        currentRobotFile.createNewFile();
-      }
-
-      // overwrite the file contents.
-      FileWriter writer = new FileWriter(currentRobotFile, false);
-      Yaml yaml = new Yaml();
-      yaml.dump(currentRobot, writer);
-      writer.close();
-      Log.i("MasterChooser", "Wrote '" + currentRobot.getRobotId().toString() + "' to current-robot file.");
-    } catch (Exception ex) {
-      Log.e("MasterChooser", "exception writing current robot to sdcard: " + ex.getMessage());
+    ContentValues cv = new ContentValues();
+    cv.put(CurrentRobotContentProvider.TABLE_COLUMN, txt);
+    Uri newEmp = callingActivity.getContentResolver().insert(CurrentRobotContentProvider.CONTENT_URI, cv);
+    if (newEmp != CurrentRobotContentProvider.CONTENT_URI) {
+      Log.e("MasterChooser", "Could not save, non-equal URI's");
     }
   }
 
@@ -144,22 +121,23 @@ public class MasterChooser /*extends RosLoader*/ {
    * nothing is changed.
    */
   public void loadCurrentRobot() {
-    try {
-      File currentRobotFile = getCurrentRobotFile();
-      if (currentRobotFile == null) {
-        Log.e("MasterChooser", "loadCurrentRobot(): can't get the current-robot file.");
-        return;
-      }
-
-      BufferedReader reader = new BufferedReader(new FileReader(currentRobotFile));
-      try {
-        Yaml yaml = new Yaml();
-        currentRobot = (RobotDescription) yaml.load(reader);
-      } finally {
-        reader.close();
-      }
-    } catch (Throwable ex) {
-      Log.e("MasterChooser", "exception reading current-robot file: " + ex.getMessage());
+    String str = null;
+    Cursor c = callingActivity.getContentResolver().query(CurrentRobotContentProvider.CONTENT_URI, null, null, null, null);
+    if (c == null) {
+      currentRobot = null;
+      Log.e("MasterChooser", "Content provider failed!!!");
+      return;
+    }
+    if (c.getCount() > 0) {
+      c.moveToFirst();
+      str = c.getString(c.getColumnIndex(CurrentRobotContentProvider.TABLE_COLUMN));
+      Log.i("MasterChooser", "Found: " + str);
+    }
+    if (str != null) {
+      Yaml yaml = new Yaml();
+      currentRobot = (RobotDescription)yaml.load(str);
+    } else {
+      currentRobot = null;
     }
   }
 

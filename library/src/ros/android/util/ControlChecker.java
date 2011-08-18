@@ -259,6 +259,7 @@ public class ControlChecker {
               Log.d("ControlChecker", "Stopping robot");
               getPage(robotId.getControlUri() + "?action=STOP_ROBOT");
             } else {
+              Log.d("ControlChecker", "No eviction");
               failureCallback.handleFailure("Need to evict current user inorder to connect");
               return;
             }
@@ -285,10 +286,12 @@ public class ControlChecker {
             if (state.state == ControlChecker.State.VALID) {
               robotReadyCallback.handleSuccess();
             } else {
+              Log.d("ControlChecker", "Restarted robot, still not working");
               failureCallback.handleFailure("Re-started the robot, but it is still not working");
             }
           } else {
             //Non-started robot
+            Log.d("ControlChecker", "Robot, not started working");
             failureCallback.handleFailure("Robot not started");
           }
         }

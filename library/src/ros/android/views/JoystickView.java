@@ -68,6 +68,8 @@ public class JoystickView extends ImageView implements OnTouchListener {
   private float motionY;
   private float motionX;
   private Publisher<Twist> twistPub;
+  private boolean sendMessages = true;
+  private boolean nullMessage = true;
 
   public JoystickView(Context ctx) {
     super(ctx);
@@ -102,7 +104,12 @@ public class JoystickView extends ImageView implements OnTouchListener {
       public void run() {
         try {
           while (true) {
-            pub.publish(message);
+            if (sendMessages) {
+              pub.publish(message);
+              if (nullMessage) {
+                sendMessages = false;
+              }
+            }
             Thread.sleep(1000 / rate);
           }
         } catch (InterruptedException e) {
@@ -144,6 +151,8 @@ public class JoystickView extends ImageView implements OnTouchListener {
       touchCmdMessage.angular.x = 0;
       touchCmdMessage.angular.y = 0;
       touchCmdMessage.angular.z = -5 * motionX;
+      sendMessages = true;
+      nullMessage = false;
     } else {
       touchCmdMessage.linear.x = 0;
       touchCmdMessage.linear.y = 0;
@@ -151,6 +160,7 @@ public class JoystickView extends ImageView implements OnTouchListener {
       touchCmdMessage.angular.x = 0;
       touchCmdMessage.angular.y = 0;
       touchCmdMessage.angular.z = 0;
+      nullMessage = true;
     }
     return true;
   }

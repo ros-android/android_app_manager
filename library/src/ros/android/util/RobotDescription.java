@@ -127,7 +127,7 @@ public class RobotDescription implements java.io.Serializable {
   }
 
   public boolean isUnknown() {
-    return this.robotName == NAME_UNKNOWN;
+    return this.robotName.equals(NAME_UNKNOWN);
   }
 
   public static RobotDescription createUnknown(RobotId robotId)

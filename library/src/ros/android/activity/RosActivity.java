@@ -220,6 +220,10 @@ public class RosActivity extends Activity {
     }
 
 
+    public void setTitle(String m) {
+      dialog.setTitle(m);
+    }
+    
     public void setMessage(String m) {
       dialog.setMessage(m);
     }
@@ -334,6 +338,13 @@ public class RosActivity extends Activity {
                      }
                    });
                  errorDialog.show("Cannot contact ROS master: " + reason2);
+                 errorDialog.dismiss();
+                 evictDialog.setTitle("Stop Robot?");
+                 if (evictDialog.show("The robot appears to be in a broken state. Do you wish to stop it?")) {
+                   evictDialog.dismiss();
+                   controlTerminate();
+                 }
+                 evictDialog.dismiss();
                  runOnUiThread(new Runnable() { 
                      public void run() {
                        masterChooser.launchChooserActivity();
@@ -369,6 +380,7 @@ public class RosActivity extends Activity {
                      }
                    });
                  errorDialog.show("Cannot connect to control robot: " + reason2);
+                 errorDialog.dismiss();
                  runOnUiThread(new Runnable() { 
                      public void run() {
                        masterChooser.launchChooserActivity();
@@ -440,6 +452,7 @@ public class RosActivity extends Activity {
                      }
                    });
                  errorDialog.show("Cannot connect to robot WiFi: " + reason2);
+                 errorDialog.dismiss();
                  runOnUiThread(new Runnable() { 
                      public void run() {
                        masterChooser.launchChooserActivity();
@@ -490,7 +503,11 @@ public class RosActivity extends Activity {
         if (getCurrentRobot().getRobotId().getControlUri() != null) {
           runOnUiThread(new Runnable() { 
               public void run() {
-                progress.show("Deactivating...", "Deactivating robot");
+                final ProgressDialogWrapper p = progress;
+                if (p != null) {
+                  p.dismiss();
+                  p.show("Deactivating...", "Deactivating robot");
+                }
               }});
           String uri = getCurrentRobot().getRobotId().getControlUri() + "?action=STOP_ROBOT";
           try {
@@ -517,7 +534,10 @@ public class RosActivity extends Activity {
           }
           runOnUiThread(new Runnable() { 
               public void run() {
-                progress.dismiss();
+                final ProgressDialogWrapper p = progress;
+                if (p != null) {
+                  p.dismiss();
+                }
               }});
         }
       }

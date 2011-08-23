@@ -200,9 +200,13 @@ public class RosActivity extends Activity {
       state = 0;
       this.context = context;
       dialog = builder.setPositiveButton(yesButton, new DialogInterface.OnClickListener() {
-                              public void onClick(DialogInterface dialog, int which) { state = 1; }})
+                              public void onClick(DialogInterface dialog, int which) { 
+                                state = 1;
+                              }})
                       .setNegativeButton(noButton, new DialogInterface.OnClickListener() {
-                              public void onClick(DialogInterface dialog, int which) { state = 2; }})
+                              public void onClick(DialogInterface dialog, int which) { 
+                                state = 2;
+                              }})
                       .create();
     }
 
@@ -210,8 +214,9 @@ public class RosActivity extends Activity {
       state = 0;
       this.context = context;
       dialog = builder.setNeutralButton(okButton, new DialogInterface.OnClickListener() {
-                              public void onClick(DialogInterface dialog, int which) { state = 1; }})
-                      .create();
+          public void onClick(DialogInterface dialog, int which) {
+            state = 1;
+          }}).create();
     }
 
 

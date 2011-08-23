@@ -1,6 +1,6 @@
-- other: {local-name: /opt/ros/diamondback/ros}
-- other: {local-name: /opt/ros/diamondback/stacks}
-- hg: {local-name: rosjava, uri: 'https://rosjava.googlecode.com/hg', version: default}
+- other: {local-name: /opt/ros/electric/ros}
+- other: {local-name: /opt/ros/electric/stacks}
+- hg: {local-name: rosjava_core, uri: 'https://rosjava.googlecode.com/hg', version: default}
 - hg: {local-name: appmanandroid, uri: 'https://kforge.ros.org/appmanandroid/hg', version: default}
 - hg: {local-name: android_teleop, uri: 'https://kforge.ros.org/appmanandroid/android_teleophg', version: default}
 - hg: {local-name: app_chooser, uri: 'https://kforge.ros.org/appmanandroid/app_chooserhg', version: default}
@@ -16,3 +16,4 @@
 - hg: {uri: 'https://kforge.ros.org/warehousewg/warehouse-hg', local-name: warehouse}
 - hg: {uri: 'https://kforge.ros.org/appmanandroid/voice_recoghg', local-name: voice_recognition}
 - hg: {uri: 'https://kforge.ros.org/appmanandroid/appmanwx', local-name: appmanwx}
+- hg: {uri: 'https://kforge.ros.org/turtlebot/turtlebot', local-name: turtlebot}

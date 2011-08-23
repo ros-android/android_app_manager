@@ -169,7 +169,7 @@ public class RosAppActivity extends RosActivity {
     try {
       //Start up the application on the robot and start the dashboard.
       dashboard.start(node);
-      if (startApplication) {
+      if (startApplication && false) {
         applicationStarted = false;
         startApp();
         runOnUiThread(new Runnable() {

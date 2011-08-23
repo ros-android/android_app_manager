@@ -139,6 +139,10 @@ public class MapView extends PanZoomView {
     mapDisplay.addCallback(c);
   }
 
+  public void resetMapDisplayState() {
+    mapDisplay.resetState();
+  }
+  
   private class FootprintThread extends Thread {
     private MapView view;
     private Node node;

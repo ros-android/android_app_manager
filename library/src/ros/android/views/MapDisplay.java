@@ -83,6 +83,10 @@ public class MapDisplay extends PanZoomDisplay {
     callbacks.add(c);
   }
 
+  public void resetState() {
+    setState(MapDisplay.State.STATE_STARTING);
+  }
+
   private void setState(State newState) {
     if (state != newState) {
       Log.i("MapDisplay", "New state: " + newState + ".");

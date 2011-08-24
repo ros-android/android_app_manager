@@ -102,9 +102,10 @@
 	     - customize to your needs.
 	     -->
   <target name="clean">
-    <echo message="cleaning build/libs/*" />
+    <echo message="cleaning build and bin" />
     <delete>
-      <fileset dir="build/libs" includes="**.jar"/>
+      <fileset dir="build" includes="**"/>
+      <fileset dir="bin" includes="**"/>
     </delete>
   </target>
 

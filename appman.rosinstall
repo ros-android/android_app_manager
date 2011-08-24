@@ -17,3 +17,4 @@
 - hg: {uri: 'https://kforge.ros.org/appmanandroid/voice_recoghg', local-name: voice_recognition}
 - hg: {uri: 'https://kforge.ros.org/appmanandroid/appmanwx', local-name: appmanwx}
 - hg: {uri: 'https://kforge.ros.org/turtlebot/turtlebot', local-name: turtlebot}
+- svn: {local-name: multimaster_experimental, uri: 'https://code.ros.org/svn/ros/stacks/multimaster_experimental/trunk'}

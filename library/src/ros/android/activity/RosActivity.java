@@ -247,14 +247,15 @@ public class RosActivity extends Activity {
           break;
         }
       }
+      dismiss();
       return state == 1;
     }
     
     public void dismiss() {
-      if (progress != null) {
-        progress.dismiss();
+      if (dialog != null) {
+        dialog.dismiss();
       }
-      progress = null;
+      dialog = null;
     }
   }
 

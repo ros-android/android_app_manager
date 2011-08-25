@@ -66,6 +66,9 @@ public class Dashboard {
   }
 
   public void setView(ViewGroup view, ViewGroup.LayoutParams lparams) {
+    if (view == null) {
+      Log.e("Dashboard", "Null view for dashboard");
+    }
     this.view = view;
     this.lparams = lparams;
   }
@@ -99,6 +102,12 @@ public class Dashboard {
             ViewGroup localView = view;
             if (dash != null && localView != null) {
               localView.addView((View)dash, lparams);
+            } else if (dash == null) {
+              Log.e("Dashboard", "Dashboard could not start: no dashboard");
+            } else if (view == null) {
+              Log.e("Dashboard", "Dashboard could not start: no view");
+            } else {
+              Log.e("Dashboard", "Dashboard could not start: no view or dashboard");
             }
           }});
       dashboard.start(node);

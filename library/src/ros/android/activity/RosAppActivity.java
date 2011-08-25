@@ -212,6 +212,7 @@ public class RosAppActivity extends RosActivity {
     if (dashboard != null) {
       dashboard.stop();
     }
+    appManager = null;
   }
 
   /** Starts the application on the robot. Calls the service with the name */

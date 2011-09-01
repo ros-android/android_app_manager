@@ -46,8 +46,8 @@ public class RobotDescription implements java.io.Serializable {
   public static final String WIFI = "invalid wifi";
   public static final String CONTROL = "not started";
 
-  public static final String NAME_UNKNOWN = "Unknown";
-  public static final String TYPE_UNKNOWN = "Unknown";
+  private static final String NAME_UNKNOWN = "Unknown";
+  private static final String TYPE_UNKNOWN = "Unknown";
 
   private static final long serialVersionUID = 1L;
   private RobotId robotId;

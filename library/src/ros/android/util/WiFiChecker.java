@@ -151,9 +151,20 @@ public class WiFiChecker {
         if (wifiValid()) {
           foundWiFiCallback.handleSuccess();
         } else if (reconnectionCallback.doReconnection(wifiManager.getConnectionInfo().getSSID(), robotId.getWifi())) {
+          Log.d("WiFiChecker", "Disable networking");
+          wifiManager.setWifiEnabled(false);
+          int i = 0;
+          while (i < 30 && wifiManager.isWifiEnabled()) {
+            Log.d("WiFiChecker", "Waiting for WiFi enable");
+            Thread.sleep(1000L);
+            i++;
+          }
+          if (wifiManager.isWifiEnabled()) {
+            failureCallback.handleFailure("Un-able to shutdown WiFi");
+            return;  
+          }
           Log.d("WiFiChecker", "Wait for networking");
           wifiManager.setWifiEnabled(true);
-          int i = 0;
           while (i < 30 && !wifiManager.isWifiEnabled()) {
             Log.d("WiFiChecker", "Waiting for WiFi enable");
             Thread.sleep(1000L);
@@ -177,6 +188,7 @@ public class WiFiChecker {
               n = test.networkId;
               wc = test;
             }
+            test.status = WifiConfiguration.Status.DISABLED;
           }
           if (wc != null) {
             if (wc.priority != priority) {

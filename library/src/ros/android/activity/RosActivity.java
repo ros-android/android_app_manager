@@ -324,6 +324,9 @@ public class RosActivity extends Activity {
                          p.dismiss();
                        }
                      }});
+                 //It's important that this is done because at startup the robots are unnamed
+                 masterChooser.setCurrentRobot(robotDescription);
+                 masterChooser.saveCurrentRobot();
                  createNode();
                }
              },

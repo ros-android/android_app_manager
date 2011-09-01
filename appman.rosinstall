@@ -4,6 +4,7 @@
 - hg: {local-name: appmanandroid, uri: 'https://kforge.ros.org/appmanandroid/hg', version: default}
 - hg: {local-name: android_teleop, uri: 'https://kforge.ros.org/appmanandroid/android_teleophg', version: default}
 - hg: {local-name: app_chooser, uri: 'https://kforge.ros.org/appmanandroid/app_chooserhg', version: default}
+- hg: {local-name: android_map_manager, uri: 'https://kforge.ros.org/appmanandroid/map_manager_hg', version: default}
 - hg: {local-name: make_a_map, uri: 'https://kforge.ros.org/appmanandroid/make_a_maphg', version: default}
 - hg: {local-name: map_nav, uri: 'https://kforge.ros.org/appmanandroid/map_navhg', version: default}
 - hg: {local-name: pan_tilt, uri: 'https://kforge.ros.org/appmanandroid/pan_tilthg', version: default}

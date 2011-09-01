@@ -42,6 +42,21 @@ import org.ros.exception.RosException;
 import org.ros.message.geometry_msgs.PoseStamped;
 import org.ros.message.actionlib_msgs.GoalStatusArray;
 import org.ros.message.actionlib_msgs.GoalStatus;
+////
+import org.ros.actionlib.client.SimpleActionClient;
+import org.ros.actionlib.client.SimpleActionClientCallbacks;
+import org.ros.actionlib.state.SimpleClientGoalState;
+import org.ros.message.move_base_msgs.MoveBaseActionFeedback;
+import org.ros.message.move_base_msgs.MoveBaseActionGoal;
+import org.ros.message.move_base_msgs.MoveBaseAction;
+import org.ros.message.move_base_msgs.MoveBaseActionResult;
+import org.ros.message.move_base_msgs.MoveBaseFeedback;
+import org.ros.message.move_base_msgs.MoveBaseGoal;
+import org.ros.message.move_base_msgs.MoveBaseResult;
+import org.ros.actionlib.ActionSpec;
+import org.ros.node.NodeConfiguration;
+import org.ros.namespace.NameResolver;
+
 
 /**
  * PanZoomDisplay which implements a draggable goal-pose setter.
@@ -61,7 +76,7 @@ import org.ros.message.actionlib_msgs.GoalStatus;
  * After the user lets go, the pose stays the same until the display
  * times out.  (Timeout implemented in PoseInputDisplay).
  */
-public class SendGoalDisplay extends PoseInputDisplay {
+public class SendGoalDisplay extends PoseInputDisplay implements SimpleActionClientCallbacks<MoveBaseFeedback, MoveBaseResult> {
   private String goalTopic = "move_base_simple/goal";
   private String statusTopic = "move_base/status";
   private String fixedFrame = "/map";
@@ -69,10 +84,17 @@ public class SendGoalDisplay extends PoseInputDisplay {
   private Publisher<PoseStamped> publisher;
   private Subscriber<GoalStatusArray> subscriber;
   private boolean followRobotMode;
+  private SimpleActionClient<MoveBaseActionFeedback, MoveBaseActionGoal, 
+    MoveBaseActionResult, MoveBaseFeedback, MoveBaseGoal, MoveBaseResult> move_base_action;
+  private NodeConfiguration nodeConfiguration;
 
   public SendGoalDisplay() {
     super();
     setColor( 0x80ff80 );
+  }
+
+  public void setNodeConfiguration(NodeConfiguration c) {
+    nodeConfiguration = c;
   }
 
   public void setTopic( String topic ) {
@@ -133,16 +155,53 @@ public class SendGoalDisplay extends PoseInputDisplay {
     }
   }
 
+  public void activeCallback() {
+    setColor( 0x80ff80 );
+  }
+
+  public void feedbackCallback(MoveBaseFeedback feedback) {
+  }
+
+  public void doneCallback(SimpleClientGoalState state, MoveBaseResult result) {
+    if (state.getState() == SimpleClientGoalState.StateEnum.ABORTED
+        || state.getState() == SimpleClientGoalState.StateEnum.REJECTED) {
+      setColor( 0xff8080 );
+    } else {
+      setColor( 0x80ff80 );
+    }
+  }
+
   @Override
   public void start( Node node ) throws RosException {
     super.start( node );
-    publisher = node.newPublisher( goalTopic, "geometry_msgs/PoseStamped" );
-    subscriber = node.newSubscriber( statusTopic, "actionlib_msgs/GoalStatusArray",
-        new MessageListener<GoalStatusArray>() {
-              @Override
-              public void onNewMessage(final GoalStatusArray msg) {
-                SendGoalDisplay.this.onStatusRecieved(msg);
-              }});
+    try {
+      move_base_action = new SimpleActionClient("move_base_client_android", new ActionSpec<MoveBaseAction, 
+                                                MoveBaseActionFeedback, MoveBaseActionGoal, 
+                                                MoveBaseActionResult, MoveBaseFeedback, 
+                                                MoveBaseGoal, MoveBaseResult>
+                                                (MoveBaseAction.class,
+                                                 "move_base_msgs/MoveBaseAction",
+                                                 "move_base_msgs/MoveBaseActionFeedback", 
+                                                 "move_base_msgs/MoveBaseActionGoal",
+                                                 "move_base_msgs/MoveBaseActionResult", 
+                                                 "move_base_msgs/MoveBaseFeedback",
+                                                 "move_base_msgs/MoveBaseGoal",
+                                                 "move_base_msgs/MoveBaseResult"));
+      NodeConfiguration nc = NodeConfiguration.copyOf(nodeConfiguration);
+      nc.setParentResolver(NameResolver.create("/move_base"));
+      move_base_action.main(nc); //TODO: fix this so we don't create a new node
+    } catch (Exception e) {
+      Log.e("SendGoalDisplay", "ActionClient failed!");
+      e.printStackTrace();
+      move_base_action = null;
+      publisher = node.newPublisher( goalTopic, "geometry_msgs/PoseStamped" );
+      subscriber = node.newSubscriber( statusTopic, "actionlib_msgs/GoalStatusArray",
+                                       new MessageListener<GoalStatusArray>() {
+                                         @Override
+                                         public void onNewMessage(final GoalStatusArray msg) {
+                                           SendGoalDisplay.this.onStatusRecieved(msg);
+                                         }});
+    }
   }
 
   @Override
@@ -156,15 +215,15 @@ public class SendGoalDisplay extends PoseInputDisplay {
       subscriber.shutdown();
     }
     subscriber = null;
+    if(  move_base_action != null) {
+       move_base_action.shutdown();
+    }
+     move_base_action = null;
   }
 
   @Override
   protected void onPose( float x, float y, float angle ) {
     followRobotMode = false;
-
-    if( publisher == null ) {
-      return;
-    }
 
     PoseStamped goal = new PoseStamped();
     goal.header.frame_id = fixedFrame;
@@ -175,6 +234,25 @@ public class SendGoalDisplay extends PoseInputDisplay {
     goal.pose.orientation.y = 0;
     goal.pose.orientation.z = FloatMath.sin( angle / 2f );
     goal.pose.orientation.w = FloatMath.cos( angle / 2f );
+    
+    if (move_base_action != null) {
+      Log.i("SendGoalDisplay", "Sending action goal.");
+      MoveBaseGoal base_goal = new MoveBaseGoal();
+      base_goal.target_pose = goal;
+      try {
+        move_base_action.sendGoal(base_goal, this);
+      } catch (Exception e) {
+        Log.e("SendGoalDisplay", "Error on sending goal:");
+        e.printStackTrace();
+      }
+      return;
+    }
+
+
+    if( publisher == null ) {
+      return;
+    }
+
 
     Log.i("SendGoalDisplay", "Sending goal.");
     publisher.publish( goal );

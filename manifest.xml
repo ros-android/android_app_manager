@@ -30,7 +30,6 @@
   <depend package="tf"/>
   <depend package="pr2_msgs"/>
   <depend package="pr2_power_board"/>
-  <depend package="map_store" />
   <depend package="actionlib_msgs" />
 
   <export>

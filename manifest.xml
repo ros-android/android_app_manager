@@ -13,7 +13,7 @@
   <depend package="app_manager"/>
   <depend package="turtlebot_node"/>
   <depend package="rosjava"/>
-  <depend package="android"/>
+  <depend package="android_gingerbread"/>
   <depend package="move_base_msgs"/>
   <depend package="actionlib_java"/>
 
@@ -34,6 +34,6 @@
 
   <export>
     <rosjava-src location="library/src" />
-    <rosjava-android-lib path="library" />
+    <rosjava-android-lib path="library" target="android-9" />
   </export>
 </package>

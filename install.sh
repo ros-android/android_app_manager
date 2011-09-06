@@ -7,6 +7,8 @@ cd `rospack find make_a_map`
 ant install
 cd `rospack find map_nav`
 ant install
+cd `rospack find android_map_manager`
+ant install
 cd `rospack find android_teleop`
 ant install
 cd `rospack find android_pr2_props`

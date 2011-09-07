@@ -54,7 +54,7 @@ import org.ros.service.app_manager.ListApps;
 import org.ros.service.app_manager.StartApp;
 import org.ros.service.app_manager.StopApp;
 import org.ros.message.app_manager.AppInstallationState;
-import org.ros.message.app_manager.StoreApp;
+import org.ros.message.app_manager.ExchangeApp;
 import org.ros.service.app_manager.GetAppDetails;
 import org.ros.service.app_manager.GetInstallationState;
 import org.ros.service.app_manager.InstallApp;
@@ -136,8 +136,8 @@ public class AppManager {
     subscriptions.add(node.newSubscriber(resolver.resolve("app_list"), "app_manager/AppList", callback));
   }
 
-  public void addAppStoreListCallback(MessageListener<AppInstallationState> callback) throws RosException {
-    subscriptions.add(node.newSubscriber(resolver.resolve("store_app_list"), "app_manager/AppInstallationState", callback));
+  public void addExchangeListCallback(MessageListener<AppInstallationState> callback) throws RosException {
+    subscriptions.add(node.newSubscriber(resolver.resolve("exchange_app_list"), "app_manager/AppInstallationState", callback));
   }
 
   public AppList getAppList() {
@@ -157,10 +157,10 @@ public class AppManager {
     }
   }
   
-  public void listStoreApps(boolean remoteUpdate, final ServiceResponseListener<GetInstallationState.Response> callback) {
+  public void listExchangeApps(boolean remoteUpdate, final ServiceResponseListener<GetInstallationState.Response> callback) {
     try {
       ServiceClient<GetInstallationState.Request, GetInstallationState.Response> listAppsClient =
-        node.newServiceClient(resolver.resolve("list_store_apps"), "app_manager/GetInstallationState");
+        node.newServiceClient(resolver.resolve("list_exchange_apps"), "app_manager/GetInstallationState");
       GetInstallationState.Request request = new GetInstallationState.Request();
       request.remote_update = remoteUpdate;
       listAppsClient.call(request, callback);

@@ -102,10 +102,11 @@
 	     - customize to your needs.
 	     -->
   <target name="clean">
-    <echo message="cleaning build and bin" />
+    <echo message="cleaning build, bin and gen" />
     <delete>
       <fileset dir="build" includes="**"/>
       <fileset dir="bin" includes="**"/>
+      <fileset dir="gen" includes="**"/>
     </delete>
   </target>
 

@@ -149,6 +149,18 @@ public class RosAppActivity extends RosActivity {
 
   private ProgressDialog progress;
 
+  protected void onAppTerminate() {
+    RosAppActivity.this.runOnUiThread(new Runnable() {
+        @Override public void run() {
+          new AlertDialog.Builder(RosAppActivity.this).setTitle("App Termination")
+            .setMessage("The application has terminated on the server, so the client is exiting.")
+            .setCancelable(false).setNeutralButton("Exit", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                  RosAppActivity.this.finish();
+                }}).create().show();
+        }});
+  }
+
   @Override
   protected void onNodeCreate(Node node) {
     Log.i("RosAndroid", "RosAppActivity.onNodeCreate");
@@ -165,7 +177,14 @@ public class RosAppActivity extends RosActivity {
     } catch (AppManagerNotAvailableException e) {
       Log.e("RosAndroid", "ros init failed", e);
       appManager = null;
-    }   
+    }  
+    if (appManager != null && startApplication) {
+      appManager.addTerminationCallback(robotAppName,
+                                        new AppManager.TerminationCallback() {
+                                          @Override public void onAppTermination() {
+                                            RosAppActivity.this.onAppTerminate();
+                                          }});
+    }
     try {
       //Start up the application on the robot and start the dashboard.
       dashboard.start(node);

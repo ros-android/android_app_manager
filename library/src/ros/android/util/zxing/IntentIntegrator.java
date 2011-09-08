@@ -198,7 +198,7 @@ public final class IntentIntegrator {
     downloadDialog.setPositiveButton(stringButtonYes, new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface dialogInterface, int i) {
-        Uri uri = Uri.parse("market://search?q=pname:" + PACKAGE);
+        Uri uri = Uri.parse("market://details?id=" + PACKAGE);
         Intent intent = new Intent(Intent.ACTION_VIEW, uri);
         activity.startActivity(intent);
       }

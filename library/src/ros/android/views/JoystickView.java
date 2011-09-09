@@ -89,11 +89,11 @@ public class JoystickView extends ImageView implements OnTouchListener {
   private void init(Context context) {
     baseControlTopic = "turtlebot_node/cmd_vel";
     touchCmdMessage = new Twist();
+    this.setOnTouchListener(this);
   }
 
   public void setBaseControlTopic(String t) {
     baseControlTopic = t;
-    this.setOnTouchListener(this);
   }
 
   private <T extends Message> void createPublisherThread(final Publisher<T> pub, final T message,
@@ -105,10 +105,13 @@ public class JoystickView extends ImageView implements OnTouchListener {
         try {
           while (true) {
             if (sendMessages) {
+              //Log.i("JoystickView", "send joystick message");
               pub.publish(message);
               if (nullMessage) {
                 sendMessages = false;
               }
+            } else {
+              //Log.i("JoystickView", "skipping joystick");
             }
             Thread.sleep(1000 / rate);
           }

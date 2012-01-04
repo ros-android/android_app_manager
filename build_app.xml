@@ -10,13 +10,13 @@
   <!-- directories -->
   <property name="pwd" location="."/>
   <property name="app.dir" location="."/>
-  <property name="dont.do.deps" value="true" />
 
   <path id="project.libraries.src">
     <pathelement location="${ros.pkg.android.dir}/library/src"/>
   </path>
   
-  
+  <path id="android.libraries.src"><path refid="project.libraries.src"/></path>
+  <path id="android.libraries.jars"><path refid="project.libraries.jars"/></path>
 
   <mkdir dir="build/libs"/>
   <echo message="to dir build/libs" />
@@ -112,6 +112,7 @@
   </target>
 
   <target name="compile">
+    <property name="build.target" value="-compile"/>
     <antcall target="-compile" />
   </target>
 

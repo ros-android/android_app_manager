@@ -10,6 +10,7 @@
   <!-- directories -->
   <property name="pwd" location="."/>
   <property name="app.dir" location="."/>
+  <property name="dont.do.deps" value="true" />
 
   <path id="project.libraries.src">
     <pathelement location="${ros.pkg.android.dir}/library/src"/>
@@ -52,7 +53,7 @@
        application and should be checked into Version Control Systems.
        
     -->
-  <property file="build.properties" />
+  <property file="project.properties" />
   
   <!-- The default.properties file is created and updated by the 'android'
        tool, as well as ADT.
@@ -61,7 +62,7 @@
   <property file="default.properties" />
   
   <!-- Required pre-setup import -->
-  <import file="${sdk.dir}/tools/ant/pre_setup.xml" />
+  <!--<import file="${sdk.dir}/tools/ant/pre_setup.xml" />-->
   
   
   <!-- extension targets. Uncomment the ones where you want to do custom work
@@ -110,5 +111,9 @@
     </delete>
   </target>
 
-  <setup />
+  <target name="compile">
+    <antcall target="-compile" />
+  </target>
+
+  <import file="${sdk.dir}/tools/ant/build.xml" />
 </project>

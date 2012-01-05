@@ -43,7 +43,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-import org.ros.node.DefaultNodeFactory;
+import org.ros.internal.node.DefaultNodeFactory;
 import org.ros.node.Node;
 import org.ros.exception.RosException;
 import ros.android.util.RobotId;
@@ -556,14 +556,15 @@ public class RosActivity extends Activity {
       @Override
       public void run() {
         try {
-          NodeConfiguration config = masterChooser.createConfiguration();
+          NodeConfiguration config = NodeConfiguration.copyOf(masterChooser.createConfiguration());
           if (config == null) {
             Log.e("RosAndroid", "Configuration for node is null!");
           }
           String milis = Long.toString(System.currentTimeMillis());
           String name = "android" + milis;
           Log.i("RosAndroid", "Creating node \"" + name + "\"");
-          node = new DefaultNodeFactory().newNode(name, config);
+          config.setNodeName(name);
+          node = new DefaultNodeFactory().newNode(config);
         } catch (Exception e) {
 	    Log.e("RosAndroid", "Exception while creating node.", e);
           node = null;

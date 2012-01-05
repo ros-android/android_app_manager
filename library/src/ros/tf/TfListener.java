@@ -111,7 +111,9 @@ public class TfListener {
   public boolean start(Node node) {
     stop();
     try {
-	tfSubscriber = node.newSubscriber(getTopic(), "tf/tfMessage", new MessageListener<tfMessage>() {
+      tfSubscriber = node.newSubscriber(getTopic(), "tf/tfMessage");
+      tfSubscriber.addMessageListener(
+        new MessageListener<tfMessage>() {
           @Override
           public void onNewMessage(final tfMessage msg) {
             if (msg != null) {

@@ -67,7 +67,8 @@ public class LaserScanDisplay extends PosablePanZoomDisplay {
   public void start( Node node ) throws RosException {
     super.start( node );
     scanSubscriber =
-        node.newSubscriber(scanTopic, "sensor_msgs/LaserScan", new MessageListener<LaserScan>() {
+      node.newSubscriber(scanTopic, "sensor_msgs/LaserScan");
+    scanSubscriber.addMessageListener(new MessageListener<LaserScan>() {
           @Override
           public void onNewMessage(final LaserScan msg) {
             rangeScan = msg;

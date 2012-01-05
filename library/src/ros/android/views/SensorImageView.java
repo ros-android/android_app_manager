@@ -63,7 +63,8 @@ public class SensorImageView extends ImageView implements MessageListener<Compre
   }
 
   public void start(Node node, String topic) throws RosException {
-      imageSub = node.newSubscriber(topic, "sensor_msgs/CompressedImage", this); // todo this??? (the callback)
+    imageSub = node.newSubscriber(topic, "sensor_msgs/CompressedImage");
+    imageSub.addMessageListener(this); // todo this??? (the callback)
   }
 
   public void stop() {

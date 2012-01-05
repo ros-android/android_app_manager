@@ -145,7 +145,9 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
     this.node = node;
     try {
       dashboardSubscriber =
-          node.newSubscriber("dashboard_agg", "pr2_msgs/DashboardState", new MessageListener<DashboardState>() {
+        node.newSubscriber("dashboard_agg", "pr2_msgs/DashboardState");
+      dashboardSubscriber.addMessageListener(
+          new MessageListener<DashboardState>() {
             @Override
             public void onNewMessage(final DashboardState msg) {
               Pr2Dashboard.this.post(new Runnable() {
@@ -155,7 +157,7 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
                 }
               });
             }
-            });
+          });
 
       NameResolver resolver = node.getResolver().createResolver(new GraphName("/"));
     } catch( Exception ex ) {

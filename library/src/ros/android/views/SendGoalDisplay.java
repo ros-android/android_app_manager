@@ -171,36 +171,42 @@ public class SendGoalDisplay extends PoseInputDisplay implements SimpleActionCli
     }
   }
 
+  class MoveBaseActionSpec extends ActionSpec<MoveBaseAction, 
+    MoveBaseActionFeedback, MoveBaseActionGoal, 
+    MoveBaseActionResult, MoveBaseFeedback, 
+    MoveBaseGoal, MoveBaseResult> {
+
+    public MoveBaseActionSpec() throws RosException {
+      super(MoveBaseAction.class,
+            "move_base_msgs/MoveBaseAction",
+            "move_base_msgs/MoveBaseActionFeedback", 
+            "move_base_msgs/MoveBaseActionGoal",
+            "move_base_msgs/MoveBaseActionResult", 
+            "move_base_msgs/MoveBaseFeedback",
+            "move_base_msgs/MoveBaseGoal",
+            "move_base_msgs/MoveBaseResult");
+    }
+  }
+
+
   @Override
   public void start( Node node ) throws RosException {
     super.start( node );
     try {
-      move_base_action = new SimpleActionClient("move_base_client_android", new ActionSpec<MoveBaseAction, 
-                                                MoveBaseActionFeedback, MoveBaseActionGoal, 
-                                                MoveBaseActionResult, MoveBaseFeedback, 
-                                                MoveBaseGoal, MoveBaseResult>
-                                                (MoveBaseAction.class,
-                                                 "move_base_msgs/MoveBaseAction",
-                                                 "move_base_msgs/MoveBaseActionFeedback", 
-                                                 "move_base_msgs/MoveBaseActionGoal",
-                                                 "move_base_msgs/MoveBaseActionResult", 
-                                                 "move_base_msgs/MoveBaseFeedback",
-                                                 "move_base_msgs/MoveBaseGoal",
-                                                 "move_base_msgs/MoveBaseResult"));
-      NodeConfiguration nc = NodeConfiguration.copyOf(nodeConfiguration);
-      nc.setParentResolver(NameResolver.create("/move_base"));
-      move_base_action.main(nc); //TODO: fix this so we don't create a new node
+      MoveBaseActionSpec spec = new MoveBaseActionSpec();
+      move_base_action = spec.buildSimpleActionClient("/move_base");
+      move_base_action.addClientPubSub(node);
     } catch (Exception e) {
       Log.e("SendGoalDisplay", "ActionClient failed!");
       e.printStackTrace();
       move_base_action = null;
       publisher = node.newPublisher( goalTopic, "geometry_msgs/PoseStamped" );
-      subscriber = node.newSubscriber( statusTopic, "actionlib_msgs/GoalStatusArray",
-                                       new MessageListener<GoalStatusArray>() {
-                                         @Override
-                                         public void onNewMessage(final GoalStatusArray msg) {
-                                           SendGoalDisplay.this.onStatusRecieved(msg);
-                                         }});
+      subscriber = node.newSubscriber( statusTopic, "actionlib_msgs/GoalStatusArray" );
+      subscriber.addMessageListener(new MessageListener<GoalStatusArray>() {
+          @Override
+          public void onNewMessage(final GoalStatusArray msg) {
+            SendGoalDisplay.this.onStatusRecieved(msg);
+          }});
     }
   }
 

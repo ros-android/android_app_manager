@@ -237,7 +237,8 @@ public class MapDisplay extends PanZoomDisplay {
       MapDisplay.this.setState(State.STATE_NEED_MAP);
     }
     Log.i("MapDisplay", "Done map selection");
-    mapSubscriber = node.newSubscriber(mapTopic, "nav_msgs/OccupancyGrid",
+    mapSubscriber = node.newSubscriber(mapTopic, "nav_msgs/OccupancyGrid");
+    mapSubscriber.addMessageListener(
         new MessageListener<OccupancyGrid>() {
               @Override
               public void onNewMessage(final OccupancyGrid msg) {

@@ -133,11 +133,15 @@ public class AppManager {
   
   
   public void addAppListCallback(MessageListener<AppList> callback) throws RosException {
-    subscriptions.add(node.newSubscriber(resolver.resolve("app_list"), "app_manager/AppList", callback));
+    Subscriber<AppList> s = node.newSubscriber(resolver.resolve("app_list"), "app_manager/AppList");
+    s.addMessageListener(callback);
+    subscriptions.add(s);
   }
 
   public void addExchangeListCallback(MessageListener<AppInstallationState> callback) throws RosException {
-    subscriptions.add(node.newSubscriber(resolver.resolve("exchange_app_list"), "app_manager/AppInstallationState", callback));
+    Subscriber<AppInstallationState> s = node.newSubscriber(resolver.resolve("exchange_app_list"), "app_manager/AppInstallationState");
+    s.addMessageListener(callback);
+    subscriptions.add(s);
   }
 
   public AppList getAppList() {

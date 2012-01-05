@@ -308,20 +308,20 @@ public class MasterChooserActivity extends Activity {
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    switch (item.getItemId()) {
-    case R.id.add_robot:
+    int id = item.getItemId();
+    if (id == R.id.add_robot) {
       showDialog(ADD_URI_DIALOG_ID);
       return true;
-    case R.id.delete_unresponsive:
+    } else if (id == R.id.delete_unresponsive) {
       deleteUnresponsiveRobots();
       return true;
-    case R.id.delete_all:
+    } else if (id == R.id.delete_all) {
       deleteAllRobots();
       return true;
-    case R.id.kill:
+    } else if (id == R.id.kill) {
       android.os.Process.killProcess(android.os.Process.myPid());
       return true;
-    default:
+    } else {
       return super.onOptionsItemSelected(item);
     }
   }

@@ -118,8 +118,9 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
     stop();
     this.node = node;
     try {
-      diagnosticSubscriber =
-          node.newSubscriber("diagnostics_agg", "diagnostic_msgs/DiagnosticArray", new MessageListener<DiagnosticArray>() {
+      diagnosticSubscriber = node.newSubscriber("diagnostics_agg", "diagnostic_msgs/DiagnosticArray");
+      diagnosticSubscriber.addMessageListener(
+          new MessageListener<DiagnosticArray>() {
             @Override
             public void onNewMessage(final DiagnosticArray msg) {
               TurtlebotDashboard.this.post(new Runnable() {

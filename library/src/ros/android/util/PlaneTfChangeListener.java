@@ -120,7 +120,8 @@ public class PlaneTfChangeListener {
    * Start listening to tf messages.
    */
   public void start( Node node ) throws RosException {
-      tfSubscriber = node.newSubscriber(tfTopic, "tf/tfMessage", new MessageListener<tfMessage>() {
+    tfSubscriber = node.newSubscriber(tfTopic, "tf/tfMessage");
+    tfSubscriber.addMessageListener(new MessageListener<tfMessage>() {
         @Override
         public void onNewMessage(final tfMessage msg) {
           if (msg != null) {

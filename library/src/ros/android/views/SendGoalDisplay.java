@@ -56,6 +56,7 @@ import org.ros.message.move_base_msgs.MoveBaseResult;
 import org.ros.actionlib.ActionSpec;
 import org.ros.node.NodeConfiguration;
 import org.ros.namespace.NameResolver;
+import org.ros.internal.node.DefaultNodeFactory;
 
 
 /**
@@ -195,7 +196,17 @@ public class SendGoalDisplay extends PoseInputDisplay implements SimpleActionCli
     try {
       MoveBaseActionSpec spec = new MoveBaseActionSpec();
       move_base_action = spec.buildSimpleActionClient("/move_base");
-      move_base_action.addClientPubSub(node);
+      
+
+      //This is some bad code that is needed because action clients don't
+      //prepend the name variable. Is this a bug in ActionClient?
+      NodeConfiguration nc = NodeConfiguration.copyOf(nodeConfiguration);
+      nc.setParentResolver(NameResolver.newFromNamespace("/move_base"));
+      nc.setNodeName("/android_move_base");
+      Node newNode = new DefaultNodeFactory().newNode(nc);
+
+      //Should just refer to node.
+      move_base_action.addClientPubSub(newNode);
     } catch (Exception e) {
       Log.e("SendGoalDisplay", "ActionClient failed!");
       e.printStackTrace();

@@ -14,27 +14,6 @@
 
     <property file="../ros.properties" />
 
-    <property file="ant.properties" />
-
-    <!--loadproperties srcFile="project.properties" /-->
-
-    <fail
-            message="sdk.dir is missing. Make sure to generate local.properties using 'android update project' or to inject it through an env var"
-            unless="sdk.dir"
-    />
-
-    <target name="-pre-compile">
-      <mkdir dir="libs"/>
-      <copy todir="libs" flatten="true">
-         <filelist dir="/" files="${ros.compile.jarfileset}"/>
-      </copy>
-    </target>
-
-    <!--target name="-post-compile">
-      <copy file="bin/classes.jar" tofile="bin/appmanandroid.jar"/>
-    </target-->
-
-    <!-- version-tag: 1 -->
-    <import file="${sdk.dir}/tools/ant/build.xml" />
-
+    <import file="${ros.pkg.rosjava_bootstrap.dir}/android.xml" />
+    
 </project>

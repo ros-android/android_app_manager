@@ -144,7 +144,7 @@ public class RosAppActivity extends RosActivity {
     NameResolver resolver = node.getResolver();
     GraphName name = new GraphName(robotDescription.getRobotName());
     GraphName apps = name.join(new GraphName("application"));
-    return resolver.createResolver(apps);
+    return resolver.newChild(apps);
   }
 
   private ProgressDialog progress;

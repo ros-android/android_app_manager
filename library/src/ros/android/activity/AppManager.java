@@ -253,7 +253,7 @@ public class AppManager {
    */
   public static AppManager create(Node node, String robotName) throws XmlRpcTimeoutException,
       AppManagerNotAvailableException, RosException {
-    NameResolver resolver = node.getResolver().createResolver(new GraphName(robotName));
+    NameResolver resolver = node.getResolver().newChild(new GraphName(robotName));
     try {
       return new AppManager(node, resolver);
     } catch( java.lang.RuntimeException ex ) {

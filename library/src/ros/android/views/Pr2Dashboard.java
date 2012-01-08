@@ -159,7 +159,7 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
             }
           });
 
-      NameResolver resolver = node.getResolver().createResolver(new GraphName("/"));
+      NameResolver resolver = node.getResolver().newChild(new GraphName("/"));
     } catch( Exception ex ) {
       this.node = null;
       throw( new RosException( ex ));

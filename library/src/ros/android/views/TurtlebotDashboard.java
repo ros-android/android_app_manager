@@ -132,7 +132,7 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
             }
           });
 
-      NameResolver resolver = node.getResolver().createResolver(new GraphName("/turtlebot_node"));
+      NameResolver resolver = node.getResolver().newChild(new GraphName("/turtlebot_node"));
     } catch( Exception ex ) {
       this.node = null;
       throw( new RosException( ex ));

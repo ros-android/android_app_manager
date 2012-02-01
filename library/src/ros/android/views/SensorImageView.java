@@ -45,7 +45,7 @@ import org.ros.message.sensor_msgs.CompressedImage;
  *
  * @author ethan.rublee@gmail.com (Ethan Rublee)
  */
-public class SensorImageView extends ImageView implements MessageListener<CompressedImage>, Runnable {
+public class SensorImageView extends ImageView {
 
   private org.ros.node.topic.Subscriber<CompressedImage> imageSub;
   private Bitmap bitmap;
@@ -64,7 +64,18 @@ public class SensorImageView extends ImageView implements MessageListener<Compre
 
   public void start(Node node, String topic) throws RosException {
     imageSub = node.newSubscriber(topic, "sensor_msgs/CompressedImage");
-    imageSub.addMessageListener(this); // todo this??? (the callback)
+    imageSub.addMessageListener(new MessageListener<CompressedImage>() {
+      @Override
+      public void onNewMessage(CompressedImage message) {
+        bitmap = BitmapFactory.decodeByteArray(message.data, 0, message.data.length);
+        post(new Runnable() {
+          @Override
+          public void run() {
+            setImageBitmap(bitmap);
+          }
+        }); // todo this??? (the callback)
+      }
+    });
   }
 
   public void stop() {
@@ -73,15 +84,5 @@ public class SensorImageView extends ImageView implements MessageListener<Compre
     }
     imageSub = null;
   }
-
-  @Override
-  public void onNewMessage(CompressedImage message) {
-    bitmap = BitmapFactory.decodeByteArray(message.data, 0, message.data.length);
-    post(this);
-  }
-
-  @Override
-  public void run() {
-    setImageBitmap(bitmap);
-  }
+  
 }

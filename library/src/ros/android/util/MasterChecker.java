@@ -34,7 +34,7 @@
 package ros.android.util;
 
 import android.util.Log;
-import org.ros.internal.node.server.SlaveIdentifier;
+import org.ros.internal.node.server.NodeIdentifier;
 import org.ros.internal.node.client.ParameterClient;
 import org.ros.namespace.NameResolver;
 import org.ros.namespace.GraphName;
@@ -127,7 +127,7 @@ public class MasterChecker {
     public void run() {
       try {
         ParameterClient paramClient = new ParameterClient(
-                  SlaveIdentifier.newFromStrings("/master_checker", masterUri.toString()), masterUri);
+                  NodeIdentifier.newFromStrings("/master_checker", masterUri.toString()), masterUri);
         boolean hasName = ((Boolean)paramClient.hasParam(new GraphName("robot/name")).getResult()).booleanValue();
         boolean hasType = ((Boolean)paramClient.hasParam(new GraphName("robot/type")).getResult()).booleanValue();
         if (hasName && hasType) {

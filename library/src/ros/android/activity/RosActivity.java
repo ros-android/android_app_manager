@@ -43,6 +43,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import org.ros.node.DefaultNodeMainExecutor;
+import org.ros.node.NodeMainExecutor;
 import org.ros.internal.node.DefaultNodeFactory;
 import org.ros.node.Node;
 import org.ros.exception.RosException;
@@ -564,7 +566,8 @@ public class RosActivity extends Activity {
           String name = "android" + milis;
           Log.i("RosAndroid", "Creating node \"" + name + "\"");
           config.setNodeName(name);
-          node = new DefaultNodeFactory().newNode(config);
+          NodeMainExecutor nodeMainExecutor = DefaultNodeMainExecutor.newDefault();
+          node = new DefaultNodeFactory(nodeMainExecutor.getScheduledExecutorService()).newNode(config);
         } catch (Exception e) {
 	    Log.e("RosAndroid", "Exception while creating node.", e);
           node = null;

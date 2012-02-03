@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:orientation="vertical"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+                      android:layout_width="wrap_content" 
+                      android:layout_height="fill_parent">
+<TableLayout android:orientation="vertical"
              android:padding="10dp"
              android:id="@+id/table_layout"
              android:layout_width="fill_parent"
@@ -31,13 +36,11 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textUri"
-                android:hint="http://host:11311"
                 android:layout_toLeftOf="@+id/enter_button"/>
       <EditText android:id="@+id/wifi_name_editor"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:inputType="text"
-                android:hint="prXLAN"/>
+                android:inputType="text"/>
     </TableRow>
 
     <TableRow> 
@@ -53,8 +56,7 @@
       <EditText android:id="@+id/control_uri_editor"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textUri"
-                android:hint="http://host/cgi-bin/control.py"/>
+                android:inputType="textUri"/>
       <EditText android:id="@+id/wifi_password_editor"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
@@ -94,3 +96,5 @@
           android:layout_alignParentBottom="true"/>
   </TableRow>
 </TableLayout>
+</HorizontalScrollView>
+</ScrollView>

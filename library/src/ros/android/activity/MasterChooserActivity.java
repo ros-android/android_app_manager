@@ -299,8 +299,8 @@ public class MasterChooserActivity extends Activity {
         dialog.setOnKeyListener(new DialogKeyListener());
         EditText uriField = (EditText) dialog.findViewById(R.id.uri_editor);
         EditText controlUriField = (EditText) dialog.findViewById(R.id.control_uri_editor);  
-        uriField.setText("http://prX1.willowgarage.com:11311/",TextView.BufferType.EDITABLE ); 
-        controlUriField.setText("http://prX1.willowgarage.com/cgi-bin/control.py",TextView.BufferType.EDITABLE );
+        //uriField.setText("http://prX1.willowgarage.com:11311/",TextView.BufferType.EDITABLE ); 
+        //controlUriField.setText("http://prX1.willowgarage.com/cgi-bin/control.py",TextView.BufferType.EDITABLE );
 	button =(Button) dialog.findViewById(R.id.enter_button);
         button.setOnClickListener(new View.OnClickListener() {
           public void onClick(View v) {

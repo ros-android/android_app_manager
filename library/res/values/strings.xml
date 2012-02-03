@@ -3,4 +3,8 @@
     <string name="loading">Loading</string>
     <string name="app_name">App Manager</string>
     <string name="uri_not_set_toast">Select a master URI before continuing.</string>
+	<string-array name="context_menu">
+		<item>Select Robot</item>
+		<item>Delete Robot</item>
+	</string-array>
 </resources>

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+                      android:layout_width="wrap_content" 
+                      android:layout_height="fill_parent">
+<LinearLayout android:orientation="vertical"
               android:layout_width="fill_parent"
               android:layout_height="wrap_content"
               android:padding="10dp"
@@ -26,7 +31,6 @@
               android:layout_width="fill_parent"
               android:layout_height="wrap_content"
               android:inputType="textUri"
-              android:hint="http://host:11311"
               android:layout_toLeftOf="@+id/enter_button"/>
   </RelativeLayout>
   <TextView android:text="Enter control URI:"
@@ -35,16 +39,14 @@
   <EditText android:id="@+id/control_uri_editor"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:inputType="textUri"
-            android:hint="http://host/cgi-bin/control.py"/>
+            android:inputType="textUri" />
   <TextView android:text="Enter wifi network name:"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"/>
   <EditText android:id="@+id/wifi_name_editor"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:inputType="text"
-            android:hint="prXLAN"/>
+            android:inputType="text" />
   <TextView android:text="Enter wifi password if applicable:"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"/>
@@ -66,3 +68,5 @@
           android:layout_height="wrap_content"
           android:id="@+id/cancel_button"/>
 </LinearLayout>
+</HorizontalScrollView>
+</ScrollView>

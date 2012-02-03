@@ -6,14 +6,53 @@
               android:padding="10dp"
               android:gravity="center"
               >
-  <TextView android:text="Enter master URI:"
+  <TextView android:text="Fields marked with an asterisk (*) are required."
+            android:layout_width="fill_parent"
+            android:textColor="#FF0000"
+            android:layout_height="wrap_content"/>
+  <TextView android:text="Enter master URI: *"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"/>
-  <EditText android:id="@+id/uri_editor"
-            android:layout_width="250dp"
+  <RelativeLayout
+      android:id="@+id/RelativeLayout01" android:layout_width="fill_parent"
+      android:layout_height="wrap_content">
+    <Button android:text="Enter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/enter_button"
+            android:layout_alignParentRight="true"/>
+    <EditText android:id="@+id/uri_editor"
+              android:layout_alignParentLeft="true"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:inputType="textUri"
+              android:hint="http://host:11311"
+              android:layout_toLeftOf="@+id/enter_button"/>
+  </RelativeLayout>
+  <TextView android:text="Enter control URI:"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"/>
+  <EditText android:id="@+id/control_uri_editor"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:inputType="textUri"
-            android:hint="http://host:11311"/>
+            android:hint="http://host/cgi-bin/control.py"/>
+  <TextView android:text="Enter wifi network name:"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"/>
+  <EditText android:id="@+id/wifi_name_editor"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:hint="prXLAN"/>
+  <TextView android:text="Enter wifi password if applicable:"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"/>
+  <EditText android:id="@+id/wifi_password_editor"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"/>
+
   <TextView android:text="or"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>

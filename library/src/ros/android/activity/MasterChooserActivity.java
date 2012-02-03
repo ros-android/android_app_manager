@@ -35,15 +35,25 @@ package ros.android.activity;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.AlertDialog;
+import android.text.Spannable;
+import android.text.Spannable.Factory;
+import android.text.style.StyleSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ContentValues;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
@@ -62,7 +72,10 @@ import ros.android.util.zxing.IntentResult;
 import ros.android.util.RobotsContentProvider;
 import android.database.Cursor;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Map;
+import java.util.HashMap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -80,11 +93,14 @@ public class MasterChooserActivity extends Activity {
 
   private static final int ADD_URI_DIALOG_ID = 0;
 
+  private static final int ADD_DELETION_DIALOG_ID = 1;
+
   public static final String ROBOT_DESCRIPTION_EXTRA = "org.ros.android.RobotDescription";
 
   // don't modify this without immediately calling updateListView().
   private List<RobotDescription> robots;
   private MasterChooser currentRobotAccessor;
+  private boolean[] selections;
 
   public MasterChooserActivity() {
     robots = new ArrayList<RobotDescription>();
@@ -133,7 +149,7 @@ public class MasterChooserActivity extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setTitle("Choose a ROS Master");
+    setTitle("Choose a ROS Master!!!");
     readRobotList();
   }
 
@@ -153,6 +169,7 @@ public class MasterChooserActivity extends Activity {
     setContentView(R.layout.advanced_master_chooser);
     ListView listview = (ListView) findViewById(R.id.master_list);
     listview.setAdapter(new MasterAdapter(this, robots));
+    registerForContextMenu(listview);
     listview.setOnItemClickListener(new OnItemClickListener() {
       @Override
       public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
@@ -252,37 +269,116 @@ public class MasterChooserActivity extends Activity {
     currentRobotAccessor.saveCurrentRobot();
   }
 
+  private void deleteSelectedRobots(boolean[] array) {
+    int j=0;
+    for (int i=0; i<array.length; i++) {
+      if (array[i]) {
+        if( robots.get(j).equals( currentRobotAccessor.getCurrentRobot() )) {
+          currentRobotAccessor.setCurrentRobot( null );
+          currentRobotAccessor.saveCurrentRobot();
+        }
+        robots.remove(j);
+      }
+      else {
+        j++;
+      }
+    }
+    onRobotsChanged();
+  }
+
   @Override
   protected Dialog onCreateDialog(int id) {
-    Dialog dialog;
+    //readRobotList();
+    final Dialog dialog;
     Button button;
     switch (id) {
-    case ADD_URI_DIALOG_ID:
-      dialog = new Dialog(this);
-      dialog.setContentView(R.layout.add_uri_dialog);
-      dialog.setTitle("Add a robot");
-      EditText uriField = (EditText) dialog.findViewById(R.id.uri_editor);
-      uriField.setOnKeyListener(new URIFieldKeyListener());
-      button = (Button) dialog.findViewById(R.id.scan_robot_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          scanRobotClicked(v);
+      case ADD_URI_DIALOG_ID:
+        dialog = new Dialog(this);
+        dialog.setContentView(R.layout.add_uri_dialog);
+        dialog.setTitle("Add a robot");
+        dialog.setOnKeyListener(new DialogKeyListener());
+        EditText uriField = (EditText) dialog.findViewById(R.id.uri_editor);
+        EditText controlUriField = (EditText) dialog.findViewById(R.id.control_uri_editor);  
+        uriField.setText("http://prX1.willowgarage.com:11311/",TextView.BufferType.EDITABLE ); 
+        controlUriField.setText("http://prX1.willowgarage.com/cgi-bin/control.py",TextView.BufferType.EDITABLE );
+	button =(Button) dialog.findViewById(R.id.enter_button);
+        button.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v) {
+            enterRobotInfo(dialog);
+            removeDialog(ADD_URI_DIALOG_ID);
+          }
+        });
+        button = (Button) dialog.findViewById(R.id.scan_robot_button);
+        button.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            scanRobotClicked(v);
+          }
+        });
+        button = (Button) dialog.findViewById(R.id.cancel_button);
+        button.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            removeDialog(ADD_URI_DIALOG_ID);
+          }  
+        });
+        break;
+      case ADD_DELETION_DIALOG_ID:
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String newline = System.getProperty("line.separator");
+        if (robots.size()>0) {
+          selections = new boolean[robots.size()];
+          Spannable[] robot_names = new Spannable[robots.size()];
+          Spannable name;
+          for (int i=0; i<robots.size(); i++) {
+            name = Factory.getInstance().newSpannable(robots.get(i).getRobotName() + newline + robots.get(i).getRobotId());
+            name.setSpan(new ForegroundColorSpan(0xff888888), robots.get(i).getRobotName().length(), name.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            name.setSpan(new RelativeSizeSpan(0.8f), robots.get(i).getRobotName().length(), name.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            robot_names[i] = name;
+          }
+          builder.setTitle("Delete a robot");
+          builder.setMultiChoiceItems(robot_names, selections, new DialogSelectionClickHandler());
+          builder.setPositiveButton( "Delete Selections", new DialogButtonClickHandler() ); 
+          builder.setNegativeButton( "Cancel", new DialogButtonClickHandler());
+          dialog = builder.create();
         }
-      });
-      button = (Button) dialog.findViewById(R.id.cancel_button);
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          dismissDialog(ADD_URI_DIALOG_ID);
-        }
-      });
-      break;
-    default:
-      dialog = null;
+       else {
+         builder.setTitle("No robots to delete.");
+         dialog = builder.create();
+         final Timer t = new Timer();
+         t.schedule(new TimerTask() {
+           public void run() {
+             removeDialog(ADD_DELETION_DIALOG_ID);
+           }
+         }, 3*1000);
+       }
+        break;
+      default: 
+        dialog = null;
     }
     return dialog;
   }
+  
+  public class DialogSelectionClickHandler implements DialogInterface.OnMultiChoiceClickListener {
+    public void onClick( DialogInterface dialog, int clicked, boolean selected ) {
+      return;
+      }
+    }
+      
+  public class DialogButtonClickHandler implements DialogInterface.OnClickListener {
+    public void onClick( DialogInterface dialog, int clicked ) {
+      switch( clicked ) {
+        case DialogInterface.BUTTON_POSITIVE:
+          deleteSelectedRobots(selections);
+          removeDialog(ADD_DELETION_DIALOG_ID);
+          break;
+        case DialogInterface.BUTTON_NEGATIVE:
+          removeDialog(ADD_DELETION_DIALOG_ID);
+          break;
+      }
+    }
+  }
+  
 
   public void addRobotClicked(View view) {
     showDialog(ADD_URI_DIALOG_ID);
@@ -312,6 +408,9 @@ public class MasterChooserActivity extends Activity {
     if (id == R.id.add_robot) {
       showDialog(ADD_URI_DIALOG_ID);
       return true;
+    } else if (id == R.id.delete_selected) {
+      showDialog(ADD_DELETION_DIALOG_ID);
+      return true;
     } else if (id == R.id.delete_unresponsive) {
       deleteUnresponsiveRobots();
       return true;
@@ -326,23 +425,83 @@ public class MasterChooserActivity extends Activity {
     }
   }
 
-  public class URIFieldKeyListener implements View.OnKeyListener {
+  public void enterRobotInfo(Dialog dialog) {
+    EditText uriField = (EditText) dialog.findViewById(R.id.uri_editor);
+    String newMasterUri = uriField.getText().toString();
+    EditText controlUriField = (EditText) dialog.findViewById(R.id.control_uri_editor);
+    String newControlUri = controlUriField.getText().toString();
+    EditText wifiNameField = (EditText) dialog.findViewById(R.id.wifi_name_editor);
+    String newWifiName = wifiNameField.getText().toString();
+    EditText wifiPasswordField = (EditText) dialog.findViewById(R.id.wifi_password_editor);
+    String newWifiPassword = wifiPasswordField.getText().toString();
+    if (newMasterUri != null && newMasterUri.length() > 0) {
+      Map<String, Object> data = new HashMap<String, Object>();
+      data.put("URL", newMasterUri);
+      if (newControlUri != null && newControlUri.length() > 0) {
+        data.put("CURL", newControlUri);
+      }
+      if (newWifiName != null && newWifiName.length() > 0) {
+        data.put("WIFI", newWifiName);
+      }
+      if (newWifiPassword != null && newWifiPassword.length() > 0) {
+        data.put("WIFIPW", newWifiPassword);
+      }
+      try {
+        addMaster(new RobotId(data));
+      } catch (InvalidRobotDescriptionException e) { 
+        Toast.makeText(MasterChooserActivity.this, "Invalid Parameters.", Toast.LENGTH_SHORT).show();
+      }
+    }
+    else {
+      Toast.makeText(MasterChooserActivity.this, "Must specify Master URI.", Toast.LENGTH_SHORT).show();
+  }
+}
+
+  public class DialogKeyListener implements DialogInterface.OnKeyListener {
     @Override
-    public boolean onKey(View view, int keyCode, KeyEvent event) {
+    public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
       if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
-        EditText uriField = (EditText) view;
-        String newMasterUri = uriField.getText().toString();
-        if (newMasterUri != null && newMasterUri.length() > 0) {
-          try {
-            addMaster(new RobotId(newMasterUri));
-          } catch (InvalidRobotDescriptionException e) {
-            Toast.makeText(MasterChooserActivity.this, "Invalid URI", Toast.LENGTH_SHORT).show();
-          }
-        }
-        dismissDialog(ADD_URI_DIALOG_ID);
+        Dialog dlg = (Dialog) dialog;
+        enterRobotInfo(dlg);
+        removeDialog(ADD_URI_DIALOG_ID);
         return true;
       }
       return false;
     }
   }
+
+  @Override
+  public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    if (v.getId()==R.id.master_list) {
+      AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+      menu.setHeaderTitle(robots.get(info.position).getRobotName());
+      String[] menuItems = getResources().getStringArray(R.array.context_menu);
+      for (int i = 0; i<menuItems.length; i++) {
+        menu.add(Menu.NONE, i, i, menuItems[i]);
+      }
+    }
+  }
+
+  @Override
+  public boolean onContextItemSelected(MenuItem item) {
+    AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+    int menuItemIndex = item.getItemId();
+    switch (menuItemIndex) {
+      case 0:
+        choose(info.position);
+        break;
+      case 1:
+        selections = new boolean[robots.size()];
+        for (int i=0; i<selections.length; i++) {
+          selections[i] = false;
+        }
+        selections[info.position] = true;
+        deleteSelectedRobots(selections);
+        break;
+      default:
+        return false;
+    } 
+    return true;
+  }
+
 }

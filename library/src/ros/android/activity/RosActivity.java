@@ -45,7 +45,7 @@ import android.widget.Button;
 import android.widget.Toast;
 import org.ros.node.DefaultNodeMainExecutor;
 import org.ros.node.NodeMainExecutor;
-import org.ros.internal.node.DefaultNodeFactory;
+import org.ros.node.DefaultNodeFactory;
 import org.ros.node.Node;
 import org.ros.exception.RosException;
 import ros.android.util.RobotId;

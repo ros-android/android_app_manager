@@ -56,8 +56,9 @@ import org.ros.message.move_base_msgs.MoveBaseResult;
 import org.ros.actionlib.ActionSpec;
 import org.ros.node.NodeConfiguration;
 import org.ros.namespace.NameResolver;
-import org.ros.internal.node.DefaultNodeFactory;
-
+import org.ros.node.DefaultNodeFactory;
+import org.ros.node.DefaultNodeMainExecutor;
+import org.ros.node.NodeMainExecutor;
 
 /**
  * PanZoomDisplay which implements a draggable goal-pose setter.
@@ -203,8 +204,8 @@ public class SendGoalDisplay extends PoseInputDisplay implements SimpleActionCli
       NodeConfiguration nc = NodeConfiguration.copyOf(nodeConfiguration);
       nc.setParentResolver(NameResolver.newFromNamespace("/move_base"));
       nc.setNodeName("/android_move_base");
-      Node newNode = new DefaultNodeFactory().newNode(nc);
-
+      NodeMainExecutor nodeMainExecutor = DefaultNodeMainExecutor.newDefault();
+      Node newNode = new DefaultNodeFactory(nodeMainExecutor.getScheduledExecutorService()).newNode(nc);
       //Should just refer to node.
       move_base_action.addClientPubSub(newNode);
     } catch (Exception e) {

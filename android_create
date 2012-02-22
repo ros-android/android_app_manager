@@ -20,17 +20,17 @@ if [ "x$1" == "x--create" ] ; then
 		<activity android:name=".$appname" android:label="@string/app_name"
 			android:screenOrientation="landscape" android:configChanges="orientation|keyboardHidden">
 			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
-			<intent-filter>
 				<action android:name="$package.$rootclass" />
 				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
 		</activity>
-		<activity android:name="ros.android.activity.MasterChooserActivity"
-			android:label="@string/app_name">
-		</activity>
+                <activity android:name="ros.android.activity.AppChooserRedirectActivity"
+                        android:label="@string/app_name">
+                        <intent-filter>
+                                <action android:name="android.intent.action.MAIN" />
+                                <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                </activity>
 	</application>
 	
 	<uses-permission android:name="android.permission.INTERNET"/>

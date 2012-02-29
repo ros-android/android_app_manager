@@ -281,7 +281,7 @@ public class RosActivity extends Activity {
       if (progress != null) {
         this.dismiss();
       }
-      progress = ProgressDialog.show(activity, title, text, true, false);
+      progress = ProgressDialog.show(activity, title, text, true, true);
       progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
     }
   }

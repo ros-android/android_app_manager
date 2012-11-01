@@ -45,6 +45,7 @@ import java.util.List;
 import org.ros.node.parameter.ParameterTree;
 import java.lang.Thread;
 
+import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.exception.RosException;
 
@@ -145,9 +146,9 @@ public class MapView extends PanZoomView {
   
   private class FootprintThread extends Thread {
     private MapView view;
-    private Node node;
+    private ConnectedNode node;
     private String footprintParam;
-    public FootprintThread(MapView view, Node node, String footprintParam) {
+    public FootprintThread(MapView view, ConnectedNode node, String footprintParam) {
       super();
       this.view = view;
       this.node = node;
@@ -157,7 +158,7 @@ public class MapView extends PanZoomView {
     public void run() {
       //This is sort of a hack to wait for the footprint parameter.
       int it = 0;
-      while (!node.newParameterTree().has(footprintParam) && it < 30) {
+      while (!node.getParameterTree().has(footprintParam) && it < 30) {
         try {
           Thread.sleep(1000);
         } catch(java.lang.InterruptedException e) {
@@ -166,7 +167,7 @@ public class MapView extends PanZoomView {
         it++;
       }
 
-      ParameterTree tree = node.newParameterTree();
+      ParameterTree tree = node.getParameterTree();
       Log.i("MapView", "Creating Footprint from " + footprintParam);
       List footprint = tree.getList(footprintParam);
       double[] footprintX = new double[footprint.toArray().length];
@@ -224,7 +225,7 @@ public class MapView extends PanZoomView {
   }
 
   @Override
-  public void start(Node node) throws RosException { 
+  public void start(ConnectedNode node) throws RosException { 
     if (footprintParam != null) {
       new FootprintThread(this, node, footprintParam).start();
     }

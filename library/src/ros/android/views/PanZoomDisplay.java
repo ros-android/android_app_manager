@@ -29,12 +29,12 @@
 
 package ros.android.views;
 
-import android.graphics.Canvas;
-import android.view.MotionEvent;
-import android.util.Log;
-
-import org.ros.node.Node;
 import org.ros.exception.RosException;
+import org.ros.node.ConnectedNode;
+
+import android.graphics.Canvas;
+import android.util.Log;
+import android.view.MotionEvent;
 
 /**
  * Abstract base class for displays added to a PanZoomView.
@@ -77,7 +77,7 @@ public abstract class PanZoomDisplay {
   /**
    * Called when the node has been created.
    */
-  public void start( Node node ) throws RosException {}
+  public void start( ConnectedNode node ) throws RosException {}
 
   /**
    * Called when the node is about to be destroyed.

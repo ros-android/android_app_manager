@@ -38,9 +38,11 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.app.Activity;
+
+import org.ros.exception.RosException;
+import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.node.parameter.ParameterTree;
-import org.ros.exception.RosException;
 import android.util.Log;
 
 public class Dashboard {
@@ -49,7 +51,7 @@ public class Dashboard {
      * Set the ROS Node to use to get status data and connect it up. Disconnects
      * the previous node if there was one.
      */
-    public void start(Node node) throws RosException;
+    public void start(ConnectedNode node) throws RosException;
     public void stop();
   }
 
@@ -86,7 +88,7 @@ public class Dashboard {
         }});
   }
 
-  public void start(Node node) throws RosException {
+  public void start(ConnectedNode node) throws RosException {
     if (dashboard != null) { //FIXME: should we re-start the dashboard? I think this is really an error.
       return;
     }
@@ -145,8 +147,8 @@ public class Dashboard {
   /**
    * Dynamically locate and create a dashboard.
    */
-  private static DashboardInterface createDashboard(Node node, Context context) {
-    ParameterTree tree = node.newParameterTree();
+  private static DashboardInterface createDashboard(ConnectedNode node, Context context) {
+    ParameterTree tree = node.getParameterTree();
     String dashboardClassName = null;
     if (tree.has("robot/dashboard/class_name")) {
       dashboardClassName = tree.getString("robot/dashboard/class_name");

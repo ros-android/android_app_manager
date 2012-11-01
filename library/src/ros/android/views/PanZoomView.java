@@ -41,6 +41,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
+import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.exception.RosException;
 
@@ -73,7 +74,7 @@ public class PanZoomView extends View {
   private boolean firstSize;
 
   private ArrayList<PanZoomDisplay> displays;
-  private Node node;
+  private ConnectedNode node;
   private Matrix viewMatrix;
 
   public PanZoomView(Context ctx) {
@@ -130,7 +131,7 @@ public class PanZoomView extends View {
       displays.add( id, display );
     }
     if( node != null ) {
-      final Node thisNode = node;
+      final ConnectedNode thisNode = node;
       new Thread( new Runnable() {
           @Override public void run() {
             try {
@@ -162,7 +163,7 @@ public class PanZoomView extends View {
     }
   }
 
-  public void start(Node node) throws RosException {
+  public void start(ConnectedNode node) throws RosException {
     stop();
 
     this.node = node;

@@ -214,7 +214,7 @@ public class MasterChooser {
     }
     String namespace = "/";
     HashMap<GraphName, GraphName> remappings = new HashMap<GraphName, GraphName>();
-    NameResolver resolver = new NameResolver(new GraphName(namespace), remappings);
+    NameResolver resolver = new NameResolver(GraphName.of(namespace), remappings);
 
     URI uri;
     try {

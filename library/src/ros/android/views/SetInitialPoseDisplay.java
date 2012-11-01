@@ -29,106 +29,100 @@
 
 package ros.android.views;
 
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PointF;
+import geometry_msgs.Pose;
+import geometry_msgs.PoseWithCovarianceStamped;
+
+import org.ros.exception.RosException;
+import org.ros.node.ConnectedNode;
+import org.ros.node.topic.Publisher;
+
 import android.util.FloatMath;
 import android.util.Log;
-import android.view.MotionEvent;
-
-import javax.vecmath.Quat4f;
-import javax.vecmath.Matrix3f;
-
-import org.ros.message.MessageListener;
-import org.ros.node.Node;
-import org.ros.node.topic.Publisher;
-import org.ros.exception.RosException;
-import org.ros.message.geometry_msgs.PoseWithCovarianceStamped;
-
-import ros.android.util.Posable;
-import ros.android.util.FingerReceiver;
-import ros.android.util.FingerTracker;
 
 /**
  * PanZoomDisplay which implements a draggable initial-pose setter.
- *
- * The control has two parts: a central circle for translation and a
- * smaller outboard circle for rotation.
- *
- * Behavior: When the user is not actually touching and dragging part
- * of the control, the pose is set by incoming Matrices via the
- * Posable interface (i.e. originating from TF messages describing
- * where the robot thinks it currently is.
- *
- * When the user touches inside one of the control circles, those
- * incoming Poses are ignored and the pose is updated by the user's
- * drag gestures.
+ * 
+ * The control has two parts: a central circle for translation and a smaller
+ * outboard circle for rotation.
+ * 
+ * Behavior: When the user is not actually touching and dragging part of the
+ * control, the pose is set by incoming Matrices via the Posable interface (i.e.
+ * originating from TF messages describing where the robot thinks it currently
+ * is.
+ * 
+ * When the user touches inside one of the control circles, those incoming Poses
+ * are ignored and the pose is updated by the user's drag gestures.
  */
 public class SetInitialPoseDisplay extends PoseInputDisplay {
-  private String initialPoseTopic = "initialpose";
-  private String fixedFrame = "/map";
-  private Publisher<PoseWithCovarianceStamped> initialPosePublisher;
+	private String initialPoseTopic = "initialpose";
+	private String fixedFrame = "/map";
+	private Publisher<PoseWithCovarianceStamped> initialPosePublisher;
 
-  public SetInitialPoseDisplay() {
-    super();
-    setColor( 0x8080ff );
-  }
+	public SetInitialPoseDisplay() {
+		super();
+		setColor(0x8080ff);
+	}
 
-  public void setTopic( String topic ) {
-    this.initialPoseTopic = topic;
-  }
-  public String getTopic() {
-    return initialPoseTopic;
-  }
+	public void setTopic(String topic) {
+		this.initialPoseTopic = topic;
+	}
 
-  /**
-   * Set the frame ID for the fixed frame which the initial pose is
-   * set relative to.  Defaults to "/map".
-   */
-  public void setFixedFrame( String fixedFrame ) {
-    this.fixedFrame = fixedFrame;
-  }
-  public String getFixedFrame() {
-    return fixedFrame;
-  }
+	public String getTopic() {
+		return initialPoseTopic;
+	}
 
-  @Override
-  public void start( Node node ) throws RosException {
-    super.start( node );
-    initialPosePublisher =
-	node.newPublisher( initialPoseTopic, "geometry_msgs/PoseWithCovarianceStamped" );
-  }
+	/**
+	 * Set the frame ID for the fixed frame which the initial pose is set
+	 * relative to. Defaults to "/map".
+	 */
+	public void setFixedFrame(String fixedFrame) {
+		this.fixedFrame = fixedFrame;
+	}
 
-  @Override
-  public void stop() {
-    super.stop();
-    if( initialPosePublisher != null) {
-      initialPosePublisher.shutdown();
-    }
-    initialPosePublisher = null;
-  }
+	public String getFixedFrame() {
+		return fixedFrame;
+	}
 
-  @Override protected void onPose( float x, float y, float angle ) {
-    if( initialPosePublisher == null ) {
-      return;
-    }
+	private ConnectedNode node;
 
-    PoseWithCovarianceStamped initialPose = new PoseWithCovarianceStamped();
-    initialPose.header.frame_id = fixedFrame;
-    initialPose.pose.pose.position.x = x;
-    initialPose.pose.pose.position.y = y;
-    initialPose.pose.pose.position.z = 0;
-    initialPose.pose.pose.orientation.x = 0;
-    initialPose.pose.pose.orientation.y = 0;
-    initialPose.pose.pose.orientation.z = FloatMath.sin( angle / 2f );
-    initialPose.pose.pose.orientation.w = FloatMath.cos( angle / 2f );
-    initialPose.pose.covariance[6*0+0] = 0.5 * 0.5; // X uncertainty
-    initialPose.pose.covariance[6*1+1] = 0.5 * 0.5; // Y uncertainty
-    initialPose.pose.covariance[6*5+5] = (float)(Math.PI/12.0 * Math.PI/12.0);  // uncertainty of rotation about Z axis
+	@Override
+	public void start(ConnectedNode node) throws RosException {
+		super.start(node);
+		this.node = node;
+		initialPosePublisher = node.newPublisher(initialPoseTopic, "geometry_msgs/PoseWithCovarianceStamped");
+	}
 
-    Log.i("SetInitialPoseDisplay", "Sending initial pose");
-    initialPosePublisher.publish( initialPose );
-  }
+	@Override
+	public void stop() {
+		super.stop();
+		if(initialPosePublisher != null) {
+			initialPosePublisher.shutdown();
+		}
+		initialPosePublisher = null;
+	}
+
+	@Override
+	protected void onPose(float x, float y, float angle) {
+		if(initialPosePublisher == null) {
+			return;
+		}
+
+		PoseWithCovarianceStamped initialPose = node.getTopicMessageFactory().newFromType(PoseWithCovarianceStamped._TYPE);
+		initialPose.getHeader().setFrameId(fixedFrame);
+		Pose pose = initialPose.getPose().getPose();
+		pose.getPosition().setX(x);
+		pose.getPosition().setY(y);
+		pose.getPosition().setZ(0);
+		pose.getOrientation().setX(0);
+		pose.getOrientation().setY(0);
+		pose.getOrientation().setZ(FloatMath.sin(angle / 2f));
+		pose.getOrientation().setW(FloatMath.cos(angle / 2f));
+		double[] covariance = initialPose.getPose().getCovariance();
+		covariance[6 * 0 + 0] = 0.5 * 0.5; // X uncertainty
+		covariance[6 * 1 + 1] = 0.5 * 0.5; // Y uncertainty
+		covariance[6 * 5 + 5] = (float) (Math.PI / 12.0 * Math.PI / 12.0); // Z uncertainty
+
+		Log.i("SetInitialPoseDisplay", "Sending initial pose");
+		initialPosePublisher.publish(initialPose);
+	}
 }

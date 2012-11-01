@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="srv_gen/java"/>
 	<classpathentry kind="src" path="msg_gen/java"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/java"/>
-	<classpathentry kind="lib" path="/java/lib/guava-r07.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/RosAndroid"/>
 	<classpathentry kind="lib" path="libs/snakeyaml-android-1.8-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="libs/vecmath.jar"/>
+	<classpathentry kind="lib" path="libs/guava-13.0.1.jar"/>
+	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry exported="true" kind="lib" path="/home/adam/testspace2/android_core/android_honeycomb_mr2/libs/rosjava-0.0.0-SNAPSHOT.jar" sourcepath="/rosjava"/>
+	<classpathentry exported="true" kind="lib" path="/home/adam/testspace2/android_core/android_honeycomb_mr2/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/android_honeycomb_mr2/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="src" path="/rosjava_bootstrap"/>
+	<classpathentry kind="src" path="/rosjava_messages"/>
+	<classpathentry exported="true" kind="lib" path="/home/adam/testspace2/android_core/android_gingerbread_mr1/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/org.ros.android.android_gingerbread_mr1.MasterChooser/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/adam/testspace2/android_core/android_gingerbread_mr1/bin/org.ros.android.android_gingerbread_mr1.masterchooser.jar" sourcepath="/org.ros.android.android_gingerbread_mr1.MasterChooser/src"/>
+	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

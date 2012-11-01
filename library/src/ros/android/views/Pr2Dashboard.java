@@ -33,41 +33,30 @@
 
 package ros.android.views;
 
-import android.app.AlertDialog;
-import android.content.Context;
-import android.graphics.Color;
-import android.util.AttributeSet;
-import android.util.Log;
-import ros.android.util.Dashboard;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.Toast;
-import org.ros.internal.node.DefaultNode;
+import org.ros.exception.RemoteException;
+import org.ros.exception.RosException;
+import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
+import org.ros.namespace.GraphName;
+import org.ros.namespace.NameResolver;
 import org.ros.node.Node;
+import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
-import org.ros.exception.RosException;
-import org.ros.exception.RemoteException;
-import org.ros.exception.ServiceNotFoundException;
-import org.ros.node.service.ServiceClient;
-import org.ros.message.diagnostic_msgs.DiagnosticArray;
-import org.ros.message.diagnostic_msgs.DiagnosticStatus;
-import org.ros.message.diagnostic_msgs.KeyValue;
-import org.ros.message.pr2_msgs.DashboardState;
-import org.ros.namespace.NameResolver;
-import org.ros.namespace.GraphName;
-import org.ros.service.std_srvs.Empty;
-import org.ros.service.pr2_power_board.PowerBoardCommand;
-import ros.android.activity.R;
-import android.content.DialogInterface;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import ros.android.activity.R;
+import ros.android.util.Dashboard;
+import std_msgs.Empty;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.graphics.Color;
+import android.util.AttributeSet;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboard.DashboardInterface {
   private ImageButton modeButton;

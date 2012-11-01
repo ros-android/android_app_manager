@@ -29,34 +29,19 @@
  
 package ros.android.views;
 
+import geometry_msgs.Twist;
+
+import org.ros.exception.RosException;
+import org.ros.node.ConnectedNode;
+import org.ros.node.topic.Publisher;
+
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.widget.ImageView;
 import android.util.AttributeSet;
 import android.util.Log;
-import org.yaml.snakeyaml.Yaml;
-import java.util.List;
-import org.ros.node.parameter.ParameterTree;
-import java.lang.Thread;
-import org.ros.message.geometry_msgs.Twist;
 import android.view.MotionEvent;
-import org.ros.node.Node;
-import org.ros.exception.RosException;
-import ros.android.util.PlaneTfChangeListener;
-import android.view.View.OnTouchListener;
 import android.view.View;
-import org.ros.node.Node;
-import org.ros.node.topic.Publisher;
-import org.ros.node.service.ServiceResponseListener;
-import org.ros.node.topic.Subscriber;
-import org.ros.exception.RosException;
-import org.ros.exception.RemoteException;
-import org.ros.node.service.ServiceClient;
-import org.ros.internal.node.service.ServiceIdentifier;
-import org.ros.message.Message;
-
-import ros.android.activity.R;
+import android.view.View.OnTouchListener;
+import android.widget.ImageView;
 
 /**
  * View for screen-based joystick teleop.
@@ -88,7 +73,6 @@ public class JoystickView extends ImageView implements OnTouchListener {
 
   private void init(Context context) {
     baseControlTopic = "turtlebot_node/cmd_vel";
-    touchCmdMessage = new Twist();
     this.setOnTouchListener(this);
   }
 
@@ -96,7 +80,7 @@ public class JoystickView extends ImageView implements OnTouchListener {
     baseControlTopic = t;
   }
 
-  private <T extends Message> void createPublisherThread(final Publisher<T> pub, final T message,
+  private <T extends org.ros.internal.message.Message> void createPublisherThread(final Publisher<T> pub, final T message,
       final int rate) {
     pubThread = new Thread(new Runnable() {
 
@@ -123,8 +107,9 @@ public class JoystickView extends ImageView implements OnTouchListener {
     pubThread.start();
   }
   
-  public void start(Node node) throws RosException { 
+  public void start(ConnectedNode node) throws RosException { 
     Log.i("JoystickView", "init twistPub");
+    touchCmdMessage = node.getTopicMessageFactory().newFromType(Twist._TYPE);
     twistPub = node.newPublisher(baseControlTopic, "geometry_msgs/Twist");
     createPublisherThread(twistPub, touchCmdMessage, 10);
   }
@@ -143,26 +128,29 @@ public class JoystickView extends ImageView implements OnTouchListener {
   
   @Override
   public boolean onTouch(View arg0, MotionEvent motionEvent) {
+	  if(touchCmdMessage == null)
+		  return false;
+	  
     int action = motionEvent.getAction();
     if (arg0 == this && (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE)) {
       motionX = (motionEvent.getX() - (arg0.getWidth() / 2)) / (arg0.getWidth());
       motionY = (motionEvent.getY() - (arg0.getHeight() / 2)) / (arg0.getHeight());
 
-      touchCmdMessage.linear.x = -2 * motionY;
-      touchCmdMessage.linear.y = 0;
-      touchCmdMessage.linear.z = 0;
-      touchCmdMessage.angular.x = 0;
-      touchCmdMessage.angular.y = 0;
-      touchCmdMessage.angular.z = -5 * motionX;
+      touchCmdMessage.getLinear().setX(-2 * motionY);
+      touchCmdMessage.getLinear().setY(0);
+      touchCmdMessage.getLinear().setZ(0);
+      touchCmdMessage.getAngular().setX(0);
+      touchCmdMessage.getAngular().setY(0);
+      touchCmdMessage.getAngular().setZ(-5 * motionX);
       sendMessages = true;
       nullMessage = false;
     } else {
-      touchCmdMessage.linear.x = 0;
-      touchCmdMessage.linear.y = 0;
-      touchCmdMessage.linear.z = 0;
-      touchCmdMessage.angular.x = 0;
-      touchCmdMessage.angular.y = 0;
-      touchCmdMessage.angular.z = 0;
+      touchCmdMessage.getLinear().setX(0); 
+      touchCmdMessage.getLinear().setY(0);            
+      touchCmdMessage.getLinear().setZ(0);            
+      touchCmdMessage.getAngular().setX(0);             
+      touchCmdMessage.getAngular().setY(0);             
+      touchCmdMessage.getAngular().setZ(0);  
       nullMessage = true;
     }
     return true;

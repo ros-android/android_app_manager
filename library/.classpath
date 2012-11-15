@@ -5,17 +5,27 @@
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="lib" path="libs/snakeyaml-android-1.8-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="libs/vecmath.jar"/>
-	<classpathentry kind="lib" path="libs/guava-13.0.1.jar"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry kind="lib" path="/android_honeycomb_mr2/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
-	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
-	<classpathentry exported="true" kind="lib" path="/home/adam/testspace2/android_core/android_honeycomb_mr2/libs/rosjava-0.0.0-SNAPSHOT.jar" sourcepath="/rosjava"/>
-	<classpathentry exported="true" kind="lib" path="/home/adam/testspace2/android_core/android_honeycomb_mr2/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="/android_honeycomb_mr2/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
-	<classpathentry kind="src" path="/rosjava_bootstrap"/>
-	<classpathentry kind="src" path="/rosjava_messages"/>
-	<classpathentry exported="true" kind="lib" path="/home/adam/testspace2/android_core/android_gingerbread_mr1/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="/org.ros.android.android_gingerbread_mr1.MasterChooser/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
-	<classpathentry exported="true" kind="lib" path="/home/adam/testspace2/android_core/android_gingerbread_mr1/bin/org.ros.android.android_gingerbread_mr1.masterchooser.jar" sourcepath="/org.ros.android.android_gingerbread_mr1.MasterChooser/src"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/guava-12.0.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/rosjava_bootstrap-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/rosjava-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/netty-3.5.2.Final.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/apache_xmlrpc_client-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/apache_xmlrpc_common-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/apache_xmlrpc_server-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/com.springsource.org.apache.commons.codec-1.3.0.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/com.springsource.org.apache.commons.httpclient-3.1.0.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/com.springsource.org.apache.commons.io-1.4.0.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/com.springsource.org.apache.commons.lang-2.4.0.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/com.springsource.org.apache.commons.logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/com.springsource.org.apache.commons.net-2.0.0.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/commons-pool-1.6.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/dnsjava-2.1.1.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/jsr305-1.3.9.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/rosjava_messages-0.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/MasterChooser/libs/ws-commons-util-1.0.1.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

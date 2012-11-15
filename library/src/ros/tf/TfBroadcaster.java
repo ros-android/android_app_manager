@@ -35,10 +35,10 @@ import javax.vecmath.Quat4d;
 import org.ros.node.Node;
 import org.ros.node.topic.Publisher;
 import org.ros.message.Time;
-import org.ros.message.tf.tfMessage;
-import org.ros.message.geometry_msgs.TransformStamped;
-import org.ros.message.geometry_msgs.Vector3;
-import org.ros.message.geometry_msgs.Quaternion;
+import tf.tfMessage;
+import geometry_msgs.TransformStamped;
+import geometry_msgs.Vector3;
+import geometry_msgs.Quaternion;
 
 import java.util.ArrayList;
 

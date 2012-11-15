@@ -35,8 +35,8 @@ import org.ros.message.MessageListener;
 import org.ros.node.topic.Subscriber;
 import org.ros.message.Duration;
 import org.ros.message.Time;
-import org.ros.message.tf.tfMessage;
-import org.ros.message.geometry_msgs.TransformStamped;
+import tf.tfMessage;
+import geometry_msgs.TransformStamped;
 
 import javax.vecmath.Quat4d;
 import javax.vecmath.Vector3d;

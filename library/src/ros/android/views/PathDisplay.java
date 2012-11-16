@@ -83,7 +83,7 @@ public class PathDisplay extends PanZoomDisplay {
 
 	@Override
 	public void start(ConnectedNode node) throws RosException {
-		final PathDisplay parent = this;
+		//final PathDisplay parent = this;
 		pathSubscriber = node.newSubscriber(pathTopic, "nav_msgs/Path");
 		pathSubscriber.addMessageListener(new MessageListener<Path>() {
 			@Override

@@ -30,13 +30,15 @@
 
 package ros.tf;
 
-import org.ros.node.Node;
+import org.ros.node.ConnectedNode;
 import org.ros.message.MessageListener;
 import org.ros.node.topic.Subscriber;
 import org.ros.message.Duration;
 import org.ros.message.Time;
 import tf.tfMessage;
+import geometry_msgs.Quaternion;
 import geometry_msgs.TransformStamped;
+import geometry_msgs.Vector3;
 
 import javax.vecmath.Quat4d;
 import javax.vecmath.Vector3d;
@@ -70,7 +72,7 @@ public class TfListener {
   public static final long MAX_STORAGE_TIME = (new Duration(10, 0)).totalNsecs();
 
   private Subscriber<tfMessage> tfSubscriber;
-
+  private ConnectedNode node;
   /** Map that maps frame IDs (names) to frames */
   protected HashMap<String, Frame> frames;
   /** TF name prefix, currently not used (TODO) */
@@ -108,8 +110,9 @@ public class TfListener {
    * Subscribes to tf on the given Node and starts the listener.
    * Stops any previous subscription first.
    */
-  public boolean start(Node node) {
+  public boolean start(ConnectedNode node) {
     stop();
+    this.node = node;
     try {
       tfSubscriber = node.newSubscriber(getTopic(), "tf/tfMessage");
       tfSubscriber.addMessageListener(
@@ -117,7 +120,7 @@ public class TfListener {
           @Override
           public void onNewMessage(final tfMessage msg) {
             if (msg != null) {
-              for(TransformStamped tf : msg.transforms) {
+              for(TransformStamped tf : msg.getTransforms()) {
                 setTransform(tf);
               }
             }
@@ -149,8 +152,8 @@ public class TfListener {
    */
   protected boolean setTransform(TransformStamped transform) {
     // resolve the frame ID's
-    String childFrameID = assertResolved(tfPrefix, transform.child_frame_id);
-    String frameID = assertResolved(tfPrefix, transform.header.frame_id);
+    String childFrameID = assertResolved(tfPrefix, transform.getChildFrameId());
+    String frameID = assertResolved(tfPrefix, transform.getHeader().getFrameId());
 
     boolean errorExists = false;
     if (childFrameID.equals(frameID)) {
@@ -174,8 +177,8 @@ public class TfListener {
     Frame frame = lookupOrInsertFrame(childFrameID);
 
     // convert tf message to JTransform datastructure
-    transform.child_frame_id = childFrameID;
-    transform.header.frame_id = frameID;
+    transform.setChildFrameId(childFrameID);
+    transform.getHeader().setFrameId(frameID);
     TransformStorage tf = transformStampedMsgToTF(transform);
 
     // try to insert tf in corresponding time cache. If result is FALSE, the tf contains old data.
@@ -492,16 +495,16 @@ public class TfListener {
    * Converts the given TransformStamped message to the TransformStorage datastructure
    */
   protected TransformStorage transformStampedMsgToTF(TransformStamped msg) {
-    org.ros.message.geometry_msgs.Vector3 tMsg = msg.transform.translation;
-    org.ros.message.geometry_msgs.Quaternion rMsg = msg.transform.rotation;
+    Vector3 tMsg = msg.getTransform().getTranslation();
+    Quaternion rMsg = msg.getTransform().getRotation();
 
     // add frames to map
-    Frame childFrame = lookupOrInsertFrame(msg.child_frame_id);
-    Frame parentFrame = lookupOrInsertFrame(msg.header.frame_id);
+    Frame childFrame = lookupOrInsertFrame(msg.getChildFrameId());
+    Frame parentFrame = lookupOrInsertFrame(msg.getHeader().getFrameId());
 
-    return new TransformStorage(new Vector3d(tMsg.x, tMsg.y, tMsg.z),
-                                new Quat4d(rMsg.x, rMsg.y, rMsg.z, rMsg.w),
-                                msg.header.stamp.totalNsecs(),
+    return new TransformStorage(new Vector3d(tMsg.getX(), tMsg.getY(), tMsg.getZ()),
+                                new Quat4d(rMsg.getX(), rMsg.getY(), rMsg.getZ(), rMsg.getW()),
+                                msg.getHeader().getStamp().totalNsecs(),
                                 parentFrame, childFrame);
   }
 
@@ -513,18 +516,18 @@ public class TfListener {
     Quat4d rTF = tf.getRotation();
 
     // convert quaternion and translation vector to corresponding messages
-    org.ros.message.geometry_msgs.Vector3 tMsg = new org.ros.message.geometry_msgs.Vector3();
-    org.ros.message.geometry_msgs.Quaternion rMsg = new org.ros.message.geometry_msgs.Quaternion();
-    tMsg.x = tTF.x; tMsg.y = tTF.y; tMsg.z = tTF.z;
-    rMsg.x = rTF.x; rMsg.y = rTF.y; rMsg.z = rTF.z; rMsg.w = rTF.w;
+    Vector3 tMsg = node.getTopicMessageFactory().newFromType(Vector3._TYPE);
+    Quaternion rMsg = node.getTopicMessageFactory().newFromType(Quaternion._TYPE);
+    tMsg.setX(tTF.x); tMsg.setY(tTF.y); tMsg.setZ(tTF.z);
+    rMsg.setX(rTF.x); rMsg.setY(rTF.y); rMsg.setZ(rTF.z); rMsg.setW(rTF.w);
 
     // create TransformStamped message
-    TransformStamped msg = new TransformStamped();
-    msg.header.frame_id = tf.getParentFrame().getFrameID();
-    msg.header.stamp = new Time(tf.getTimeStamp());
-    msg.child_frame_id = tf.getChildFrame().getFrameID();
-    msg.transform.translation = tMsg;
-    msg.transform.rotation = rMsg;
+    TransformStamped msg = node.getTopicMessageFactory().newFromType(TransformStamped._TYPE);
+    msg.getHeader().setFrameId(tf.getParentFrame().getFrameID());
+    msg.getHeader().setStamp(new Time(tf.getTimeStamp()));
+    msg.setChildFrameId(tf.getChildFrame().getFrameID());
+    msg.getTransform().setTranslation(tMsg);
+    msg.getTransform().setRotation(rMsg);
 
     return msg;
   }

@@ -33,17 +33,15 @@
 
 package ros.android.util;
 
-import android.content.Context;
-import android.util.AttributeSet;
-import android.view.View;
-import android.view.ViewGroup;
-import android.app.Activity;
-
 import org.ros.exception.RosException;
 import org.ros.node.ConnectedNode;
-import org.ros.node.Node;
 import org.ros.node.parameter.ParameterTree;
+
+import android.app.Activity;
+import android.content.Context;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 
 public class Dashboard {
   public interface DashboardInterface {

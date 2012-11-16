@@ -29,29 +29,25 @@
  
 package ros.android.views;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.graphics.PointF;
-import android.graphics.Path;
-import android.util.AttributeSet;
-import android.util.Log;
-import org.yaml.snakeyaml.Yaml;
 import java.util.List;
-import org.ros.node.parameter.ParameterTree;
-import java.lang.Thread;
 
-import org.ros.node.ConnectedNode;
-import org.ros.node.Node;
 import org.ros.exception.RosException;
-
-import ros.android.util.PlaneTfChangeListener;
+import org.ros.node.ConnectedNode;
+import org.ros.node.parameter.ParameterTree;
 
 import ros.android.activity.R;
+import ros.android.util.PlaneTfChangeListener;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PointF;
+import android.util.AttributeSet;
+import android.util.Log;
 
 /**
  * View of the latest map with the turtlebot drawn in where TF thinks it is.

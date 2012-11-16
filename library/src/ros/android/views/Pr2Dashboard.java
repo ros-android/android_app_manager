@@ -39,15 +39,16 @@ import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.namespace.NameResolver;
-import org.ros.node.Node;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
+import pr2_msgs.DashboardState;
+import pr2_power_board.PowerBoardCommandRequest;
+import pr2_power_board.PowerBoardCommandResponse;
 import ros.android.activity.R;
 import ros.android.util.Dashboard;
-import std_srvs.Empty;
 import std_srvs.EmptyRequest;
 import std_srvs.EmptyResponse;
 import android.app.AlertDialog;
@@ -60,10 +61,6 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import pr2_msgs.DashboardState;
-import pr2_power_board.PowerBoardCommand;
-import pr2_power_board.PowerBoardCommandRequest;
-import pr2_power_board.PowerBoardCommandResponse;
 
 public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboard.DashboardInterface {
   private ImageButton modeButton;

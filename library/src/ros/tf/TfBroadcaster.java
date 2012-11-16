@@ -32,9 +32,10 @@ package ros.tf;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Quat4d;
 
-import org.ros.node.Node;
+import org.ros.node.ConnectedNode;
 import org.ros.node.topic.Publisher;
 import org.ros.message.Time;
+
 import tf.tfMessage;
 import geometry_msgs.TransformStamped;
 import geometry_msgs.Vector3;
@@ -53,13 +54,14 @@ import java.util.ArrayList;
 public class TfBroadcaster {
 
   private Publisher<tfMessage> tfPublisher;
-
+  private ConnectedNode node;
   /**
    * Create a publisher from the given node.  Must be called before
    * any sendTransform() calls.
    */
-  public void start(Node node) throws org.ros.exception.RosException {
+  public void start(ConnectedNode node) throws org.ros.exception.RosException {
     stop();
+    this.node = node;
     tfPublisher = node.newPublisher("/tf", "tf/tfMessage");
   }
 
@@ -79,23 +81,34 @@ public class TfBroadcaster {
    */
   public void sendTransform(Vector3d transl, Quat4d rot, Time time, String parentFrame, String childFrame) {
     // convert translation vector and quaternion to geometry messages
-    Vector3 tMsg = new Vector3();
-    Quaternion rMsg = new Quaternion();
-    tMsg.x = transl.x; tMsg.y = transl.y; tMsg.z = transl.z;
-    rMsg.x = rot.x; rMsg.y = rot.y; rMsg.z = rot.z; rMsg.w = rot.w;
-
+	Vector3 tMsg  = node.getTopicMessageFactory().newFromType(Vector3._TYPE);
+		
+	Quaternion rMsg =node.getTopicMessageFactory().newFromType(Quaternion._TYPE);
+	
+	tMsg.setX(transl.x);
+	tMsg.setY(transl.y);
+	tMsg.setZ(transl.z);
+    
+	rMsg.setX(rot.x);
+	rMsg.setY(rot.y);
+	rMsg.setZ(rot.z);
+	rMsg.setW(rot.w);
+	
     // create TransformStamped message (is a geometry msg, do NOT confuse with StampedTransform class)
-    TransformStamped tfMsg = new TransformStamped();
-    tfMsg.header.frame_id = parentFrame;
-    tfMsg.header.stamp = time;
-    tfMsg.child_frame_id = childFrame;
-    tfMsg.transform.translation = tMsg;
-    tfMsg.transform.rotation = rMsg;
+    TransformStamped tfMsg = node.getTopicMessageFactory().newFromType( TransformStamped._TYPE );
+    
+    tfMsg.getHeader().setFrameId(parentFrame);
+    tfMsg.getHeader().setStamp(time);
+    
+    tfMsg.setChildFrameId(childFrame);
+    
+    tfMsg.getTransform().setTranslation(tMsg); 
+    tfMsg.getTransform().setRotation(rMsg);
 
     // create tfMessage and add TransformStamped message to it
-    tfMessage msg = new tfMessage();
-    msg.transforms = new ArrayList<TransformStamped>();
-    msg.transforms.add(tfMsg);
+    tfMessage msg = node.getTopicMessageFactory().newFromType(tfMessage._TYPE);
+    msg.setTransforms(new ArrayList<TransformStamped>());
+    msg.getTransforms().add(tfMsg);
 
     // publish the message
     tfPublisher.publish(msg);

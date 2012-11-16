@@ -33,7 +33,7 @@
 
 package ros.android.activity;
 
-import org.ros.android.RosActivity;
+import ros.android.activity.RosActivity;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosException;
 import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
@@ -73,15 +73,15 @@ public class RosAppActivity extends RosActivity {
 	private boolean startApplication = true;
 	private boolean applicationStarted = false;
 
-	protected RosAppActivity(String notificationTicker, String notificationTitle) {
-		super(notificationTicker, notificationTitle);
-	}
+//	protected RosAppActivity(String notificationTicker, String notificationTitle) {
+//		//super(notificationTicker, notificationTitle);
+//	}
 	
-	@Override
-	protected void init(NodeMainExecutor nodeMainExecutor) {
-		// TODO Auto-generated method stub
-
-	}
+//	@Override
+//	protected void init(NodeMainExecutor nodeMainExecutor) {
+//		// TODO Auto-generated method stub
+//
+//	}
 
 	protected void setDashboardResource(int r) {
 		dashboardResourceId = r;

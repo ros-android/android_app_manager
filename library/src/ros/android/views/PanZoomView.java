@@ -29,23 +29,20 @@
  
 package ros.android.views;
 
+import java.util.ArrayList;
+
+import org.ros.exception.RosException;
+import org.ros.node.ConnectedNode;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.PointF;
-import android.view.MotionEvent;
-import android.view.View;
 import android.util.AttributeSet;
 import android.util.FloatMath;
 import android.util.Log;
-
-import java.util.ArrayList;
-
-import org.ros.node.ConnectedNode;
-import org.ros.node.Node;
-import org.ros.exception.RosException;
-
-import ros.android.activity.R;
+import android.view.MotionEvent;
+import android.view.View;
 
 /**
  * 2D container view class for showing a map with a robot on it,

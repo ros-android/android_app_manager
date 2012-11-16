@@ -33,32 +33,28 @@
 
 package ros.android.util;
 
-import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
-import android.content.ContentValues;
-import android.util.Log;
-import org.ros.node.NodeConfiguration;
-import org.ros.exception.RosException;
-import org.ros.namespace.GraphName;
-import org.ros.namespace.NameResolver;
-import org.yaml.snakeyaml.Yaml;
-import ros.android.activity.MasterChooserActivity;
-import ros.android.util.CurrentRobotContentProvider;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
-import android.net.Uri;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
 import java.util.HashMap;
+
+import org.ros.exception.RosException;
+import org.ros.namespace.GraphName;
+import org.ros.namespace.NameResolver;
+import org.ros.node.NodeConfiguration;
+import org.yaml.snakeyaml.Yaml;
+
+import ros.android.activity.MasterChooserActivity;
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
+import android.util.Log;
 
 /**
  * Helper class for launching the {@link MasterChooserActivity} for choosing a

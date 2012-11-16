@@ -40,7 +40,6 @@ import org.ros.exception.RemoteException;
 import org.ros.exception.RosException;
 import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
-import org.ros.node.Node;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;

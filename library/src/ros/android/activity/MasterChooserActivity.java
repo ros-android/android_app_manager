@@ -33,58 +33,50 @@
 
 package ros.android.activity;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.yaml.snakeyaml.Yaml;
+
+import ros.android.util.InvalidRobotDescriptionException;
+import ros.android.util.MasterChooser;
+import ros.android.util.RobotDescription;
+import ros.android.util.RobotId;
+import ros.android.util.RobotsContentProvider;
+import ros.android.util.zxing.IntentIntegrator;
+import ros.android.util.zxing.IntentResult;
 import android.app.Activity;
-import android.app.Dialog;
 import android.app.AlertDialog;
-import android.text.Spannable;
-import android.text.Spannable.Factory;
-import android.text.style.StyleSpan;
-import android.text.style.ForegroundColorSpan;
-import android.text.style.RelativeSizeSpan;
+import android.app.Dialog;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ContentValues;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.Spannable;
+import android.text.Spannable.Factory;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
-import android.net.Uri;
-import org.yaml.snakeyaml.Yaml;
-import ros.android.util.InvalidRobotDescriptionException;
-import ros.android.util.MasterChooser;
-import ros.android.util.RobotDescription;
-import ros.android.util.RobotId;
-import ros.android.util.SdCardSetup;
-import ros.android.util.zxing.IntentIntegrator;
-import ros.android.util.zxing.IntentResult;
-import ros.android.util.RobotsContentProvider;
-import android.database.Cursor;
-
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Map;
-import java.util.HashMap;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author hersh@willowgarage.com

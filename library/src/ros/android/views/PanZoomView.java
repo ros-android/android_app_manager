@@ -29,22 +29,20 @@
  
 package ros.android.views;
 
+import java.util.ArrayList;
+
+import org.ros.exception.RosException;
+import org.ros.node.ConnectedNode;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.PointF;
-import android.view.MotionEvent;
-import android.view.View;
 import android.util.AttributeSet;
 import android.util.FloatMath;
 import android.util.Log;
-
-import java.util.ArrayList;
-
-import org.ros.node.Node;
-import org.ros.exception.RosException;
-
-import ros.android.activity.R;
+import android.view.MotionEvent;
+import android.view.View;
 
 /**
  * 2D container view class for showing a map with a robot on it,
@@ -73,7 +71,7 @@ public class PanZoomView extends View {
   private boolean firstSize;
 
   private ArrayList<PanZoomDisplay> displays;
-  private Node node;
+  private ConnectedNode node;
   private Matrix viewMatrix;
 
   public PanZoomView(Context ctx) {
@@ -130,7 +128,7 @@ public class PanZoomView extends View {
       displays.add( id, display );
     }
     if( node != null ) {
-      final Node thisNode = node;
+      final ConnectedNode thisNode = node;
       new Thread( new Runnable() {
           @Override public void run() {
             try {
@@ -162,7 +160,7 @@ public class PanZoomView extends View {
     }
   }
 
-  public void start(Node node) throws RosException {
+  public void start(ConnectedNode node) throws RosException {
     stop();
 
     this.node = node;

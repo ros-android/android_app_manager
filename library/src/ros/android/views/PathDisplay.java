@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2011, Willow Garage, Inc.
  * All rights reserved.
@@ -30,85 +29,90 @@
 
 package ros.android.views;
 
-import org.ros.message.MessageListener;
-import org.ros.node.Node;
-import android.graphics.Canvas;
-import org.ros.node.topic.Subscriber;
-import org.ros.exception.RosException;
-import org.ros.message.nav_msgs.Path;
-import org.ros.message.geometry_msgs.PoseStamped;
-import android.util.Log;
+import geometry_msgs.PoseStamped;
+
 import java.util.ArrayList;
-import android.graphics.Color;
+
+import nav_msgs.Path;
+
+import org.ros.exception.RosException;
+import org.ros.message.MessageListener;
+import org.ros.node.ConnectedNode;
+import org.ros.node.Node;
+import org.ros.node.topic.Subscriber;
+
+import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.util.Log;
 
 /**
  * PanZoomDisplay which shows a path in a PanZoomView.
  */
 public class PathDisplay extends PanZoomDisplay {
-  private String pathTopic = "/move_base/NavfnROS/plan";
-  private Subscriber pathSubscriber;
-  private ArrayList<double []> path;
-  private Paint paint = new Paint();
+	private String pathTopic = "/move_base/NavfnROS/plan";
+	private Subscriber<Path> pathSubscriber;
+	private ArrayList<double[]> path;
+	private Paint paint = new Paint();
 
+	private void onPathRecieved(Path path) {
+		ArrayList<double[]> p = new ArrayList<double[]>();
+		for(PoseStamped i : path.getPoses()) {
+			double[] n = new double[2];
+			n[0] = i.getPose().getPosition().getX();
+			n[1] = i.getPose().getPosition().getY();
+			p.add(n);
+		}
+		this.path = p;
+	}
 
-  private void onPathRecieved(Path path) {
-    ArrayList<double []> p = new ArrayList<double []>();
-    for (PoseStamped i : path.poses) {
-      double[] n = new double[2];
-      n[0] = i.pose.position.x;
-      n[1] = i.pose.position.y;
-      p.add(n);
-    }
-    this.path = p;
-  }
+	public void setColor(int color) {
+		paint.setColor(color);
+	}
 
-  public void setColor ( int color ) {
-    paint.setColor(color);
-  }
+	/**
+	 * Set the topic name for the path messages. Defaults to
+	 * "/move_base_node/NavfnROS/plan".
+	 */
+	public void setTopic(String pathTopic) {
+		this.pathTopic = pathTopic;
+	}
 
-  /**
-   * Set the topic name for the path messages.  Defaults to "/move_base_node/NavfnROS/plan".
-   */
-  public void setTopic( String pathTopic ) {
-    this.pathTopic = pathTopic;
-  }
-  public String getTopic() {
-    return pathTopic;
-  }
+	public String getTopic() {
+		return pathTopic;
+	}
 
-  @Override
-  public void start( Node node ) throws RosException {
-    final PathDisplay parent = this;
-    pathSubscriber = node.newSubscriber(pathTopic, "nav_msgs/Path");
-    pathSubscriber.addMessageListener(
-        new MessageListener<Path>() {
-              @Override
-              public void onNewMessage(final Path msg) {
-                PathDisplay.this.onPathRecieved(msg);
-              }});
-    Log.i("PathDisplay", "Path display started");
-  }
+	@Override
+	public void start(ConnectedNode node) throws RosException {
+		//final PathDisplay parent = this;
+		pathSubscriber = node.newSubscriber(pathTopic, "nav_msgs/Path");
+		pathSubscriber.addMessageListener(new MessageListener<Path>() {
+			@Override
+			public void onNewMessage(final Path msg) {
+				PathDisplay.this.onPathRecieved(msg);
+			}
+		});
+		Log.i("PathDisplay", "Path display started");
+	}
 
-  @Override
-  public void stop() {
-    if(pathSubscriber != null) {
-      pathSubscriber.shutdown();
-    }
-    pathSubscriber = null;
-  }
+	@Override
+	public void stop() {
+		if(pathSubscriber != null) {
+			pathSubscriber.shutdown();
+		}
+		pathSubscriber = null;
+	}
 
-  @Override
-  public void draw( Canvas canvas ) {
-    ArrayList<double []> p = path; //Avoid race conditions
-    if (p != null) {
-      if (p.size() > 0) {
-        double[] prev = p.get(0);
-        for (double[] next : p) {
-          canvas.drawLine((float)prev[0], (float)prev[1], (float)next[0], (float)next[1], paint);
-          prev = next;
-        }
-      }
-    }
-  }
+	@Override
+	public void draw(Canvas canvas) {
+		ArrayList<double[]> p = path; // Avoid race conditions
+		if(p != null) {
+			if(p.size() > 0) {
+				double[] prev = p.get(0);
+				for(double[] next : p) {
+					canvas.drawLine((float) prev[0], (float) prev[1], (float) next[0], (float) next[1], paint);
+					prev = next;
+				}
+			}
+		}
+	}
 }

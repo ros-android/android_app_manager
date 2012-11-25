@@ -33,41 +33,34 @@
 
 package ros.android.views;
 
-import android.app.AlertDialog;
-import android.content.Context;
-import android.graphics.Color;
-import android.util.AttributeSet;
-import android.util.Log;
-import ros.android.util.Dashboard;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.Toast;
-import org.ros.internal.node.DefaultNode;
+import org.ros.exception.RemoteException;
+import org.ros.exception.RosException;
+import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
-import org.ros.node.Node;
+import org.ros.namespace.GraphName;
+import org.ros.namespace.NameResolver;
+import org.ros.node.ConnectedNode;
+import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
-import org.ros.exception.RosException;
-import org.ros.exception.RemoteException;
-import org.ros.exception.ServiceNotFoundException;
-import org.ros.node.service.ServiceClient;
-import org.ros.message.diagnostic_msgs.DiagnosticArray;
-import org.ros.message.diagnostic_msgs.DiagnosticStatus;
-import org.ros.message.diagnostic_msgs.KeyValue;
-import org.ros.message.pr2_msgs.DashboardState;
-import org.ros.namespace.NameResolver;
-import org.ros.namespace.GraphName;
-import org.ros.service.std_srvs.Empty;
-import org.ros.service.pr2_power_board.PowerBoardCommand;
-import ros.android.activity.R;
-import android.content.DialogInterface;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import pr2_msgs.DashboardState;
+import pr2_power_board.PowerBoardCommandRequest;
+import pr2_power_board.PowerBoardCommandResponse;
+import ros.android.activity.R;
+import ros.android.util.Dashboard;
+import std_srvs.EmptyRequest;
+import std_srvs.EmptyResponse;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.graphics.Color;
+import android.util.AttributeSet;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboard.DashboardInterface {
   private ImageButton modeButton;
@@ -87,9 +80,9 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
   private Pr2RobotState state = Pr2RobotState.UNKNOWN;
   private Pr2RobotState waitingState = Pr2RobotState.ANY;
   private int nBreakers;
-  private long serialNumber;
+  private int serialNumber;
 
-  private Node node;
+  private ConnectedNode node;
   private Subscriber<DashboardState> dashboardSubscriber;
 
   private boolean clickOnTransition = false;
@@ -140,12 +133,12 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
    * Set the ROS Node to use to get status data and connect it up. Disconnects
    * the previous node if there was one.
    */
-  public void start(Node node) throws RosException {
+  public void start(ConnectedNode node) throws RosException {
     stop();
     this.node = node;
     try {
       dashboardSubscriber =
-        node.newSubscriber("dashboard_agg", "pr2_msgs/DashboardState");
+      node.newSubscriber("dashboard_agg", "pr2_msgs/DashboardState");
       dashboardSubscriber.addMessageListener(
           new MessageListener<DashboardState>() {
             @Override
@@ -159,7 +152,7 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
             }
           });
 
-      NameResolver resolver = node.getResolver().newChild(new GraphName("/"));
+      NameResolver resolver = node.getResolver().newChild(GraphName.of("/"));
     } catch( Exception ex ) {
       this.node = null;
       throw( new RosException( ex ));
@@ -179,15 +172,15 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
    * thread.
    */
   private void handleDashboardState(DashboardState msg) {
-    robotBattery.setBatteryPercent((int)msg.power_state.relative_capacity);
-    robotBattery.setPluggedIn(msg.power_state.AC_present != 0);
+    robotBattery.setBatteryPercent((int)msg.getPowerState().getRelativeCapacity());
+    robotBattery.setPluggedIn(msg.getPowerState().getACPresent() != 0);
 
-    if (msg.power_board_state.wireless_stop == false) {
+    if (msg.getPowerBoardState().getWirelessStop() == false) {
       physicalEstop.setColorFilter(Color.GRAY);
       wirelessEstop.setColorFilter(Color.RED);
     } else {
       wirelessEstop.setColorFilter(Color.GREEN);
-      if (msg.power_board_state.run_stop == true) {
+      if (msg.getPowerBoardState().getRunStop() == true) {
         physicalEstop.setColorFilter(Color.GREEN);
       } else {
         physicalEstop.setColorFilter(Color.RED);
@@ -197,14 +190,14 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
     Pr2RobotState previous_state = state;
 
     boolean breaker_state = true;
-    if (msg.power_board_state_valid == true && msg.power_board_state_valid == true) {
-      for (int i = 0; i < msg.power_board_state.circuit_state.length; i++) {
-        if (msg.power_board_state.circuit_state[i] != 3) { //Breaker invalid
+    if (msg.getPowerBoardStateValid() == true) {
+      for (int i = 0; i < msg.getPowerBoardState().getCircuitState().array().length; i++) {
+        if (msg.getPowerBoardState().getCircuitState().array()[i] != 3) { //Breaker invalid
           breaker_state = false;
         }
       }
-      nBreakers = msg.power_board_state.circuit_state.length;
-      serialNumber = msg.power_board_state.serial_num;
+      nBreakers = msg.getPowerBoardState().getCircuitState().array().length;
+      serialNumber = msg.getPowerBoardState().getSerialNum();
     } else {
       breaker_state = false;
     }
@@ -213,7 +206,7 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
       modeButton.setColorFilter(Color.RED);
       state = Pr2RobotState.BREAKERS_OUT;
     } else {
-      if (msg.motors_halted_valid == true && msg.motors_halted.data == true) {
+      if (msg.getMotorsHaltedValid() == true && msg.getMotorsHalted().getData() == true) {
         modeButton.setColorFilter(Color.YELLOW);
         state = Pr2RobotState.MOTORS_OUT;
       } else { //FIXME: diagnostics
@@ -236,10 +229,10 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
   }
 
   private void onModeButtonClicked() {
-    ServiceClient<Empty.Request, Empty.Response> motorServiceClient = null;
-    ServiceClient<PowerBoardCommand.Request, PowerBoardCommand.Response> modeServiceClient = null;
-    Empty.Request motorRequest = new Empty.Request();
-    PowerBoardCommand.Request modeRequest;
+    ServiceClient<EmptyRequest, EmptyResponse> motorServiceClient = null;
+    ServiceClient<PowerBoardCommandRequest, PowerBoardCommandResponse> modeServiceClient = null;
+    EmptyRequest motorRequest = node.getTopicMessageFactory().newFromType(EmptyRequest._TYPE);
+    PowerBoardCommandRequest modeRequest;
     switch (state) {
     case BREAKERS_OUT:
       waitingState = Pr2RobotState.MOTORS_OUT;
@@ -247,20 +240,21 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
       clickOnTransition = true;
       //Send reset to the breakers.
       for (int i = 0; i < nBreakers; i++) {
-        modeRequest = new PowerBoardCommand.Request();
-        modeRequest.breaker_number = i;
-        modeRequest.command = "start";
-        modeRequest.serial_number = serialNumber;
+  		modeRequest = node.getTopicMessageFactory().newFromType(PowerBoardCommandRequest._TYPE);
+
+        modeRequest.setBreakerNumber(i);
+        modeRequest.setCommand("start");
+        modeRequest.setSerialNumber(serialNumber);
         try {
           modeServiceClient =
-            node.newServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
+          node.newServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
         } catch( ServiceNotFoundException ex ) {
           this.node = null;
           //throw( new RosException( ex.toString() ));
         }
-        modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommand.Response>() {
+        modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommandResponse>() {
             @Override
-            public void onSuccess(PowerBoardCommand.Response message) { } //Diagnostics will update. 
+            public void onSuccess(PowerBoardCommandResponse message) { } //Diagnostics will update. 
             @Override
             public void onFailure(RemoteException ex) {
               final Exception e = ex;
@@ -282,9 +276,9 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
         this.node = null;
         //throw( new RosException( ex.toString() ));
       }
-      motorServiceClient.call(motorRequest, new ServiceResponseListener<Empty.Response>() {
+      motorServiceClient.call(motorRequest, new ServiceResponseListener<EmptyResponse>() {
           @Override
-          public void onSuccess(Empty.Response message) { } //Diagnostics will update. 
+          public void onSuccess(EmptyResponse message) { } //Diagnostics will update. 
           @Override
           public void onFailure(RemoteException ex) {
             final Exception e = ex;
@@ -299,10 +293,10 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
       waitingState = Pr2RobotState.BREAKERS_OUT;
       //Stop the breakers
       for (int i = 0; i < nBreakers; i++) {
-        modeRequest = new PowerBoardCommand.Request();
-        modeRequest.breaker_number = i;
-        modeRequest.command = "stop";
-        modeRequest.serial_number = serialNumber;
+  		modeRequest = node.getTopicMessageFactory().newFromType(PowerBoardCommandRequest._TYPE);
+        modeRequest.setBreakerNumber(i);
+        modeRequest.setCommand("stop");
+        modeRequest.setSerialNumber(serialNumber);
         try {
           modeServiceClient =
             node.newServiceClient("power_board/control", "pr2_power_board/PowerBoardCommand");
@@ -310,9 +304,9 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
           this.node = null;
           //throw( new RosException( ex.toString() ));
         }
-        modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommand.Response>() {
+        modeServiceClient.call(modeRequest, new ServiceResponseListener<PowerBoardCommandResponse>() {
             @Override
-            public void onSuccess(PowerBoardCommand.Response message) { } //Diagnostics will update. 
+            public void onSuccess(PowerBoardCommandResponse message) { } //Diagnostics will update. 
             @Override
             public void onFailure(RemoteException ex) {
               final Exception e = ex;
@@ -330,9 +324,9 @@ public class Pr2Dashboard extends android.widget.LinearLayout implements Dashboa
         this.node = null;
         //throw( new RosException( ex.toString() ));
       }
-      motorServiceClient.call(motorRequest, new ServiceResponseListener<Empty.Response>() {
+      motorServiceClient.call(motorRequest, new ServiceResponseListener<std_srvs.EmptyResponse>() {
           @Override
-          public void onSuccess(Empty.Response message) { } //Diagnostics will update. 
+          public void onSuccess(EmptyResponse message) { } //Diagnostics will update. 
           @Override
           public void onFailure(RemoteException ex) {
             final Exception e = ex;

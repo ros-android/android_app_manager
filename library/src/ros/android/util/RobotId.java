@@ -33,11 +33,6 @@
 
 package ros.android.util;
 
-import org.ros.exception.RosException;
-import org.ros.namespace.GraphName;
-
-import java.net.URI;
-import java.util.Date;
 import java.util.Map;
 
 public class RobotId implements java.io.Serializable {

@@ -29,16 +29,17 @@
 
 package ros.android.views;
 
+import org.ros.exception.RosException;
+import org.ros.message.MessageListener;
+import org.ros.node.ConnectedNode;
+import org.ros.node.Node;
+
+import sensor_msgs.CompressedImage;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.AttributeSet;
 import android.widget.ImageView;
-import org.ros.message.MessageListener;
-import org.ros.node.Node;
-import org.ros.node.topic.Subscriber;
-import org.ros.exception.RosException;
-import org.ros.message.sensor_msgs.CompressedImage;
 
 /**
  * A camera node that publishes images and camera_info
@@ -62,12 +63,12 @@ public class SensorImageView extends ImageView {
     super(context, attrs);
   }
 
-  public void start(Node node, String topic) throws RosException {
+  public void start(ConnectedNode node, String topic) throws RosException {
     imageSub = node.newSubscriber(topic, "sensor_msgs/CompressedImage");
     imageSub.addMessageListener(new MessageListener<CompressedImage>() {
       @Override
       public void onNewMessage(CompressedImage message) {
-        bitmap = BitmapFactory.decodeByteArray(message.data, 0, message.data.length);
+        bitmap = BitmapFactory.decodeByteArray(message.getData().array(), 0, message.getData().readableBytes());
         post(new Runnable() {
           @Override
           public void run() {

@@ -29,83 +29,82 @@
 
 package ros.android.views;
 
+import org.ros.exception.RosException;
+import org.ros.message.MessageListener;
+import org.ros.node.ConnectedNode;
+import org.ros.node.Node;
+import org.ros.node.topic.Subscriber;
+
+import sensor_msgs.LaserScan;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.FloatMath;
-
-import org.ros.message.MessageListener;
-import org.ros.node.Node;
-import org.ros.node.topic.Subscriber;
-import org.ros.exception.RosException;
-import org.ros.message.sensor_msgs.LaserScan;
 
 /**
  * PanZoomDisplay which shows a top view of a laser range finder scan.
  */
 public class LaserScanDisplay extends PosablePanZoomDisplay {
-  private Paint paint = new Paint();
-  private String scanTopic;
-  private LaserScan rangeScan;
-  private boolean haveScan = false;
-  private Subscriber<LaserScan> scanSubscriber;
+	private Paint paint = new Paint();
+	private String scanTopic;
+	private LaserScan rangeScan;
+	private boolean haveScan = false;
+	private Subscriber<LaserScan> scanSubscriber;
 
-  public LaserScanDisplay() {
-    paint.setColor(0x80ffff00);
-  }
+	public LaserScanDisplay() {
+		paint.setColor(0x80ffff00);
+	}
 
-  public void setTopic( String scanTopic ) {
-    this.scanTopic = scanTopic;
-  }
-  public String getTopic() {
-    return scanTopic;
-  }
+	public void setTopic(String scanTopic) {
+		this.scanTopic = scanTopic;
+	}
 
-  @Override
-  public void start( Node node ) throws RosException {
-    super.start( node );
-    scanSubscriber =
-      node.newSubscriber(scanTopic, "sensor_msgs/LaserScan");
-    scanSubscriber.addMessageListener(new MessageListener<LaserScan>() {
-          @Override
-          public void onNewMessage(final LaserScan msg) {
-            rangeScan = msg;
-            haveScan = true;
-            postInvalidate();
-          }
-        });
-  }
+	public String getTopic() {
+		return scanTopic;
+	}
 
-  @Override
-  public void stop() {
-    super.stop();
-    if(scanSubscriber != null) {
-      scanSubscriber.shutdown();
-    }
-    scanSubscriber = null;
-  }
+	@Override
+	public void start(ConnectedNode node) throws RosException {
+		super.start(node);
+		scanSubscriber = node.newSubscriber(scanTopic, "sensor_msgs/LaserScan");
+		scanSubscriber.addMessageListener(new MessageListener<LaserScan>() {
+			@Override
+			public void onNewMessage(final LaserScan msg) {
+				rangeScan = msg;
+				haveScan = true;
+				postInvalidate();
+			}
+		});
+	}
 
-  @Override
-  public void drawAtPose( Canvas canvas ) {
-    if( haveScan ) {
-      float[] lineEndPoints = new float[rangeScan.ranges.length*4];
-      int numEndPoints = 0;
-      float angle = rangeScan.angle_min;
-      for( float range: rangeScan.ranges ) {
-        // Only process ranges which are in the valid range.
-        if( rangeScan.range_min <= range && range <= rangeScan.range_max ) {
-          PointF near = new PointF( FloatMath.cos(angle) * rangeScan.range_min, FloatMath.sin(angle) * rangeScan.range_min );
-          PointF far = new PointF( FloatMath.cos(angle) * range, FloatMath.sin(angle) * range );
-          lineEndPoints[numEndPoints++] = near.x;
-          lineEndPoints[numEndPoints++] = near.y;
-          lineEndPoints[numEndPoints++] = far.x;
-          lineEndPoints[numEndPoints++] = far.y;
-        }
-        angle += rangeScan.angle_increment;
-      }
-      canvas.drawLines(lineEndPoints, 0, numEndPoints, paint);
-    }
-  }
+	@Override
+	public void stop() {
+		super.stop();
+		if(scanSubscriber != null) {
+			scanSubscriber.shutdown();
+		}
+		scanSubscriber = null;
+	}
+
+	@Override
+	public void drawAtPose(Canvas canvas) {
+		if(haveScan) {
+			float[] lineEndPoints = new float[rangeScan.getRanges().length * 4];
+			int numEndPoints = 0;
+			float angle = rangeScan.getAngleMin();
+			for(float range : rangeScan.getRanges()) {
+				// Only process ranges which are in the valid range.
+				if(rangeScan.getRangeMin() <= range && range <= rangeScan.getRangeMax()) {
+					PointF near = new PointF(FloatMath.cos(angle) * rangeScan.getRangeMin(), FloatMath.sin(angle) * rangeScan.getRangeMin());
+					PointF far = new PointF(FloatMath.cos(angle) * range, FloatMath.sin(angle) * range);
+					lineEndPoints[numEndPoints++] = near.x;
+					lineEndPoints[numEndPoints++] = near.y;
+					lineEndPoints[numEndPoints++] = far.x;
+					lineEndPoints[numEndPoints++] = far.y;
+				}
+				angle += rangeScan.getAngleIncrement();
+			}
+			canvas.drawLines(lineEndPoints, 0, numEndPoints, paint);
+		}
+	}
 }

@@ -50,11 +50,6 @@ import ros.android.activity.R;
 import ros.android.util.Dashboard;
 
 
-import turtlebot_node.SetDigitalOutputsRequest;
-import turtlebot_node.SetDigitalOutputsResponse;
-import turtlebot_node.SetTurtlebotModeRequest;
-import turtlebot_node.SetTurtlebotModeResponse;
-import turtlebot_node.TurtlebotSensorState;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
@@ -135,7 +130,7 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
 				}
 			});
 
-			NameResolver resolver = node.getResolver().newChild(GraphName.of("/turtlebot_node"));
+			NameResolver resolver = node.getResolver().newChild(GraphName.of("/create_node"));
 		} catch(Exception ex) {
 			this.node = null;
 			throw (new RosException(ex));
@@ -174,16 +169,16 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
 	private void onModeButtonClicked() {
 		powerOn = !powerOn;
 
-		SetTurtlebotModeRequest modeRequest = node.getTopicMessageFactory().newFromType(SetTurtlebotModeRequest._TYPE);
-		SetDigitalOutputsRequest setDigOutRequest = node.getTopicMessageFactory().newFromType(SetDigitalOutputsRequest._TYPE);
+		create_node.SetTurtlebotModeRequest modeRequest = node.getTopicMessageFactory().newFromType(create_node.SetTurtlebotModeRequest._TYPE);
+		create_node.SetDigitalOutputsRequest setDigOutRequest = node.getTopicMessageFactory().newFromType(create_node.SetDigitalOutputsRequest._TYPE);
 
 		setDigOutRequest.setDigitalOut1((byte) 0);
 		setDigOutRequest.setDigitalOut2((byte) 0);
 		if(powerOn) {
-			modeRequest.setMode(TurtlebotSensorState.OI_MODE_FULL);
+			modeRequest.setMode(create_node.TurtlebotSensorState.OI_MODE_FULL);
 			setDigOutRequest.setDigitalOut0((byte) 1); // main breaker on
 		} else {
-			modeRequest.setMode(TurtlebotSensorState.OI_MODE_PASSIVE);
+			modeRequest.setMode(create_node.TurtlebotSensorState.OI_MODE_PASSIVE);
 			setDigOutRequest.setDigitalOut0((byte) 0); // main breaker off
 		}
 
@@ -194,10 +189,10 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
 
 		// TODO: can't I save the modeServiceClient? Causes trouble.
 		try {
-			ServiceClient<SetTurtlebotModeRequest, SetTurtlebotModeResponse> modeServiceClient = node.newServiceClient("turtlebot_node/set_operation_mode", "turtlebot_node/SetTurtlebotMode");
-			modeServiceClient.call(modeRequest, new ServiceResponseListener<SetTurtlebotModeResponse>() {
+			ServiceClient<create_node.SetTurtlebotModeRequest, create_node.SetTurtlebotModeResponse> modeServiceClient = node.newServiceClient("turtlebot_node/set_operation_mode", "create_node/SetTurtlebotMode");
+			modeServiceClient.call(modeRequest, new ServiceResponseListener<create_node.SetTurtlebotModeResponse>() {
 				@Override
-				public void onSuccess(SetTurtlebotModeResponse message) {
+				public void onSuccess(create_node.SetTurtlebotModeResponse message) {
 					numModeResponses++;
 					updateModeWaiting();
 				}
@@ -215,10 +210,10 @@ public class TurtlebotDashboard extends android.widget.LinearLayout implements D
 		}
 
 		try {
-			ServiceClient<SetDigitalOutputsRequest, SetDigitalOutputsResponse> setDigOutServiceClient = node.newServiceClient("turtlebot_node/set_digital_outputs", "turtlebot_node/SetDigitalOutputs");
-			setDigOutServiceClient.call(setDigOutRequest, new ServiceResponseListener<SetDigitalOutputsResponse>() {
+			ServiceClient<create_node.SetDigitalOutputsRequest, create_node.SetDigitalOutputsResponse> setDigOutServiceClient = node.newServiceClient("turtlebot_node/set_digital_outputs", "create_node/SetDigitalOutputs");
+			setDigOutServiceClient.call(setDigOutRequest, new ServiceResponseListener<create_node.SetDigitalOutputsResponse>() {
 				@Override
-				public void onSuccess(final SetDigitalOutputsResponse msg) {
+				public void onSuccess(final create_node.SetDigitalOutputsResponse msg) {
 					numModeResponses++;
 					updateModeWaiting();
 				}

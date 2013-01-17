@@ -73,16 +73,6 @@ public class RosAppActivity extends RosActivity {
 	private boolean startApplication = true;
 	private boolean applicationStarted = false;
 
-//	protected RosAppActivity(String notificationTicker, String notificationTitle) {
-//		//super(notificationTicker, notificationTitle);
-//	}
-	
-//	@Override
-//	protected void init(NodeMainExecutor nodeMainExecutor) {
-//		// TODO Auto-generated method stub
-//
-//	}
-
 	protected void setDashboardResource(int r) {
 		dashboardResourceId = r;
 	}

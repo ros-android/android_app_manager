@@ -8,32 +8,5 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/appman_android</url>
-  <depend package="roslib"/>
-  <depend package="rostest"/>
-  <depend package="app_manager"/>
-  <depend package="turtlebot_node"/>
-  <depend package="rosjava"/>
-  <depend package="android_gingerbread"/>
-  <depend package="move_base_msgs"/>
-  <depend package="actionlib_java"/>
 
-  <!-- msg dependencies -->
-  <depend package="rosgraph_msgs"/>
-  <depend package="sensor_msgs"/>
-  <depend package="std_msgs"/>
-  <depend package="std_srvs"/>
-  <depend package="joy"/>
-  <depend package="nav_msgs" />
-  <depend package="diagnostic_msgs"/>
-  <depend package="dynamic_reconfigure"/>
-  <depend package="geometry_msgs"/>
-  <depend package="tf"/>
-  <depend package="pr2_msgs"/>
-  <depend package="pr2_power_board"/>
-  <depend package="actionlib_msgs" />
-
-  <export>
-    <rosjava-src location="library/src" />
-    <rosjava-android-lib path="library" target="android-9" />
-  </export>
 </package>
